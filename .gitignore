@@ -24,6 +24,9 @@
 # But keep figure PDFs (these are source assets, not build output)
 !Figures/*.pdf
 
+# Scratch images (figure source PNGs are in Figures/)
+koopman_*.png
+
 # Compressed archives
 *.zip
 

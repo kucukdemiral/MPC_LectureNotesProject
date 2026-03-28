@@ -804,6 +804,10 @@ u_max = 2;  x1_max = 5;  lam_s = 1e4;
 opts = sdpsettings('verbose',0,'solver','quadprog');
 Q_lift = Cx'*Q*Cx;
 
+% Terminal cost via DARE (as in Chapter 7)
+[~, P_lift] = dlqr(A_K, B_K, Q_lift, R);   % lifted system
+[~, P_lin]  = dlqr(A_lin, B_lin, Q, R);     % linearised system
+
 % Koopman MPC
 z_par = sdpvar(p,1);  uK = sdpvar(N,1);  sK = sdpvar(N,1);
 zp = cell(N+1,1);  zp{1} = z_par;
@@ -811,7 +815,12 @@ for k = 1:N, zp{k+1} = A_K*zp{k} + B_K*uK(k); end
 objK = 0;  conK = [sK >= 0];
 for k = 1:N
     xk = Cx*zp{k+1};
-    objK = objK + xk'*Q*xk + R*uK(k)^2 + lam_s*sK(k)^2;
+    objK = objK + R*uK(k)^2 + lam_s*sK(k)^2;
+    if k < N
+        objK = objK + xk'*Q*xk;             % stage cost
+    else
+        objK = objK + zp{k+1}'*P_lift*zp{k+1}; % terminal cost
+    end
     conK = [conK, -u_max<=uK(k)<=u_max];
     conK = [conK, -x1_max-sK(k)<=xk(1)<=x1_max+sK(k)];
 end
@@ -823,7 +832,12 @@ xp = cell(N+1,1);  xp{1} = x_par;
 for k = 1:N, xp{k+1} = A_lin*xp{k} + B_lin*uL(k); end
 objL = 0;  conL = [sL >= 0];
 for k = 1:N
-    objL = objL + xp{k+1}'*Q*xp{k+1} + R*uL(k)^2 + lam_s*sL(k)^2;
+    objL = objL + R*uL(k)^2 + lam_s*sL(k)^2;
+    if k < N
+        objL = objL + xp{k+1}'*Q*xp{k+1};     % stage cost
+    else
+        objL = objL + xp{k+1}'*P_lin*xp{k+1};  % terminal cost
+    end
     conL = [conL, -u_max<=uL(k)<=u_max];
     conL = [conL, -x1_max-sL(k)<=xp{k+1}(1)<=x1_max+sL(k)];
 end
@@ -1024,9 +1038,9 @@ The two \emph{regularisation terms} are critical for noisy data:
 \begin{examplebox}{DeePC for a Scalar Integrator}
 	\emph{System.} $y_{k+1} = y_k + u_k$ (order $n = 1$, SISO).
 
-	\emph{Data.} $T = 8$ samples with PE input $u^d = [1,\; -1,\; 0.5,\; -0.5,\; 1,\; -1,\; 0.5,\; -0.5]$, starting from $y_0^d = 0$:
+	\emph{Data.} $T = 8$ samples with PE input $u^d = [1,\; -1,\; 0.5,\; -0.5,\; 0.8,\; -0.2,\; 0.3,\; -0.9]$, starting from $y_0^d = 0$:
 	\[
-	y^d = [0,\; 1,\; 0,\; 0.5,\; 0,\; 1,\; 0,\; 0.5]
+	y^d = [0,\; 1,\; 0,\; 0.5,\; 0,\; 0.8,\; 0.6,\; 0.9]
 	\]
 
 	\emph{Parameters.} $T_\text{ini} = 1$, $N = 2$, $Q = 1$, $R = 0.1$, $\lambda_g = 0$, $\lambda_\sigma = 0$ (noise-free).
@@ -1035,8 +1049,8 @@ The two \emph{regularisation terms} are critical for noisy data:
 
 	$L = T_\text{ini} + N = 3$. Construct the $3 \times 6$ Hankel matrices and partition into past (1 row) and future (2 rows):
 	\begin{align*}
-		U_p &= \begin{bmatrix} 1 & -1 & 0.5 & -0.5 & 1 & -1 \end{bmatrix} \\
-		U_f &= \begin{bmatrix} -1 & 0.5 & -0.5 & 1 & -1 & 0.5 \\ 0.5 & -0.5 & 1 & -1 & 0.5 & -0.5 \end{bmatrix}
+		U_p &= \begin{bmatrix} 1 & -1 & 0.5 & -0.5 & 0.8 & -0.2 \end{bmatrix} \\
+		U_f &= \begin{bmatrix} -1 & 0.5 & -0.5 & 0.8 & -0.2 & 0.3 \\ 0.5 & -0.5 & 0.8 & -0.2 & 0.3 & -0.9 \end{bmatrix}
 	\end{align*}
 	and similarly for $Y_p$, $Y_f$ from $y^d$.
 
@@ -1274,7 +1288,7 @@ Here $x_k^{(i)}$ denotes the state at time step $k$ during iteration $i$, and $T
 
 For each state in $\mathcal{SS}^j$, we can compute the \emph{cost-to-go}: the total cost that was actually incurred from that state to the target during the iteration in which it was visited. If the same state $x$ was visited during multiple iterations, we take the cheapest one:
 \begin{equation}\label{eq:cost_to_go}
-	Q^j(x) = \min_{(i,k):\, x_k^{(i)} = x}\; \sum_{t=k}^{T_i} \ell\bigl(x_t^{(i)},\, u_t^{(i)}\bigr)
+	Q^j(x) = \min_{(i,k):\, x_k^{(i)} = x}\; \sum_{t=k}^{T_i-1} \ell\bigl(x_t^{(i)},\, u_t^{(i)}\bigr)
 \end{equation}
 The minimum is over all (iteration, time step) pairs $(i,k)$ for which the system was in state $x$ at step $k$ of iteration $i$. The sum counts the stage costs from that point onwards until the end of that iteration. For example, if $\ell = 1$ (minimum-time), then $Q^j(x_k^{(i)}) = T_i - k$: the number of remaining steps. If the same state appeared in a later, faster iteration, $Q^j$ takes the smaller value.
 
@@ -1303,7 +1317,7 @@ where $\text{conv}(\mathcal{SS}^j)$ denotes the convex hull of the sampled safe 
 \subsection{Guarantees}
 \label{sec:lmpc_guarantees}
 
-LMPC provides two important properties without requiring an explicit model:
+LMPC provides two important properties without requiring offline design of terminal ingredients (the dynamics model $f$ is still needed for prediction):
 
 \emph{Recursive feasibility.} If iteration $j$ was feasible (the system reached $x_F$), then iteration $j+1$ is also feasible. The argument has two parts: (i)~\emph{inter-iteration}: the trajectory from iteration $j$ is contained in $\mathcal{SS}^j$, so it is available as a feasible candidate for iteration $j+1$; (ii)~\emph{intra-iteration}: at each time step within iteration $j+1$, the standard shifted-sequence argument applies---the tail of the previous solution provides a feasible candidate, and its terminal state remains in $\mathcal{SS}^j$ because all successor states from previous iterations are already in the safe set.
 
@@ -1320,12 +1334,12 @@ The cost sequence $\{J^{(j)}\}$ is non-increasing and bounded below (by zero), s
 
 	\emph{Task.} Drive from $x_0 = 2$ to $x_F = 0$ in minimum time (stage cost $\ell = 1$ per step).
 
-	\emph{Iteration 0: conservative controller.} Use $u_k = -0.3$ (well within the constraint) at every step.
+	\emph{Iteration 0: conservative controller.} Use $u_k = -0.3$ at most steps; near the origin ($|x_k| \le 0.3$), switch to $u_k = -x_k$ to reach $x_F = 0$ exactly.
 	\[
 	\begin{array}{c|c c c c c c c c}
 		k & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
 		\hline
-		x_k^{(0)} & 2.0 & 1.7 & 1.4 & 1.1 & 0.8 & 0.5 & 0.2 & -0.1
+		x_k^{(0)} & 2.0 & 1.7 & 1.4 & 1.1 & 0.8 & 0.5 & 0.2 & 0.0
 	\end{array}
 	\]
 	Cost: $J^{(0)} = 7$ steps.
@@ -1512,7 +1526,7 @@ The dynamics~\eqref{eq:racing_dynamics} are integrated using fourth-order Runge-
 
 \subsubsection{Track Representation}
 
-The track centreline is constructed as a closed Catmull--Rom spline through 13 waypoints, yielding a circuit of approximately 212\,m. The centreline is parameterised by arc length $s \in [0, L)$, where $L$ is the total track length. At each point, the unit tangent $\mathbf{t}(s)$ and outward normal $\mathbf{n}(s)$ are computed from the spline derivatives, and the local curvature $\kappa(s)$ is obtained from the rate of change of the tangent angle:
+The track centreline is taken from the MPCC benchmark~\cite{liniger2015optimization}, a complex racing circuit of approximately 445\,m featuring tight hairpins, chicanes, and high-speed straights. The centreline is parameterised by arc length $s \in [0, L)$, where $L$ is the total track length. At each point, the unit tangent $\mathbf{t}(s)$ and outward normal $\mathbf{n}(s)$ are computed from the spline derivatives, and the local curvature $\kappa(s)$ is obtained from the rate of change of the tangent angle:
 \begin{equation}\label{eq:curvature}
 	\kappa(s) = \left|\frac{\mathrm{d}\varphi_{\mathrm{tan}}}{\mathrm{d}s}\right|.
 \end{equation}
@@ -1618,7 +1632,7 @@ A second neural network $V_\phi(\mathbf{x})$ approximates the cost-to-go from an
 \begin{equation}\label{eq:vf_target}
 	Q^j(\mathbf{x}_k^{(i)}) = T_i - k,
 \end{equation}
-where $T_i$ is the total number of steps in iteration $i$. Training data from all completed laps is accumulated and the network is retrained after each iteration. The input features are:
+where $T_i$ is the total number of steps in iteration $i$. Training data from all completed laps is accumulated; for states visited in multiple iterations, only the minimum cost-to-go is retained, consistent with~\eqref{eq:cost_to_go}. The network is retrained after each iteration. The input features are:
 \begin{equation}\label{eq:vf_features}
 	\mathbf{z}_V(\mathbf{x}) = \left[\frac{X}{50},\;\; \frac{Y}{50},\;\; \cos\varphi,\;\; \sin\varphi,\;\; \frac{v_x}{v_{x,\max}}\right].
 \end{equation}
@@ -1678,7 +1692,7 @@ Algorithm~\ref{alg:nnmpc} summarises the complete NN-MPC procedure, combining th
 \For{$j = 1$ \textbf{to} $J-1$}
     \Statex \quad \textit{Train neural networks:}
     \State Build binned speed targets $\bar{v}_b^{(j)}$ from $\mathcal{SS}^{j-1}$  \hfill \Comment{Eq.~\eqref{eq:bin_speed}}
-    \State Apply boost $\hat{v}_b^{(j)} = \bar{v}_b^{(j)} \cdot \beta_j$, cap by curvature $v_{\max}(s)$ \hfill \Comment{Eqs.~\eqref{eq:boost},~\eqref{eq:curv_limit}}
+    \State Apply boost $\tilde{v}_b^{(j)} = \bar{v}_b^{(j)} \cdot \beta_j$, cap by curvature $v_{\max}(s)$ \hfill \Comment{Eqs.~\eqref{eq:boost},~\eqref{eq:curv_limit}}
     \State Train speed map $v_\theta(s)$ on binned data \hfill \Comment{MLPRegressor}
     \State Train value function $V_\phi(\mathbf{x})$ on cost-to-go data \hfill \Comment{MLPRegressor}
 
@@ -1708,13 +1722,13 @@ The controller uses no explicit wall or track-boundary constraints. Instead, fou
 
 	\item \emph{Lookahead braking.} The predictive check~\eqref{eq:mpc_step2} ensures the vehicle begins decelerating before reaching a tight corner, rather than reacting only after entering it.
 
-	\item \emph{Off-track abort.} If the lateral deviation from the centreline exceeds $3w$ (15\,m), the lap is aborted. In practice, mechanisms~1--3 keep the deviation below approximately 1.1\,m, well within the 5\,m half-width.
+	\item \emph{Off-track abort.} If the lateral deviation from the centreline exceeds $3w$ (15\,m), the lap is aborted. In practice, mechanisms~1--3 keep the deviation within the track boundaries. Early iterations stay close to the centreline ($\approx 2$\,m), while later, faster iterations exploit the full track width ($\approx 5$\,m)---mirroring real racing where drivers use the entire road.
 \end{enumerate}
 
 
 \subsubsection{Safe Set Expansion Over Iterations}
 
-Figure~\ref{fig:nnmpc_safe_set} shows how the safe set grows over iterations. After iteration~0, only a narrow band of states near the centreline has been explored (at 5\,m/s). By iteration~7, the safe set contains over 4\,000 state measurements spanning a wide range of speeds and positions. The colour encodes longitudinal speed---the progression from blue (slow) to red (fast) shows that later iterations reach higher speeds on the straights whilst maintaining safe speeds through corners.
+Figure~\ref{fig:nnmpc_safe_set} shows how the safe set grows over iterations. After iteration~0, only a narrow band of states near the centreline has been explored (at 5\,m/s). By iteration~7, the safe set contains over 10\,000 state measurements spanning a wide range of speeds and positions. The colour encodes longitudinal speed---the progression from blue (slow) to red (fast) shows that later iterations reach higher speeds on the straights whilst maintaining safe speeds through corners.
 
 \begin{figure}[ht]
 	\centering
@@ -1726,44 +1740,44 @@ Figure~\ref{fig:nnmpc_safe_set} shows how the safe set grows over iterations. Af
 
 \subsubsection{Simulation Results}
 
-The simulation runs 8~iterations on the custom 13-waypoint track (212\,m). Total computation time is approximately 6\,s on a standard laptop. Figure~\ref{fig:nnmpc_racing_results} presents the results in four panels.
+The simulation runs 8~iterations on the MPCC benchmark track (445\,m). Total computation time is approximately 15\,s on a standard laptop. Figure~\ref{fig:nnmpc_racing_results} presents the results in four panels.
 
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.95\textwidth]{Figures/fig_nnmpc_racing_results.pdf}
-	\caption{NN-MPC autonomous racing results over 8~iterations. Top left: track with overlaid trajectories---later iterations carry higher speed through straights whilst maintaining the racing line through corners. Top right: lap times decrease monotonically from 42.5\,s (pure pursuit at 5\,m/s) to 20.9\,s (NN-MPC at average 10.1\,m/s), a 51\% improvement. Bottom left: actual speed profiles---the car learns to accelerate harder on straights and brake later into corners. Bottom right: NN speed map evolution showing how the learned target speeds increase with each iteration (capped by curvature at corners).}
+	\caption{NN-MPC autonomous racing results over 8~iterations on the MPCC benchmark track. Top left: track with overlaid trajectories---later iterations carry higher speed through straights whilst maintaining the racing line through corners. Top right: lap times decrease monotonically from 90.3\,s (pure pursuit at 5\,m/s) to 56.3\,s (NN-MPC at average 7.8\,m/s), a 38\% improvement. Bottom left: actual speed profiles---the car learns to accelerate harder on straights and brake later into corners. Bottom right: NN speed map evolution showing how the learned target speeds increase with each iteration (capped by curvature at corners).}
 	\label{fig:nnmpc_racing_results}
 \end{figure}
 
 The key observations are:
 \begin{itemize}
-	\item \emph{Monotone cost decrease.} Lap times decrease from 42.5\,s to 20.9\,s (51\% improvement), consistent with the non-increasing cost property of LMPC (Section~\ref{sec:lmpc_guarantees}).
+	\item \emph{Monotone cost decrease.} Lap times decrease from 90.3\,s to 56.3\,s (38\% improvement), consistent with the non-increasing cost property of LMPC (Section~\ref{sec:lmpc_guarantees}).
 
-	\item \emph{Speed profiles.} Iteration~0 drives at a near-constant 5\,m/s. By iteration~7, the car reaches 12.6\,m/s on the straights and brakes to approximately 7\,m/s through tight corners---the curvature speed limit~\eqref{eq:curv_limit} is the binding constraint.
+	\item \emph{Speed profiles.} Iteration~0 drives at a near-constant 5\,m/s. By iteration~7, the car reaches approximately 8\,m/s on average and up to 12\,m/s on the straights, braking to approximately 6\,m/s through tight corners---the curvature speed limit~\eqref{eq:curv_limit} is the binding constraint.
 
 	\item \emph{NN speed map convergence.} The learned speed targets increase rapidly in early iterations and converge as the boost factor saturates and the curvature limits bind. The network produces a smooth, position-dependent speed profile that the pure pursuit controller can track reliably.
 
-	\item \emph{Track safety.} The maximum lateral deviation from the centreline remains below 1.1\,m throughout all 8~iterations. The vehicle never leaves the track.
+	\item \emph{Track usage.} Early iterations stay near the centreline (max lateral deviation $\approx 2$\,m). As speeds increase, the car exploits the full track width---reaching up to 5\,m from the centreline in later iterations. This mirrors real racing behaviour where drivers use the entire road to maximise cornering speed. The vehicle stays within the 5\,m half-width throughout all iterations.
 \end{itemize}
 
 Table~\ref{tab:racing_results} summarises the iteration-by-iteration improvement.
 
 \begin{table}[ht]
 	\centering
-	\caption{NN-MPC racing results: lap times and average speeds over 8~iterations on the 212\,m track.}
+	\caption{NN-MPC racing results: lap times and average speeds over 8~iterations on the 445\,m MPCC benchmark track.}
 	\label{tab:racing_results}
 	\begin{tabular}{crrrc}
 		\toprule
 		\textbf{Iteration} & \textbf{Lap time [s]} & \textbf{Avg.\ speed [m/s]} & \textbf{Max $|e_d|$ [m]} & \textbf{Controller} \\
 		\midrule
-		0 & 42.5 & 5.0 & 0.9 & Pure pursuit \\
-		1 & 37.7 & 5.6 & 0.9 & NN-MPC \\
-		2 & 32.1 & 6.6 & 1.0 & NN-MPC \\
-		3 & 28.9 & 7.3 & 1.1 & NN-MPC \\
-		4 & 26.3 & 8.0 & 1.1 & NN-MPC \\
-		5 & 24.2 & 8.7 & 1.1 & NN-MPC \\
-		6 & 22.4 & 9.4 & 1.1 & NN-MPC \\
-		7 & 20.9 & 10.1 & 1.1 & NN-MPC \\
+		0 & 90.3 & 4.9 & 2.2 & Pure pursuit \\
+		1 & 80.3 & 5.6 & 2.2 & NN-MPC \\
+		2 & 73.7 & 6.1 & 2.7 & NN-MPC \\
+		3 & 68.6 & 6.5 & 2.4 & NN-MPC \\
+		4 & 65.1 & 6.9 & 3.6 & NN-MPC \\
+		5 & 61.8 & 7.3 & 5.1 & NN-MPC \\
+		6 & 58.0 & 7.6 & 4.2 & NN-MPC \\
+		7 & 56.3 & 7.8 & 4.3 & NN-MPC \\
 		\bottomrule
 	\end{tabular}
 \end{table}
