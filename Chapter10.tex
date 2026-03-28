@@ -1,0 +1,32 @@
+\chapter{Course Conclusion and Further Topics\texorpdfstring{$^{(*)}$}{(*)}}
+\label{chap:conclusion}
+
+The course progressed from the \emph{Linear Quadratic Regulator (LQR)} through \emph{Model Predictive Control (MPC)} with explicit constraint handling, to \emph{State Estimation} and \emph{Disturbance Modelling} for offset-free tracking in the presence of noise and uncertainty.
+
+The structure presented here---\textbf{MPC + Estimator + Target Calculator}---is the standard architecture for linear MPC in process control. We omitted several advanced topics; this chapter provides pointers for further study.
+
+\section{Rigorous Stability Analysis}
+In the basic MPC formulation without a terminal set constraint, the \emph{Terminal Cost} ($x_N^\top P x_N$) encourages stability but does not mathematically \textit{guarantee} it for constrained systems. (Chapter~\ref{chap:linear_mpc}, Section~\ref{sec:mpc_stability_theory} provides the rigorous proof when the terminal set \emph{is} included.)
+
+Rigorous MPC theory relies on Lyapunov analysis. To prove stability, one must often include a \textbf{Terminal Set Constraint} ($x_N \in \mathcal{X}_f$) in the optimisation. This forces the state to land in a \emph{safe haven} (a Positive Invariant Set, meaning that once the trajectory enters the terminal set, it remains inside) at the end of the horizon, ensuring recursive feasibility.
+
+The fundamental reference for this topic is Mayne et al.~\cite{Mayne2000}.
+
+\section{Robust MPC}
+Robust MPC, specifically the Tube MPC approach, is covered in detail in Chapter~\ref{chap:tube_mpc}. The reader is referred there for the full development including Minkowski sums, Pontryagin differences, minimal robust positively invariant sets, and constraint tightening.
+
+\section{Nonlinear MPC (NMPC)}
+Nonlinear MPC is covered in detail in Chapter~\ref{chap:nmpc}. The reader is referred there for direct transcription methods, the CasADi/IPOPT workflow, successive convexification (SCvx), GuSTO, a powered rocket landing application, and Real-Time Iteration.
+
+\section{Real-Time Implementation and Embedded MPC}
+In our examples, we used solvers such as MATLAB's \texttt{quadprog} or the open-source solver IPOPT (accessed via CasADi or other interfaces), which are sufficient for offline simulations but insufficient for millisecond-level control on microcontrollers or DSPs. Deploying MPC on embedded hardware requires specialised techniques:
+\begin{itemize}
+	\item \textbf{Explicit MPC (Multiparametric Programming)~\cite{Bemporad2002}:} For small systems, we can pre-calculate the solution offline. The result is a lookup table of affine gains, one per polyhedral region of the state space. On the chip, the ``optimisation'' reduces to \texttt{if-else} checks to find the correct region, requiring microseconds to execute. Section~\ref{sec:explicit_mpc} develops this approach with worked examples and MPT3 code.
+	\item \textbf{Code Generation:} Tools like \href{https://acado.github.io/}{ACADO}, \href{https://cvxgen.com/}{CVXGEN}, or \href{https://osqp.org/}{OSQP} generate highly optimised, library-free C-code specifically tailored to the structure of the MPC problem, allowing convex MPC to run on standard automotive ECUs.
+\end{itemize}
+
+The fundamental reference for explicit MPC is Bemporad et al.~\cite{Bemporad2002}.
+
+\section{Data-Driven and Learning-Based MPC}
+Data-driven and learning-based MPC methods are covered in detail in Chapter~\ref{chap:learning_mpc}. The reader is referred there for GP-MPC, Koopman MPC, DeePC (including Willems' Fundamental Lemma), and Learning MPC, with full derivations, worked examples, and MATLAB/YALMIP implementations.
+

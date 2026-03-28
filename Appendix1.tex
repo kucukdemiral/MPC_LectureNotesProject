@@ -1,0 +1,910 @@
+% ============================================================
+%  File: Appendix1.tex (Linear Algebra)
+%  \input this file as an appendix chapter.
+%  All environments reference the existing preamble.
+%  British English throughout.
+% ============================================================
+
+\chapter{Linear Algebra: A Self-Study Reference}
+\label{app:linalg}
+
+This appendix provides a concise but complete review of the linear
+algebra concepts used throughout these lecture notes.  Each topic is
+presented with a formal definition, worked examples by hand, and the
+corresponding MATLAB commands so that you can verify every result
+interactively.  No prior knowledge beyond basic school-level algebra is
+assumed.
+
+All MATLAB code in this appendix can be typed directly into the MATLAB
+Command Window or saved as a script.  Matrices are entered row by row,
+with semicolons separating rows and commas (or spaces) separating
+elements within a row.
+
+% =============================================================
+\section{Scalars, Vectors, and Matrices}
+\label{sec:app_basics}
+% =============================================================
+
+\begin{defnbox}{Scalar}
+	A \textbf{scalar} is a single real (or complex) number, denoted by a
+	lower-case italic letter, e.g.\ $a = 3.7$.
+\end{defnbox}
+
+\begin{defnbox}{Vector}
+	A \textbf{column vector} of size $n$ is an ordered list of $n$ scalars
+	arranged vertically:
+	\[
+	{x} =
+	\begin{bmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{bmatrix}
+	\in \mathbb{R}^n.
+	\]
+	A {row vector} is the transpose of a column vector:
+	${x}^\top = [x_1,\; x_2,\; \ldots,\; x_n]$.  Unless stated
+	otherwise, \emph{vector} means column vector in these notes.
+\end{defnbox}
+
+\begin{defnbox}{Matrix}
+	An $m \times n$ \textbf{matrix} has $m$ rows and $n$ columns:
+	\[
+	A =
+	\begin{bmatrix}
+		a_{11} & a_{12} & \cdots & a_{1n} \\
+		a_{21} & a_{22} & \cdots & a_{2n} \\
+		\vdots & \vdots & \ddots & \vdots \\
+		a_{m1} & a_{m2} & \cdots & a_{mn}
+	\end{bmatrix}
+	\in \mathbb{R}^{m \times n}.
+	\]
+	The element in row $i$ and column $j$ is written $a_{ij}$ or
+	$[A]_{ij}$.  A \textbf{square matrix} has $m = n$.
+\end{defnbox}
+
+\begin{notebox}{MATLAB notation}
+	MATLAB uses \texttt{(i,j)} indexing for elements, starting from 1:
+	\texttt{A(i,j)} returns $a_{ij}$.  Size is queried with
+	\texttt{size(A)}, which returns \texttt{[m n]}.
+\end{notebox}
+
+\begin{examplebox}{Entering matrices and vectors in MATLAB}
+	\begin{lstlisting}[language=Matlab]
+		% Column vector
+		x = [2; -1; 4];       % 3x1, semicolons separate rows
+		
+		% Row vector
+		y = [5, 0, -3];       % 1x3, commas separate elements
+		
+		% 3x3 matrix
+		A = [1, 2, 3;
+		4, 5, 6;
+		7, 8, 9];
+		
+		% Access element in row 2, column 3
+		a23 = A(2,3)          % returns 6
+		
+		% Query dimensions
+		[m, n] = size(A)      % m=3, n=3
+	\end{lstlisting}
+	
+	\solution
+	Running the code above sets \texttt{a23 = 6} and confirms $A$ is
+	$3\times 3$.  Vectors are simply matrices where one dimension equals 1.
+\end{examplebox}
+
+% =============================================================
+\section{Special Matrices}
+\label{sec:app_special}
+% =============================================================
+
+Several matrix types appear repeatedly in MPC formulations and are
+worth knowing by name.
+
+\begin{defnbox}{Important Special Matrices}
+	\begin{itemize}[noitemsep]
+		\item \textbf{Zero matrix} $0_{m\times n}$: all entries are
+		zero.
+		\item \textbf{Identity matrix} $I_n$: square, ones on the main
+		diagonal, zeros elsewhere; $[I_n]_{ij} = 1$ if $i=j$, else $0$.
+		\item \textbf{Diagonal matrix}: square, all off-diagonal entries are
+		zero; written $\mathrm{diag}(d_1, d_2, \ldots, d_n)$.
+		\item \textbf{Symmetric matrix}: square, $A = A^\top$, i.e.\
+		$a_{ij} = a_{ji}$ for all $i,j$.
+		\item \textbf{Positive definite matrix}: symmetric $A$ such that
+		${x}^\top A {x} > 0$ for all
+		${x} \neq 0$.  Written $A \succ 0$.
+		\item \textbf{Positive semi-definite matrix}: symmetric $A$ such that
+		${x}^\top A {x} \geq 0$.  Written $A \succeq 0$.
+	\end{itemize}
+\end{defnbox}
+
+\begin{notebox}{Why positive definiteness matters in MPC}
+	The cost matrices $Q$ and $R$ in the MPC objective must satisfy
+	$Q \succeq 0$ and $R \succ 0$ for the optimisation problem to be
+	well-posed (bounded below with a unique minimiser).
+\end{notebox}
+
+\begin{examplebox}{Special matrices in MATLAB}
+	\begin{lstlisting}[language=Matlab]
+		n = 4;
+		Z  = zeros(n);          % 4x4 zero matrix
+		I  = eye(n);            % 4x4 identity matrix
+		D  = diag([1, 2, 3, 4]);% 4x4 diagonal matrix
+		
+		% Check symmetry
+		A  = [4, 2; 2, 3];
+		issymmetric(A)          % returns 1 (true)
+		
+		% Check positive definiteness via eigenvalues
+		ev = eig(A)             % all positive => A is positive definite
+	\end{lstlisting}
+	\solution
+	\texttt{eig(A)} returns \texttt{[1.4384; 5.5616]}, both positive,
+	confirming $A \succ 0$.
+\end{examplebox}
+
+% =============================================================
+\section{Matrix Addition and Subtraction}
+\label{sec:app_addsubtract}
+% =============================================================
+
+\begin{defnbox}{Addition and Subtraction}
+	Two matrices $A, B \in \mathbb{R}^{m \times n}$ of the \emph{same
+		size} are added (or subtracted) element by element:
+	\[
+	[A \pm B]_{ij} = a_{ij} \pm b_{ij}.
+	\]
+	Addition with matrices of different sizes is \textbf{not defined}.
+\end{defnbox}
+
+\textbf{Properties of matrix addition:}
+\begin{itemize}[noitemsep]
+	\item Commutativity: $A + B = B + A$
+	\item Associativity: $(A + B) + C = A + (B + C)$
+	\item Identity element: $A + 0 = A$
+	\item Distributivity over scalars: $\alpha(A+B) = \alpha A + \alpha B$
+\end{itemize}
+
+\begin{examplebox}{Matrix addition and subtraction by hand and in MATLAB}
+	Let
+	\[
+	A = \begin{bmatrix} 1 & 3 \\ -2 & 4 \end{bmatrix},
+	\qquad
+	B = \begin{bmatrix} 5 & -1 \\ 0 & 2 \end{bmatrix}.
+	\]
+	Compute $A + B$, $A - B$, and $3A$.
+	
+	\solution
+	\[
+	A + B =
+	\begin{bmatrix} 1+5 & 3-1 \\ -2+0 & 4+2 \end{bmatrix}
+	= \begin{bmatrix} 6 & 2 \\ -2 & 6 \end{bmatrix},
+	\]
+	\[
+	A - B =
+	\begin{bmatrix} 1-5 & 3+1 \\ -2-0 & 4-2 \end{bmatrix}
+	= \begin{bmatrix} -4 & 4 \\ -2 & 2 \end{bmatrix},
+	\]
+	\[
+	3A =
+	\begin{bmatrix} 3 & 9 \\ -6 & 12 \end{bmatrix}.
+	\]
+	
+	\begin{lstlisting}[language=Matlab]
+		A = [1, 3; -2, 4];
+		B = [5, -1; 0, 2];
+		
+		ApB = A + B     % [6  2; -2  6]
+		AmB = A - B     % [-4  4; -2  2]
+		threeA = 3*A    % [3  9; -6  12]
+	\end{lstlisting}
+\end{examplebox}
+
+% =============================================================
+\section{Matrix Transpose}
+\label{sec:app_transpose}
+% =============================================================
+
+\begin{defnbox}{Transpose}
+	The \textbf{transpose} of $A \in \mathbb{R}^{m \times n}$ is the
+	matrix $A^\top \in \mathbb{R}^{n \times m}$ obtained by swapping rows
+	and columns: $[A^\top]_{ij} = a_{ji}$.
+\end{defnbox}
+
+\textbf{Useful transpose identities:}
+\begin{align}
+	(A^\top)^\top &= A \label{eq:t1}\\
+	(A + B)^\top  &= A^\top + B^\top \label{eq:t2}\\
+	(AB)^\top     &= B^\top A^\top \label{eq:t3}\\
+	(\alpha A)^\top &= \alpha A^\top \label{eq:t4}
+\end{align}
+
+Identity \eqref{eq:t3} is the most frequently used and most easily
+forgotten: note the \emph{reversed} order.
+
+\begin{examplebox}{Transpose in MATLAB}
+	\begin{lstlisting}[language=Matlab]
+		A  = [1, 2, 3; 4, 5, 6];   % 2x3 matrix
+		At = A'                      % 3x2 transpose
+		
+		% Verify (AB)' = B'A'
+		B  = [1, 0; -1, 2; 3, 1];  % 3x2 so that AB is defined
+		lhs = (A*B)'
+		rhs = B' * A'
+		isequal(lhs, rhs)           % returns 1 (true)
+	\end{lstlisting}
+	\solution
+	\texttt{At} is the $3\times2$ matrix with rows \texttt{[1 4]},
+	\texttt{[2 5]}, \texttt{[3 6]}.  MATLAB confirms the identity.
+	
+	\textbf{Warning:} in MATLAB, \texttt{A'} computes the
+	\emph{conjugate} (Hermitian) transpose.  For real matrices this makes
+	no difference.  For complex matrices use \texttt{A.'} (dot-transpose)
+	if you want the non-conjugate transpose.
+\end{examplebox}
+
+% =============================================================
+\section{Matrix--Matrix Multiplication}
+\label{sec:app_matmat}
+% =============================================================
+
+\begin{defnbox}{Matrix Multiplication}
+	If $A \in \mathbb{R}^{m \times p}$ and $B \in \mathbb{R}^{p \times n}$
+	(the inner dimensions must match), their product
+	$C = AB \in \mathbb{R}^{m \times n}$ is defined by
+	\[
+	c_{ij} = \sum_{k=1}^{p} a_{ik}\, b_{kj},
+	\qquad i = 1,\ldots,m,\quad j = 1,\ldots,n.
+	\]
+	In words: the $(i,j)$ entry of $C$ is the \emph{dot product} of the
+	$i$-th row of $A$ with the $j$-th column of $B$.
+\end{defnbox}
+
+\begin{alertbox}{Matrix multiplication is NOT commutative}
+	In general $AB \neq BA$.  The product $BA$ may not even be defined if
+	$A$ and $B$ are not square.  Always check dimension compatibility
+	before multiplying: an $m\times p$ matrix times a $p \times n$ matrix
+	gives an $m \times n$ result.
+\end{alertbox}
+
+\textbf{Properties:}
+\begin{itemize}[noitemsep]
+	\item Associativity: $(AB)C = A(BC)$
+	\item Distributivity: $A(B+C) = AB + AC$
+	\item Identity: $AI = IA = A$
+	\item Scalar: $(\alpha A)B = A(\alpha B) = \alpha(AB)$
+\end{itemize}
+
+\begin{examplebox}{Matrix--matrix multiplication by hand and in MATLAB}
+	Let
+	\[
+	A = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix},
+	\qquad
+	B = \begin{bmatrix} 5 & 6 \\ 7 & 8 \end{bmatrix}.
+	\]
+	Compute $AB$ and $BA$ and confirm they differ.
+	
+	\solution
+	\[
+	AB =
+	\begin{bmatrix}
+		1\cdot5 + 2\cdot7 & 1\cdot6 + 2\cdot8 \\
+		3\cdot5 + 4\cdot7 & 3\cdot6 + 4\cdot8
+	\end{bmatrix}
+	=
+	\begin{bmatrix} 19 & 22 \\ 43 & 50 \end{bmatrix},
+	\]
+	\[
+	BA =
+	\begin{bmatrix}
+		5\cdot1 + 6\cdot3 & 5\cdot2 + 6\cdot4 \\
+		7\cdot1 + 8\cdot3 & 7\cdot2 + 8\cdot4
+	\end{bmatrix}
+	=
+	\begin{bmatrix} 23 & 34 \\ 31 & 46 \end{bmatrix}.
+	\]
+	Clearly $AB \neq BA$.
+	
+	\begin{lstlisting}[language=Matlab]
+		A  = [1, 2; 3, 4];
+		B  = [5, 6; 7, 8];
+		
+		AB = A * B          % [19 22; 43 50]
+		BA = B * A          % [23 34; 31 46]
+		isequal(AB, BA)     % returns 0 (false) -- not commutative
+	\end{lstlisting}
+\end{examplebox}
+
+\begin{examplebox}{Non-square matrix multiplication}
+	\[
+	A = \begin{bmatrix} 1 & 0 & -1 \\ 2 & 3 & 1 \end{bmatrix} \in
+	\mathbb{R}^{2\times 3}, \qquad
+	B = \begin{bmatrix} 2 \\ -1 \\ 4 \end{bmatrix} \in \mathbb{R}^{3\times 1}.
+	\]
+	Compute $AB$ (which exists) and state why $BA$ does not exist.
+	
+	\solution
+	$A$ is $2\times 3$ and $B$ is $3\times 1$: inner dimensions both equal
+	3, so $AB \in \mathbb{R}^{2\times 1}$:
+	\[
+	AB =
+	\begin{bmatrix}
+		1\cdot2 + 0\cdot(-1) + (-1)\cdot4 \\
+		2\cdot2 + 3\cdot(-1) + 1\cdot4
+	\end{bmatrix}
+	=
+	\begin{bmatrix} -2 \\ 5 \end{bmatrix}.
+	\]
+	$BA$ would require $B$ ($3\times1$) times $A$ ($2\times3$): inner
+	dimensions are $1 \neq 2$, so $BA$ is \textbf{undefined}.
+	
+	\begin{lstlisting}[language=Matlab]
+		A = [1, 0, -1; 2, 3, 1];
+		B = [2; -1; 4];
+		AB = A * B          % [-2; 5]
+		BA = B * A          % Error: inner matrix dimensions must agree
+	\end{lstlisting}
+\end{examplebox}
+
+% =============================================================
+\section{Matrix--Vector Multiplication}
+\label{sec:app_matvec}
+% =============================================================
+
+Matrix--vector multiplication is a special case of matrix--matrix
+multiplication where $n=1$, but it has a particularly important
+geometric interpretation: $A{x}$ transforms the vector
+${x}$ into a new vector in a (possibly different) space.
+
+\begin{defnbox}{Matrix--Vector Product}
+	For $A \in \mathbb{R}^{m\times n}$ and
+	${x} \in \mathbb{R}^n$:
+	\[
+	{y} = A{x}, \qquad
+	y_i = \sum_{j=1}^{n} a_{ij}\, x_j, \quad i = 1,\ldots,m.
+	\]
+	Equivalently, $A{x}$ is a {linear combination} of the
+	columns of $A$ with coefficients given by the entries of ${x}$:
+	\[
+	A{x} = x_1 {a}_1 + x_2 {a}_2 + \cdots
+	+ x_n {a}_n,
+	\]
+	where ${a}_j$ denotes the $j$-th column of $A$.
+\end{defnbox}
+
+In state-space control the plant update $x_{k+1} = Ax_k + Bu_k$ is
+nothing more than two matrix--vector products added together.
+
+\begin{examplebox}{Matrix--vector multiplication by hand and in MATLAB}
+	Given the state-space matrices
+	\[
+	A = \begin{bmatrix} 0.9 & 0.1 \\ 0 & 0.8 \end{bmatrix},
+	\quad
+	B = \begin{bmatrix} 0.1 \\ 0.5 \end{bmatrix},
+	\quad
+	x_k = \begin{bmatrix} 2 \\ -1 \end{bmatrix},
+	\quad
+	u_k = 3,
+	\]
+	compute the next state $x_{k+1} = Ax_k + Bu_k$.
+	
+	\solution
+	\[
+	Ax_k =
+	\begin{bmatrix} 0.9\cdot2 + 0.1\cdot(-1) \\ 0\cdot2 + 0.8\cdot(-1)
+	\end{bmatrix}
+	= \begin{bmatrix} 1.7 \\ -0.8 \end{bmatrix},
+	\qquad
+	Bu_k =
+	\begin{bmatrix} 0.3 \\ 1.5 \end{bmatrix},
+	\]
+	\[
+	x_{k+1} = \begin{bmatrix} 1.7 \\ -0.8 \end{bmatrix}
+	+ \begin{bmatrix} 0.3 \\ 1.5 \end{bmatrix}
+	= \begin{bmatrix} 2.0 \\ 0.7 \end{bmatrix}.
+	\]
+	
+	\begin{lstlisting}[language=Matlab]
+		A  = [0.9, 0.1; 0, 0.8];
+		B  = [0.1; 0.5];
+		xk = [2; -1];
+		uk = 3;
+		
+		xk1 = A*xk + B*uk    % [2.0; 0.7]
+	\end{lstlisting}
+\end{examplebox}
+
+% =============================================================
+\section{The Inverse of a Matrix}
+\label{sec:app_inverse}
+% =============================================================
+
+\begin{defnbox}{Matrix Inverse}
+	A square matrix $A \in \mathbb{R}^{n\times n}$ is \textbf{invertible}
+	(or \textbf{non-singular}) if there exists a matrix
+	$A^{-1} \in \mathbb{R}^{n\times n}$ such that
+	\[
+	A A^{-1} = A^{-1} A = I_n.
+	\]
+	If no such matrix exists, $A$ is called \textbf{singular}.
+\end{defnbox}
+
+\begin{defnbox}{Conditions for Invertibility}
+	A square matrix $A$ is invertible if and only if any one of the
+	following equivalent conditions holds:
+	\begin{itemize}[noitemsep]
+		\item $\det(A) \neq 0$ (see Section~\ref{sec:app_det});
+		\item all eigenvalues of $A$ are non-zero
+		(see Section~\ref{sec:app_eig});
+		\item the columns (or rows) of $A$ are linearly independent;
+		\item the equation $A{x} = 0$ has only the trivial
+		solution ${x} = 0$.
+	\end{itemize}
+\end{defnbox}
+
+\textbf{Useful inverse identities:}
+\begin{align}
+	(A^{-1})^{-1} &= A \\
+	(AB)^{-1}     &= B^{-1} A^{-1} \quad \text{(reversed order)} \\
+	(A^\top)^{-1} &= (A^{-1})^\top \\
+	(\alpha A)^{-1} &= \tfrac{1}{\alpha} A^{-1}
+\end{align}
+
+\textbf{Inverse of a $2\times2$ matrix} by hand:
+\[
+A = \begin{bmatrix} a & b \\ c & d \end{bmatrix}
+\implies
+A^{-1} = \frac{1}{ad - bc}
+\begin{bmatrix} d & -b \\ -c & a \end{bmatrix}.
+\]
+
+\begin{examplebox}{Computing the inverse by hand and in MATLAB}
+	Let
+	\[
+	A = \begin{bmatrix} 3 & 1 \\ 5 & 2 \end{bmatrix}.
+	\]
+	Find $A^{-1}$ and verify $AA^{-1} = I$.
+	
+	\solution
+	$\det(A) = 3\cdot2 - 1\cdot5 = 1$, so
+	\[
+	A^{-1} = \frac{1}{1}
+	\begin{bmatrix} 2 & -1 \\ -5 & 3 \end{bmatrix}
+	= \begin{bmatrix} 2 & -1 \\ -5 & 3 \end{bmatrix}.
+	\]
+	Verification:
+	\[
+	AA^{-1} =
+	\begin{bmatrix} 3 & 1 \\ 5 & 2 \end{bmatrix}
+	\begin{bmatrix} 2 & -1 \\ -5 & 3 \end{bmatrix}
+	=
+	\begin{bmatrix} 6-5 & -3+3 \\ 10-10 & -5+6 \end{bmatrix}
+	= \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix} = I. \checkmark
+	\]
+	
+	\begin{lstlisting}[language=Matlab]
+		A    = [3, 1; 5, 2];
+		Ainv = inv(A)           % [2 -1; -5 3]
+		
+		% Verify
+		A * Ainv                % should give eye(2)
+		norm(A*Ainv - eye(2))   % numerical error, should be ~1e-15
+	\end{lstlisting}
+\end{examplebox}
+
+\begin{alertbox}{Avoid \texttt{inv(A)} in numerical computations}
+	Although \texttt{inv(A)} is convenient for checking results,
+	numerically it is almost always better to use the backslash operator
+	\texttt{A\textbackslash b} to solve $Ax = b$
+	directly, without forming $A^{-1}$ explicitly.  The backslash
+	operator uses LU factorisation, which is faster and more numerically
+	stable than computing the full inverse.
+	
+	\begin{lstlisting}[language=Matlab]
+		% Solve Ax = b
+		b = [1; 2];
+		x_inv = inv(A) * b    % slow and less accurate
+		x_bs  = A \ b         % fast, numerically recommended
+	\end{lstlisting}
+\end{alertbox}
+
+\begin{examplebox}{Detecting a singular matrix}
+	\begin{lstlisting}[language=Matlab]
+		A_sing = [1, 2; 2, 4];     % row 2 = 2 * row 1
+		
+		det(A_sing)                 % returns 0 => singular
+		rank(A_sing)                % returns 1 (not full rank)
+		cond(A_sing)                % returns Inf
+		
+		inv(A_sing)                 % MATLAB warns: matrix is singular
+	\end{lstlisting}
+	\solution
+	The determinant is zero and the rank is 1 (not 2), confirming
+	singularity.  MATLAB returns a matrix of \texttt{Inf} values from
+	\texttt{inv} and issues a warning.  The condition number
+	\texttt{cond(A)} measures how close a matrix is to being singular;
+	values much larger than $10^6$ indicate near-singularity.
+\end{examplebox}
+
+% =============================================================
+\section{The Determinant}
+\label{sec:app_det}
+% =============================================================
+
+\begin{defnbox}{Determinant}
+	The \textbf{determinant} $\det(A)$ (also written $|A|$) is a scalar
+	function of a square matrix that encodes fundamental properties such as
+	invertibility, volume scaling, and orientation.
+	
+	For a $2\times2$ matrix:
+	\[
+	\det\!\begin{bmatrix} a & b \\ c & d \end{bmatrix} = ad - bc.
+	\]
+	For a $3\times3$ matrix (cofactor expansion along the first row):
+	\[
+	\det\!\begin{bmatrix} a_{11} & a_{12} & a_{13} \\
+		a_{21} & a_{22} & a_{23} \\
+		a_{31} & a_{32} & a_{33} \end{bmatrix}
+	= a_{11}(a_{22}a_{33} - a_{23}a_{32})
+	- a_{12}(a_{21}a_{33} - a_{23}a_{31})
+	+ a_{13}(a_{21}a_{32} - a_{22}a_{31}).
+	\]
+\end{defnbox}
+
+\textbf{Key properties:}
+\begin{itemize}[noitemsep]
+	\item $\det(I) = 1$
+	\item $\det(AB) = \det(A)\det(B)$
+	\item $\det(A^\top) = \det(A)$
+	\item $\det(A^{-1}) = 1/\det(A)$
+	\item $\det(\alpha A) = \alpha^n \det(A)$ for $A \in \mathbb{R}^{n\times n}$
+	\item $\det(A) = 0$ if and only if $A$ is singular
+\end{itemize}
+
+\begin{examplebox}{Determinant by hand and in MATLAB}
+	Compute $\det(A)$ for
+	\[
+	A = \begin{bmatrix} 2 & -1 & 0 \\ 1 & 3 & -2 \\ 0 & 1 & 4 \end{bmatrix}.
+	\]
+	
+	\solution
+	Expanding along the first row:
+	\[
+	\det(A) = 2\bigl(3\cdot4 - (-2)\cdot1\bigr)
+	- (-1)\bigl(1\cdot4 - (-2)\cdot0\bigr)
+	+ 0\bigl(\cdots\bigr)
+	= 2(14) + 1(4) = 32.
+	\]
+	
+	\begin{lstlisting}[language=Matlab]
+		A    = [2, -1, 0; 1, 3, -2; 0, 1, 4];
+		d    = det(A)           % returns 32
+	\end{lstlisting}
+\end{examplebox}
+
+% =============================================================
+\section{The Trace}
+\label{sec:app_trace}
+% =============================================================
+
+\begin{defnbox}{Trace}
+	The \textbf{trace} of a square matrix $A \in \mathbb{R}^{n\times n}$
+	is the sum of its diagonal elements:
+	\[
+	\mathrm{tr}(A) = \sum_{i=1}^{n} a_{ii} = a_{11} + a_{22} + \cdots + a_{nn}.
+	\]
+\end{defnbox}
+
+\textbf{Key properties:}
+\begin{itemize}[noitemsep]
+	\item Linearity: $\mathrm{tr}(\alpha A + \beta B) = \alpha\,\mathrm{tr}(A) + \beta\,\mathrm{tr}(B)$
+	\item Cyclic permutation: $\mathrm{tr}(ABC) = \mathrm{tr}(CAB) = \mathrm{tr}(BCA)$
+	\item Transpose invariance: $\mathrm{tr}(A) = \mathrm{tr}(A^\top)$
+	\item Equal to sum of eigenvalues: $\mathrm{tr}(A) = \sum_{i=1}^n \lambda_i$
+\end{itemize}
+
+The trace appears in control theory when expressing quadratic cost
+functions compactly.  The MPC stage cost
+${x}^\top Q {x}$ can be written as
+$\mathrm{tr}(Q{x}{x}^\top)$, which is useful in
+stochastic and robust formulations.
+
+\begin{examplebox}{Trace in MATLAB}
+	\begin{lstlisting}[language=Matlab]
+		A = [1, 2, 3;
+		4, 5, 6;
+		7, 8, 9];
+		
+		tr = trace(A)           % 1 + 5 + 9 = 15
+		
+		% Verify trace equals sum of eigenvalues
+		lambda = eig(A);
+		sum(lambda)             % also 15 (up to numerical precision)
+		
+		% Cyclic property: tr(ABC) = tr(CAB)
+		B = rand(3);  C = rand(3);
+		abs(trace(A*B*C) - trace(C*A*B))   % ~1e-14, effectively zero
+	\end{lstlisting}
+	\solution
+	\texttt{trace(A) = 15 = 1+5+9}.  The sum of eigenvalues agrees
+	(numerically), confirming the identity.
+\end{examplebox}
+
+% =============================================================
+\section{Eigenvalues and Eigenvectors}
+\label{sec:app_eig}
+% =============================================================
+
+Eigenvalues and eigenvectors are central to understanding the dynamic
+behaviour of linear systems.  In discrete-time state-space control,
+the eigenvalues of the system matrix $A$ determine stability: the
+closed-loop system $x_{k+1} = A_\mathrm{cl} x_k$ is stable if and
+only if all eigenvalues of $A_\mathrm{cl}$ lie strictly inside the
+unit circle.
+
+\begin{defnbox}{Eigenvalue and Eigenvector}
+	Let $A \in \mathbb{R}^{n\times n}$.  A scalar $\lambda \in \mathbb{C}$
+	is an \textbf{eigenvalue} of $A$ if there exists a non-zero vector
+	${v} \in \mathbb{C}^n$ such that
+	\[
+	A{v} = \lambda {v}.
+	\]
+	The vector $v$ is the corresponding \textbf{eigenvector}.
+	Geometrically, $A$ does not rotate ${v}$; it only scales it by
+	$\lambda$.
+\end{defnbox}
+
+\textbf{Finding eigenvalues — the characteristic equation:}
+
+Rearranging $A{v} = \lambda{v}$ gives
+$(A - \lambda I){v} = {0}$.  For a non-trivial solution
+${v} \neq {0}$, the matrix $(A-\lambda I)$ must be
+singular:
+\[
+\det(A - \lambda I) = 0.
+\]
+This is the \textbf{characteristic equation}, a degree-$n$ polynomial
+in $\lambda$ whose $n$ roots (counting multiplicity, possibly complex)
+are the eigenvalues.
+
+\begin{examplebox}{Eigenvalues by hand for a $2\times2$ matrix}
+	Find the eigenvalues of
+	\[
+	A = \begin{bmatrix} 3 & 1 \\ 1 & 3 \end{bmatrix}.
+	\]
+	
+	\solution
+	\[
+	\det(A - \lambda I)
+	= \det\begin{bmatrix} 3-\lambda & 1 \\ 1 & 3-\lambda \end{bmatrix}
+	= (3-\lambda)^2 - 1 = 0.
+	\]
+	\[
+	(3-\lambda)^2 = 1
+	\implies 3 - \lambda = \pm 1
+	\implies \lambda_1 = 4, \quad \lambda_2 = 2.
+	\]
+	Both eigenvalues are real and positive.  For a discrete-time system
+	matrix, we would check $|\lambda_i| < 1$; here both are $> 1$, so this
+	$A$ would represent an unstable open-loop plant.
+	
+	\begin{lstlisting}[language=Matlab]
+		A      = [3, 1; 1, 3];
+		lambda = eig(A)         % [2; 4]
+	\end{lstlisting}
+\end{examplebox}
+
+\begin{examplebox}{Eigenvectors and the full eigendecomposition}
+	Using the same matrix $A = \begin{bmatrix} 3 & 1 \\ 1 & 3 \end{bmatrix}$,
+	find the eigenvectors corresponding to $\lambda_1 = 4$ and
+	$\lambda_2 = 2$.
+	
+	\solution
+	\textbf{For $\lambda_1 = 4$:}
+	\[
+	(A - 4I)v = \begin{bmatrix} -1 & 1 \\ 1 & -1 \end{bmatrix}
+	\begin{bmatrix} v_1 \\ v_2 \end{bmatrix} = 0
+	\implies -v_1 + v_2 = 0 \implies v_1 = v_2.
+	\]
+	Choosing $v_1 = 1$: $v_1 = \tfrac{1}{\sqrt{2}}[1,\;1]^\top$
+	(normalised).
+	
+	\textbf{For $\lambda_2 = 2$:}
+	\[
+	(A - 2I)v = \begin{bmatrix} 1 & 1 \\ 1 & 1 \end{bmatrix}
+	v = 0
+	\implies v_1 + v_2 = 0 \implies v_2 = -v_1.
+	\]
+	Choosing $v_1 = 1$: $v_2 = \tfrac{1}{\sqrt{2}}[1,\;-1]^\top$.
+	
+	\begin{lstlisting}[language=Matlab]
+		A = [3, 1; 1, 3];
+		
+		% eig returns V (eigenvector matrix) and D (diagonal eigenvalue matrix)
+		[V, D] = eig(A)
+		% V: columns are eigenvectors
+		% D: diagonal entries are eigenvalues
+		
+		% Verify A*v = lambda*v for first eigenvector
+		v1     = V(:,1);
+		lam1   = D(1,1);
+		norm(A*v1 - lam1*v1)    % ~1e-15, effectively zero
+		
+		% The eigendecomposition: A = V * D * inv(V)
+		norm(A - V*D*inv(V))    % ~1e-15, effectively zero
+	\end{lstlisting}
+\end{examplebox}
+
+\begin{defnbox}{Eigenvalue Properties for Stability Analysis}
+	For a discrete-time system $x_{k+1} = A x_k$:
+	\begin{itemize}[noitemsep]
+		\item \textbf{Asymptotically stable:} all eigenvalues satisfy
+		$|\lambda_i| < 1$ (strictly inside the unit circle).
+		\item \textbf{Marginally stable:} all $|\lambda_i| \leq 1$ and
+		those on the unit circle have distinct eigenvectors.
+		\item \textbf{Unstable:} at least one eigenvalue satisfies
+		$|\lambda_i| > 1$.
+	\end{itemize}
+	For a continuous-time system $\dot{x} = Ax$, replace the unit circle
+	with the left half-plane: stable iff $\mathrm{Re}(\lambda_i) < 0$.
+\end{defnbox}
+
+\begin{examplebox}{Stability check via eigenvalues in MATLAB}
+	Check whether the following discrete-time system matrix is stable:
+	\[
+	A = \begin{bmatrix} 0.98 & 0.01 \\ 0.02 & 0.97 \end{bmatrix}.
+	\]
+	
+	\solution
+	\begin{lstlisting}[language=Matlab]
+		A      = [0.98, 0.01; 0.02, 0.97];
+		lambda = eig(A)             % [0.96; 0.99]
+		abs_lambda = abs(lambda)    % [0.96; 0.99]
+		all(abs_lambda < 1)         % returns 1 (true) => stable
+		
+		% Visualise on the unit circle
+		theta = linspace(0, 2*pi, 200);
+		figure; hold on;
+		plot(cos(theta), sin(theta), 'k--');    % unit circle
+		plot(real(lambda), imag(lambda), 'rx', 'MarkerSize', 10);
+		axis equal; grid on;
+		xlabel('Real'); ylabel('Imaginary');
+		title('Eigenvalues of A');
+	\end{lstlisting}
+	Both eigenvalues have magnitude less than 1, so the system is
+	asymptotically stable.  The plot shows both poles inside the unit
+	circle.
+\end{examplebox}
+
+% =============================================================
+\section{Putting It All Together: A State-Space Example}
+\label{sec:app_together}
+% =============================================================
+
+This section demonstrates how all the operations above arise together
+in a single state-space simulation, mirroring the structure of the MPC
+plant model used throughout these notes.
+
+\begin{examplebox}{Two-state discrete system: simulation and analysis}
+	Consider the discrete-time system
+	\[
+	x_{k+1} = A x_k + B u_k, \qquad y_k = C x_k,
+	\]
+	with
+	\[
+	A = \begin{bmatrix} 0.9 & 0.1 \\ 0.0 & 0.8 \end{bmatrix},
+	\quad
+	B = \begin{bmatrix} 0.1 \\ 0.3 \end{bmatrix},
+	\quad
+	C = \begin{bmatrix} 1 & 0 \end{bmatrix},
+	\quad
+	x_0 = \begin{bmatrix} 5 \\ 2 \end{bmatrix},
+	\quad u_k = 0\;\forall k.
+	\]
+	
+	Carry out the following tasks in MATLAB:
+	\begin{enumerate}[noitemsep]
+		\item Confirm the system is stable.
+		\item Compute $\mathrm{tr}(A)$ and $\det(A)$ and relate them to the
+		eigenvalues.
+		\item Simulate 20 steps and plot the output $y_k$.
+	\end{enumerate}
+	
+	\solution
+	\begin{lstlisting}[language=Matlab]
+		A  = [0.9, 0.1; 0.0, 0.8];
+		B  = [0.1; 0.3];
+		C  = [1, 0];
+		x  = [5; 2];
+		N  = 20;
+		
+		%% 1. Stability
+		lambda = eig(A);
+		disp('Eigenvalues:'); disp(lambda)
+		disp('Magnitudes:');  disp(abs(lambda))
+		% Both < 1 => stable
+		
+		%% 2. Trace and determinant
+		tr_A  = trace(A)          % 0.9 + 0.8 = 1.7
+		det_A = det(A)            % 0.9*0.8 - 0.1*0 = 0.72
+		sum_lam  = sum(lambda)    % also 1.7 = trace
+		prod_lam = prod(lambda)   % also 0.72 = det
+		
+		%% 3. Simulation
+		y = zeros(1, N);
+		for k = 1:N
+		y(k) = C * x;
+		x    = A * x + B * 0;   % u=0
+		end
+		
+		figure;
+		stem(1:N, y, 'filled');
+		xlabel('Time step k'); ylabel('y_k');
+		title('Output y_k (free response, u=0)');
+		grid on;
+	\end{lstlisting}
+	
+	The output decays to zero, consistent with the stable eigenvalues
+	$\lambda_1 \approx 0.9$ and $\lambda_2 = 0.8$.  Notice that
+	$\mathrm{tr}(A) = \sum \lambda_i = 1.7$ and
+	$\det(A) = \prod \lambda_i = 0.72$, confirming the identities from
+	Sections~\ref{sec:app_trace} and \ref{sec:app_det}.
+\end{examplebox}
+
+% =============================================================
+\section{Quick Reference: MATLAB Commands}
+\label{sec:app_matlab_ref}
+% =============================================================
+
+\begin{center}
+	\renewcommand{\arraystretch}{1.35}
+	\begin{tabular}{>{\ttfamily\small}l >{\small}l >{\small}l}
+		\toprule
+		\normalfont\textbf{MATLAB command} & \textbf{Operation} &
+		\textbf{Example} \\
+		\midrule
+		A + B               & Addition              & Element-wise, same size \\
+		A - B               & Subtraction           & Element-wise, same size \\
+		alpha * A           & Scalar multiplication & Multiplies every entry \\
+		A * B               & Matrix multiplication & Inner dims must match \\
+		A'                  & Transpose (conjugate) & Use \texttt{A.'} for real transpose \\
+		A \textasciicircum{} n & Matrix power       & $A^n$, square $A$ only \\
+		inv(A)              & Matrix inverse        & Avoid for solving $Ax=b$ \\
+		A \textbackslash{} b & Solve $Ax = b$       & Preferred over \texttt{inv(A)*b} \\
+		det(A)              & Determinant           & Scalar result \\
+		trace(A)            & Trace                 & Sum of diagonal \\
+		eig(A)              & Eigenvalues           & Column vector $\lambda$ \\
+		{[}V,D{]} = eig(A)  & Eigenvectors + values & Columns of \texttt{V}, diag of \texttt{D} \\
+		rank(A)             & Rank                  & Number of independent columns \\
+		cond(A)             & Condition number      & Large value $\Rightarrow$ near-singular \\
+		norm(A)             & 2-norm (default)      & \texttt{norm(A,1)}, \texttt{norm(A,'fro')} also available \\
+		size(A)             & Dimensions            & Returns \texttt{[m n]} \\
+		zeros(m,n)          & Zero matrix           & All entries 0 \\
+		ones(m,n)           & Ones matrix           & All entries 1 \\
+		eye(n)              & Identity matrix       & $I_n$ \\
+		diag(v)             & Diagonal matrix       & \texttt{diag(A)} extracts diagonal of $A$ \\
+		linspace(a,b,n)     & Equally spaced vector & $n$ points from $a$ to $b$ \\
+		\bottomrule
+	\end{tabular}
+\end{center}
+
+\begin{summarybox}{Linear Algebra Summary for MPC}
+	\begin{enumerate}[noitemsep]
+		\item \textbf{Dimensions matter:} always check that inner dimensions
+		are compatible before multiplying; $A_{m\times p} \cdot
+		B_{p\times n}$ gives $C_{m\times n}$.
+		\item \textbf{Multiplication is not commutative:} $AB \neq BA$ in
+		general; the reversed-order rule $(AB)^\top = B^\top A^\top$
+		and $(AB)^{-1} = B^{-1}A^{-1}$ are essential.
+		\item \textbf{Invertibility:} $A^{-1}$ exists iff $\det(A)\neq 0$
+		iff all eigenvalues are non-zero.  Use \texttt{A\textbackslash
+			b} rather than \texttt{inv(A)*b}.
+		\item \textbf{Stability:} for discrete-time systems, check
+		$|\lambda_i| < 1$ for all eigenvalues of the closed-loop
+		matrix.
+		\item \textbf{Trace and determinant} equal the sum and product of
+		eigenvalues respectively, providing a fast sanity check.
+		\item \textbf{Positive definiteness} of cost matrices $Q \succeq 0$,
+		$R \succ 0$ is required for the MPC QP to be convex and
+		bounded below; verify with \texttt{eig(Q)} and
+		\texttt{eig(R)}.
+	\end{enumerate}
+\end{summarybox}

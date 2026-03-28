@@ -1,0 +1,1124 @@
+% ===================================================================
+% CHAPTER 1
+% ===================================================================
+\part{Fundamentals}
+\chapter{Introduction to Model Predictive Control}
+\label{chap:introduction}
+
+For over fifty years, control engineering relied on a simple rule: measure the error, then correct it. Classical feedback controllers such as PID react to what has already happened. Model Predictive Control (MPC) takes a fundamentally different approach: it uses a mathematical model of the system to predict future behaviour and computes control actions by solving a constrained optimisation problem at each time step.
+
+MPC originated in the process industries~\cite{Qin2003} but is now applied across robotics, autonomous vehicles, aerospace, renewable energy, building climate control, biomedical systems, and finance. The common thread in these applications is that the system has multiple interacting variables, hard physical constraints, and benefits from anticipating future conditions rather than merely reacting to past errors.
+
+\section{From Classical Control to Optimisation-Based Control}
+
+\subsection{Classical Control Revisited}
+Model Predictive Control (MPC) must first be placed within the framework of classical control theory in order to be understood. The goal of a typical control loop, illustrated in Figure~\ref{fig:classic_loop}, is to adjust a system (or plant) so that its outputs follow a desired reference.
+
+In the classical approach, a controller is designed, usually represented as a transfer function $G_c(s)$ in the Laplace domain. On its own, this controller is a dynamic system. In order to produce an input for the plant, it processes measurements and reference signals. The goal of the design process is to create a dynamic system (the controller) with characteristics like stability, quick rise time, and little overshoot in the closed-loop transfer function.
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[auto, node distance=2.5cm, >=latex', thick]
+		% Define styles for the blocks and lines
+		\tikzstyle{block} = [draw, rectangle, fill=gray!20, minimum height=3em, minimum width=5em]
+		\tikzstyle{line} = [draw, ->]
+		
+		% Place the nodes (blocks)
+		\node [block] (controller) {$G_c(s)$};
+		\node [block, right=3cm of controller] (plant) {Plant};
+		
+		% Coordinates for start and end
+		\node [coordinate, left=2cm of controller] (input) {};
+		\node [coordinate, right=2cm of plant] (output) {};
+		
+		% Draw the connections
+		% 1. Reference to G(s)
+		\draw [line] (input) -- node {Reference} (controller);
+		
+		% 2. G(s) to Plant
+		\draw [line] (controller) -- node {Input} (plant);
+		
+		% 3. Plant to Output
+		\draw [line] (plant) -- node [name=y] {Output} (output);
+		
+		% 4. Feedback loop (Measurements)
+		% We start from the output line, go down, go left, then up to G(s)
+		\draw [line] (y.south) |- ++(0,-1.5) -| node [pos=0.25, below] {Measurements} (controller.south);
+		
+	\end{tikzpicture}
+	\caption{The Classical Control Loop. The controller is a pre-designed dynamic block (e.g., PID) that maps error to input of the controlled system called \emph{plant}.}
+	\label{fig:classic_loop}
+\end{figure}
+
+To give an example, in classical control (e.g., Proportional-Integral-Derivative or PID), the engineer explicitly defines \emph{how} the controller calculates the input. The internal structure of a PID controller is shown in Figure~\ref{fig:pid_structure}. A PID controller is explicitly instructed to:
+\begin{enumerate}
+	\item Calculate the error, $e(t)=r(t)-y(t)$ (Reference - Output).
+	\item Integrate the error, $\int e(t)dt$.
+	\item Differentiate the error, $\dfrac{d}{dt}e(t)$.
+	\item Multiply these terms by specific gains ($K_p, K_i, K_d$) and sum them to obtain control signal, $$u(t)=K_pe(t)+K_i \int e(t)dt+K_d\frac{d}{dt}e(t)$$
+\end{enumerate}
+This sum constitutes the control input that is applied to the plant. The behaviour is fixed by the mathematical structure of the controller. That means when one knows $e(t)$ numerically and once the control gains ($K_p, K_i, K_d$) are selected, the control signal applied to the plant can be precisely calculated in closed form. 
+
+\begin{figure}[t]
+	\centering
+	\begin{tikzpicture}
+		% Paths, nodes and wires:
+		\node[shape=rectangle, draw, line width=1pt, minimum width=0.965cm, minimum height=0.965cm](N1) at (4.25, 9){} node[anchor=center] at (N1.text){$K_i$};
+		\node[shape=rectangle, draw, line width=1pt, minimum width=0.965cm, minimum height=0.965cm](N2) at (6.25, 9){} node[anchor=center] at (N2.text){$\int$};
+		\node[shape=rectangle, draw, line width=1pt, minimum width=0.965cm, minimum height=0.965cm](N3) at (5.25, 7){} node[anchor=center] at (N3.text){$K_p$};
+		\node[shape=rectangle, draw, line width=1pt, minimum width=0.965cm, minimum height=0.965cm](N4) at (4.25, 5){} node[anchor=center] at (N4.text){$K_d$};
+		\node[shape=rectangle, draw, line width=1pt, minimum width=0.965cm, minimum height=0.965cm](N5) at (6.25, 5){} node[anchor=center] at (N5.text){$\frac{d}{dt}$};
+		\node[shape=circle, draw, line width=1pt, minimum width=0.465cm] at (8, 7){};
+		\draw[-latex] (2, 7) -- (2, 9) -- (3.75, 9);
+		\draw[-latex] (4.75, 9) -- (5.75, 9);
+		\draw[-latex] (6.75, 9) -- (8, 9) -- (8, 7.25);
+		\draw[-latex] (1.5, 7) -- (4.75, 7);
+		\draw[-latex] (5.75, 7) -- (7.75, 7);
+		\draw[-latex] (2, 7) -- (2, 5) -- (3.75, 5);
+		\draw[-latex] (4.75, 5) -- (5.75, 5);
+		\draw[-latex] (6.75, 5) -- (8, 5) -- (8, 6.75);
+		\draw[-latex] (8.25, 7) -- (9, 7);
+		\node[circ] at (2, 7){};
+		\node[shape=rectangle, minimum width=0.465cm, minimum height=0.715cm] at (7.75, 7.5){} node[anchor=north west, align=left, text width=0.077cm, inner sep=6pt] at (7.5, 7.875){$+$};
+		\node[shape=rectangle, minimum width=0.465cm, minimum height=0.715cm] at (7.25, 7.125){} node[anchor=north west, align=left, text width=0.077cm, inner sep=6pt] at (7, 7.5){$+$};
+		\node[shape=rectangle, minimum width=0.465cm, minimum height=0.715cm] at (7.75, 6.375){} node[anchor=north west, align=left, text width=0.077cm, inner sep=6pt] at (7.5, 6.75){$+$};
+		\node[shape=rectangle, minimum width=0.715cm, minimum height=0.215cm](N6) at (1.375, 7.375){} node[anchor=center] at (N6.text){$e(t)$} node[anchor=north west, align=left, text width=0.327cm, inner sep=6pt] at (1, 7.5){};
+		\node[shape=rectangle, minimum width=0.715cm, minimum height=0.215cm](N7) at (9, 7.375){} node[anchor=center] at (N7.text){$u(t)$} node[anchor=north west, align=left, text width=0.327cm, inner sep=6pt] at (8.625, 7.5){};
+	\end{tikzpicture}
+	\caption{The internal structure of a PID controller. The error ($e$) is processed in parallel: it is integrated, differentiated, and scaled by specific gains before being summed to produce the control input ($u$).}
+	\label{fig:pid_structure}
+\end{figure}
+
+\subsection{The MPC Approach: Optimisation-Based Control}
+As shown in Figure~\ref{fig:mpc_loop}, MPC represents a fundamental shift in this philosophy. In an MPC architecture, the explicit controller block is replaced by an \emph{optimisation routine}. Here we call it \emph{Optimiser}. This is mostly an embedded digital computer that runs an algorithm.  
+
+Instead of specifying \emph{how} to calculate the input mathematically, MPC specifies \emph{what} the controller should achieve. That means, there is no controller structure specified but the optimiser directly generates the control signal. If the error signal, $e(t)$ is known, we do not know what the controller will generate. The signal generated by the optimiser that goes into the \emph{Plant} depends on many factors and conditions of the controller,  measured signal,  dynamics of the plant, reference signal, environmental conditions, and their current, past and predicted values. 
+
+Generally, the engineer provides the optimiser with four key components:
+\begin{enumerate}
+	\item \textbf{A Model (Plant dynamics):} Information on how the plant reacts to inputs and disturbances (typically a state-space model derived from first principles like Newton's second law of motion, Kirchhoff's voltage and current laws for electrical circuits).
+	\item \textbf{Measurements:} The current state $x(t)$ of the system and historical data. This could be either a measured signal or estimated one.
+	\item \textbf{Objectives:} A mathematical function  \emph{cost} representing the goal (e.g., tracking a reference or minimising energy consumption).
+	\item \textbf{Constraints:} Limitations on the system (e.g., maximum valve opening, safety limits, temperature limits, rate bounds of the actuator etc.).
+\end{enumerate}
+
+
+\begin{figure}[t]
+	\centering
+	\begin{tikzpicture}[auto, node distance=2.5cm, >={Latex[length=3mm, width=2mm]}, thick]
+		
+		% ---------------------------------------------------------
+		% 1. Define Styles
+		% ---------------------------------------------------------
+		\tikzstyle{block} = [draw, rectangle, fill=gray!30, minimum height=4em, minimum width=6em, text width=6em, align=center]
+		\tikzstyle{line} = [draw, ->]
+		\tikzstyle{coord} = [coordinate]
+		
+		% ---------------------------------------------------------
+		% 2. Place Nodes (Blocks)
+		% ---------------------------------------------------------
+		
+		% The Optimizer Block (We make it larger to fit the icon)
+		\node [block, minimum height=3.5cm, minimum width=3.5cm] (opt) {};
+		
+		% Text label for Optimizer (placed at the top of the block)
+		\node [below=0.2cm] at (opt.north) {\large \textsf{Optimiser}};
+		
+		% The Computer Icon (drawn manually inside the Optimizer block)
+		% Monitor
+		\draw [fill=black!10, thick] ($(opt.center)+(-0.5, -0.1)$) rectangle ($(opt.center)+(0.5, 0.6)$);
+		\draw [fill=black] ($(opt.center)+(-0.4, 0.0)$) rectangle ($(opt.center)+(0.4, 0.5)$);
+		% Stand
+		\draw [thick] ($(opt.center)+(-0.2, -0.1)$) -- ($(opt.center)+(-0.2, -0.2)$) -- ($(opt.center)+(0.2, -0.2)$) -- ($(opt.center)+(0.2, -0.1)$);
+		% PC Unit (Desktop case)
+		\draw [fill=black!10, thick] ($(opt.center)+(-0.7, -0.6)$) rectangle ($(opt.center)+(0.7, -0.2)$);
+		% Vents/Drive details on PC Unit
+		\draw [thin] ($(opt.center)+(-0.6, -0.5)$) -- ($(opt.center)+(-0.6, -0.3)$);
+		\draw [thin] ($(opt.center)+(-0.5, -0.5)$) -- ($(opt.center)+(-0.5, -0.3)$);
+		\draw [thin] ($(opt.center)+(-0.4, -0.5)$) -- ($(opt.center)+(-0.4, -0.3)$);
+		\draw [thin] ($(opt.center)+(0.2, -0.4)$) -- ($(opt.center)+(0.6, -0.4)$);
+		
+		% The Plant Block
+		\node [block, right=2.5cm of opt, minimum height=3cm, minimum width=4cm] (plant) {\Large \textsf{Plant}};
+		
+		% ---------------------------------------------------------
+		% 3. Draw Connections
+		% ---------------------------------------------------------
+		
+		% Input Reference
+		\node [coord, left=3cm of opt] (input) {};
+		\draw [line] (input) -- node[above] { \textsf{Reference}} (opt);
+		
+		% Optimizer to Plant
+		\draw [line] (opt) -- node[above] { \textsf{Input}} (plant);
+		
+		% Output
+		\node [coord, right=2.5cm of plant] (output) {};
+		\draw [line] (plant) -- node[name=y, above] { \textsf{Output}} (output);
+		
+		% Feedback Loop (Measurements)
+		% Start from the output line 'y', go down, go left, go up into bottom of Optimizer
+		\draw [line] (y.south) |- ++(0,-3) -| node[pos=0.25, above] { \textsf{Measurements}} (opt.south);
+		
+	\end{tikzpicture}
+	\caption{The MPC Control Loop. The fixed controller is replaced by an on-line optimiser that uses a model and constraints of the plant as well as predefined objective function to solve for the optimal control input.}
+	\label{fig:mpc_loop}
+\end{figure}
+
+
+The optimiser processes this information to select the input that brings the plant to ideal form by minimising an objective (cost) while strictly respecting constraints. 
+
+\section{Conceptual Framework: The Racing Car Analogy}
+
+To intuitively grasp the mechanics of MPC, consider the challenge of driving a racing car around a circuit in the minimum possible time. To design an effective controller for this vehicle, one must first formalise the environment and the vehicle’s behaviour:
+\begin{itemize}
+	\item \textbf{The Model (Dynamics):} The controller must understand how the car responds to inputs—how steering, acceleration, and braking translate into changes in position and velocity.
+	\item \textbf{The Measurements (Feedback):} To plan the optimal trajectory, the controller must know the car's current state at every instant. This includes the position ($x, y$) relative to the track boundaries, the velocity ($v$) to judge braking distances, and the heading angle ($\theta$) to align with the apex of the next corner.
+	\item \textbf{The Objective (Cost Function):} The primary goal is to minimise the lap time, often whilst secondary goals, such as minimising fuel consumption or tyre wear, are also considered.
+	\item \textbf{The Constraints:} The car must remain within the track boundaries, stay below the engine's maximum power output, and respect the physical limits of tyre traction to avoid skidding.
+
+\end{itemize}
+Consider the racing track shown in Figure~\ref{fig:racing_car}. A human driver naturally performs predictive control. Upon approaching a corner, the driver does not simply react to the car's current position. Instead, they look ahead—establishing a \textit{prediction horizon}. They anticipate the car's future trajectory based on its current momentum and adjust their inputs \textit{proactively}. For example, a driver will pull to the outside of the track to flatten the turn radius, anticipating the geometry of the road ahead before they even reach the apex.
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.9\textwidth]{Figures/racing1.pdf}
+	\caption{Model Predictive Control for trajectory optimisation in a racing scenario. The controller plans an optimal path (cyan) over the prediction horizon that minimises a cost function (tracking the reference line) while satisfying state constraints (track edges) and avoiding obstacles (red cars).}
+	\label{fig:racing_car}
+\end{figure}
+
+Imagine if the driver planned the entire lap at the starting line based on a map, closed their eyes, and executed that plan blindly. This "open-loop" execution would inevitably result in a crash. This failure occurs because the internal model is never perfect. There are several reasons for this failure:
+\begin{itemize}
+	\item \textbf{Model Mismatch:} Tyre friction changes as the rubber heats up, or oil on the track alters the grip levels. 
+	\item \textbf{Disturbances:} External factors, such as sudden wind gusts, push the car off its intended path.
+	\item \textbf{Unforeseen Constraints:} A driver might round a blind corner to discover a stationary, crashed car blocking the road.
+\end{itemize}
+The original plan calculated at the start line cannot account for these variables. To survive, the driver must use constant visual feedback to discard the old plan and calculate a new trajectory that avoids the obstacle.
+In MPC, this is known as a \textbf{receding horizon} strategy. The controller calculates an optimal sequence of actions for the entire horizon but only executes the immediate first step. A fraction of a second later, it takes a new measurement and repeats the entire optimisation. This constant re-planning makes the system robust to uncertainty and ensures the car remains on the track, even in a changing or unpredictable environment.
+
+\section{Receding Horizon Control (RHC)}
+
+The mathematical framework that brings the racing car analogy to life is known as \textit{Receding Horizon Control} (RHC). This strategy serves as the engine of MPC, bridging the gap between static optimisation and dynamic control.
+
+\subsection{The Algorithm}
+The RHC strategy operates in discrete time steps. At each sampling instant $t$, the controller performs the following sequence, as illustrated in Figure~\ref{fig:mpc_concept_and_timeline}:
+
+\begin{enumerate}
+	\item \textbf{Measure:} Obtain the current state of the system, denoted as $x(t)$ via sensors or estimators. This provides the \emph{starting line} for the current iteration.
+	\item \textbf{Plan (Optimise):} Using an internal model of the plant, calculate an optimal sequence of future control inputs $\{u_0, u_1, \dots, u_{N-1}\}$ over a finite prediction horizon $N$. This sequence is chosen to minimise a cost function (such as error from a reference) whilst respecting all physical constraints.
+	
+	\item \textbf{Execute:} Although a full sequence of $N$ steps was calculated, the controller applies \textbf{only the first element}, $u_0$, to the plant. The remaining $N-1$ steps of the plan are discarded.
+	\item \textbf{Evolve:} The system evolves for one sample period under the influence of the applied input and any external disturbances.
+	\item \textbf{Repeat:} At the next time step $t+1$, the entire process begins again. The horizon "recedes" (shifts forward by one step), and a new optimisation problem is solved from the new state 	$x(t+1)$.
+\end{enumerate}
+
+\begin{figure}[h]
+	\centering
+	\resizebox{0.85\textwidth}{!}{
+	\begin{tikzpicture}[auto, >={Latex[length=3mm, width=2mm]}, thick]
+		
+		% =========================================================
+		% PART 1: TOP DIAGRAM (CONTROL LOOP)
+		% =========================================================
+		
+		% 1. Define Styles
+		\tikzstyle{block} = [draw, rectangle, fill=gray!30, minimum height=4em, minimum width=6em, align=center]
+		\tikzstyle{line} = [draw, ->]
+		
+		% 2. Place Main Blocks
+		% Optimizer Block
+		\node [block, minimum height=3.5cm, minimum width=3.5cm] (opt) at (0,0) {};
+		\node [below=0.2cm] at (opt.north) { \textsf{Optimiser}};
+		
+		% Computer Icon inside Optimizer
+		\draw [fill=black!10, thick] ($(opt.center)+(-0.5, -0.1)$) rectangle ($(opt.center)+(0.5, 0.6)$);
+		\draw [fill=black] ($(opt.center)+(-0.4, 0.0)$) rectangle ($(opt.center)+(0.4, 0.5)$);
+		\draw [thick] ($(opt.center)+(-0.2, -0.1)$) -- ($(opt.center)+(-0.2, -0.2)$) -- ($(opt.center)+(0.2, -0.2)$) -- ($(opt.center)+(0.2, -0.1)$);
+		\draw [fill=black!10, thick] ($(opt.center)+(-0.7, -0.6)$) rectangle ($(opt.center)+(0.7, -0.2)$);
+		\draw [thin] ($(opt.center)+(-0.6, -0.5)$) -- ($(opt.center)+(-0.6, -0.3)$);
+		\draw [thin] ($(opt.center)+(-0.5, -0.5)$) -- ($(opt.center)+(-0.5, -0.3)$);
+		\draw [thin] ($(opt.center)+(-0.4, -0.5)$) -- ($(opt.center)+(-0.4, -0.3)$);
+		\draw [thin] ($(opt.center)+(0.2, -0.4)$) -- ($(opt.center)+(0.6, -0.4)$);
+		
+		% Plant Block
+		\node [block, right=2.5cm of opt, minimum height=3cm, minimum width=4cm] (plant) { \textsf{Plant}};
+		
+		% 3. Main Horizontal Connections
+		% Reference
+		\node [coordinate, left=4cm of opt] (input) {};
+		\draw [line] (input) -- node[above] { \textsf{Reference}} (opt);
+		
+		% Input
+		\draw [line] (opt) -- node[above] { \textsf{Input}} (plant);
+		
+		% Output
+		\node [coordinate, right=2cm of plant] (output) {};
+		\draw [line] (plant) -- node[name=y, above] { \textsf{Output}} (output);
+		
+		% Feedback
+		\draw [line] (y.south) |- ++(0,-2.8) -| node[pos=0.25, above] { \textsf{Measurements}} (opt.south);
+		
+		% 4. Top Inputs (Objectives, Model, Constraints)
+		\node [above=1.5cm of opt] (model) { \textsf{Model}};
+		\node [left=0.5cm of model] (obj) { \textsf{Objectives}};
+		\node [right=0.5cm of model] (const) { \textsf{Constraints}};
+		
+		\draw [line] (obj.south) -- (opt.north);
+		\draw [line] (model.south) -- (opt.north);
+		\draw [line] (const.south) -- (opt.north);
+		
+		
+		% =========================================================
+		% PART 2: BOTTOM DIAGRAM (TIMELINE)
+		% =========================================================
+		
+		% Shift coordinate system down
+		\begin{scope}[yshift=-8cm, xshift=-4cm]
+			
+			% Styles for bars
+			\tikzstyle{dobar} = [draw, fill=yellow!80!red, minimum height=0.8cm]
+			\tikzstyle{planbar} = [draw, fill=gray!30, minimum height=0.8cm, anchor=west]
+			
+			% Row 1 (Top)
+			\node [dobar, minimum width=1.5cm, anchor=west] (do1) at (0, 3) { \textsf{Do}};
+			\node [planbar, minimum width=10cm] (plan1) at (do1.east) { \textsf{Plan}};
+			% Vertical line to axis
+			\draw [thick] (do1.west) -- (0, 0);
+			
+			% Row 2 (Middle) - Shifted right
+			\node [dobar, minimum width=1.5cm, anchor=west] (do2) at (1.5, 1.5) { \textsf{Do}};
+			\node [planbar, minimum width=10cm] (plan2) at (do2.east) { \textsf{Plan}};
+			% Vertical line to axis
+			\draw [thick] (do2.west) -- (1.5, 0);
+			
+			% Row 3 (Bottom) - Shifted right again
+			\node [dobar, minimum width=1.5cm, anchor=west] (do3) at (3.0, 0) {}; % Empty box for alignment initially
+			% Re-draw slightly offset to look "stacked" properly or just place nodes manually
+			% Let's place explicitly to match image structure
+			\node [dobar, minimum width=1.5cm, anchor=west] (do3_real) at (3.0, 0) { \textsf{Do}};
+			\node [planbar, minimum width=10cm] (plan3) at (do3_real.east) { \textsf{Plan}};
+			% Vertical line to axis
+			\draw [thick] (do3_real.west) -- (3.0, -1.5); % Extend down to axis
+			
+			% Time Axis
+			\draw [->, very thick] (-0.5, -1.5) -- (16.5, -1.5) node[above left] { \textsf{Time}};
+			
+			% Fix vertical lines for Row 1 and 2 to reach the new axis level
+			\draw [thick] (do1.west) -- (0, -1.5);
+			\draw [thick] (do2.west) -- (1.5, -1.5);
+			
+		\end{scope}
+		
+	\end{tikzpicture}
+}
+	\caption{\textbf{Top}: The closed-loop architecture. The controller uses an internal Model to predict plant behaviour, an Optimiser to minimise a cost function (Objectives) subject to safety limits (Constraints), and real-time Measurements to correct prediction errors.
+		\textbf{Bottom}: The Receding Horizon strategy. At each time step, an optimal trajectory is computed over a long prediction horizon (\emph{Plan}), but only the first control action is applied (\emph{Do}). The horizon then shifts forward, and the optimisation repeats with updated feedback, turning an open-loop prediction into a closed-loop controller.}
+	\label{fig:mpc_concept_and_timeline}
+\end{figure}
+
+The reader may naturally ask: \textit{"If the plan calculated at step $t$ was \emph{optimal}, why discard the rest of it and repeat the work at step $t+1$?"}
+
+The answer lies in the inevitable gap between the controller's internal model and the real world. If we were to execute the entire $N$-step sequence without looking back, we would be operating in \emph{open-loop}. Any small modelling error that falls into that $N$ instants or unexpected gust of wind would cause the system to drift away from the intended path.
+
+By only executing the first step and then re-measuring the state, we turn a series of open-loop predictions into a \emph{closed-loop} feedback strategy. The \emph{horizon} refers to how far into the future the controller predicts. Since we repeat the optimisation at every step, the horizon moves forward with time. This repetitive re-planning ensures that the control action is always based on the most current information. The \emph{receding} nature of the horizon ensures that the controller is constantly correcting for errors and reacting to new information, much like the driver who constantly adjusts their steering as the road unfolds. 
+
+\section{Why Use Model Predictive Control?}
+
+Whilst traditional control methods—like Proportional-Integral-Derivative (PID) control, lead-lag compensation, and the Linear Quadratic Regulator (LQR)—are still workhorses of industrial automation, they often hit their limits when dealing with today's demanding performance requirements. Model Predictive Control has become a leading approach for complex systems by anticipating future behaviour through model-based prediction.
+
+The transition from classical methods to MPC is typically driven by the need to operate closer to the physical limits of a system without compromising safety or stability. Unlike traditional controllers, which are often tuned via trial-and-error to achieve a specific response, MPC provides a systematic framework that accounts for the system's model and its environment. The primary advantages that distinguish MPC from its predecessors are outlined in the following subsections.
+
+\subsection{Systematic Handling of Constraints}
+
+This is the most significant advantage of MPC. In the real world, every engineering system is subject to physical and operational limits. These may include \textit{actuator constraints}, such as the maximum opening of a valve or the voltage limit of a motor, and \textit{state constraints}, such as maintaining a chemical reactor below a critical temperature or ensuring a vehicle remains within track boundaries.
+
+\textbf{Classical Control:} Ignores constraints during design and is inherently \emph{blind} to these boundaries. A PID controller, for instance, may calculate a control action that the hardware cannot physically execute. This often leads to \emph{integrator windup}, where the controller's internal logic becomes saturated, resulting in large overshoots or sluggish recovery. 
+
+\textbf{MPC:} Includes constraints directly in the optimisation. The optimiser knows the limits and will find the best control action that resides \textit{on the boundary} of those limits without crossing them. MPC behaves non-linearly: it acts gently when far from a constraint but aggressively when approaching a limit to prevent violation. (See Figure~\ref{fig:constraints_comparison}). MPC treats constraints as fundamental components of the control problem. By predicting future behaviour, the optimiser can anticipate a potential constraint violation and adjust the control signal proactively \emph{before} the limit is reached. This ability to operate safely at the very edge of the feasible operating space is perhaps the most significant economic driver for MPC in industry.
+
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[>={Latex[length=3mm, width=2mm]}, thick, font=\sffamily]
+		
+		% ---------------------------------------------------------
+		% TOP PLOT: Violation of Constraint
+		% ---------------------------------------------------------
+		\begin{scope}
+			% Axes
+			\draw[->, very thick] (0,0) -- (8.5,0) node[below left] { time};
+			\draw[->, very thick] (0,0) -- (0,5) node[midway, above, rotate=90] { output};
+			
+			% Constraint Line (Red Dashed)
+			\draw[red, dashed, thick] (0,4.2) -- (8.2,4.2);
+			\node[above] at (5, 4.2) { constraint};
+			
+			% Set Point Line (Black Dashed)
+			\draw[dashed, thick] (0,2.5) -- (8.2,2.5);
+			
+			% The Response Curve (Blue) - High Overshoot
+			% Using coordinates to shape the "Underdamped" look
+			\draw[blue, thick] plot [smooth, tension=0.7] coordinates {
+				(0,0) 
+				(1.5, 4.6)   % Peak crossing constraint
+				(3.0, 1.8)   % Valley
+				(4.5, 2.9)   % Secondary Peak
+				(6.0, 2.2)   % Secondary Valley
+				(7.5, 2.6)   % Settling
+				(8.0, 2.5)
+			};
+			
+			% Set Point Label
+			\node (sp_text) at (2.5, 0.5) { set point};
+			\draw[->, thin] (sp_text.north) -- (2.0, 2.4);
+		\end{scope}
+		
+		% ---------------------------------------------------------
+		% BOTTOM PLOT: Respecting Constraint (MPC Style)
+		% ---------------------------------------------------------
+		\begin{scope}[yshift=-6.5cm] % Shift down
+			% Axes
+			\draw[->, very thick] (0,0) -- (8.5,0) node[below left] { time};
+			\draw[->, very thick] (0,0) -- (0,5) node[midway, above, rotate=90] { output};
+			
+			% Constraint Line (Red Dashed)
+			\draw[red, dashed, thick] (0,4.2) -- (8.2,4.2);
+			\node[above] at (5, 4.2) { constraint};
+			
+			% Set Point Line (Black Dashed)
+			% Note: In the image, the bottom set point looks slightly higher relative to the axis
+			\draw[dashed, thick] (0,2.8) -- (8.2,2.8);
+			
+			% The Response Curve (Blue) - Controlled Overshoot
+			\draw[blue, thick] plot [smooth, tension=0.7] coordinates {
+				(0,0) 
+				(1.5, 4.1)   % Peak just below constraint
+				(3.5, 2.1)   % Valley
+				(5.0, 3.1)   % Secondary Peak
+				(6.5, 2.6)   % Secondary Valley
+				(8.0, 2.85)  % Settling
+			};
+			
+			% Set Point Label
+			\node (sp_text_b) at (2.5, 0.5) { set point};
+			\draw[->, thin] (sp_text_b.north) -- (2.4, 2.7);
+		\end{scope}
+		
+	\end{tikzpicture}
+	\caption{\textbf{Top:} Classical control showing significant overshoot violating constraints. \textbf{Bottom:} Predictive control respecting constraints by adjusting the trajectory.}
+	\label{fig:constraints_comparison}
+\end{figure}
+
+\subsection{Future Knowledge and Preview Capability}
+
+A major drawback of many traditional controllers is that they're inherently \textit{causal}—they can only react to what's already happened or what's happening right now. However, in many modern engineering applications, we often have access to "future knowledge"—information about upcoming changes in what we want the system to do, or predicted external disturbances. MPC can exploit this information directly through its prediction mechanism, via its \textit{look-ahead} or \textit{preview} capability.
+
+To show the advantage of acting on future information, consider the following examples:
+\begin{itemize}
+	\item \textbf{Smart Energy Management:} Think about a building's HVAC (Heating, Ventilation, and Air Conditioning) system. If the weather forecast predicts a scorching heatwave for the afternoon—right when electricity prices hit their peak—an MPC controller can choose to "pre-cool" the building's thermal mass during the cooler morning hours whilst energy is cheaper. A traditional PID controller, being reactive, would only ramp up the cooling once the internal temperature had already started to climb, consuming electricity during the most expensive tariff period.
+	
+	\item \textbf{Autonomous Path Following:} In autonomous driving, the vehicle often has map data or sensor information about the road layout ahead. If there's a sharp bend coming up, a reactive controller (like a lane-keeping PID) would only start to steer or slow down once it detects a tracking error at the corner. In contrast, MPC sees the curve in its prediction horizon and begins adjusting the steering angle and reducing speed \textit{before} entering the turn. This produces a smoother, safer, and more "human-like" driving experience.
+	
+	\item \textbf{Renewable Energy Integration:} In a microgrid, if the forecast shows a sudden drop in solar irradiance coming (say, due to approaching cloud cover), MPC can proactively fire up a backup power source or dial back non-essential loads. This keeps the grid stable by making up for the power shortfall before the frequency actually drops.
+\end{itemize}
+
+Incorporating forecast information into the optimisation converts a reactive control strategy into a proactive one.
+
+\subsection{Multivariable Control and Complex Objectives}
+
+Whilst classical control theory typically tackles problems by designing individual loops for individual variables (Single-Input Single-Output, or SISO), modern systems are rarely this straightforward. MPC handles Multi-Input Multi-Output (MIMO) systems natively through its state-space formulation, and its flexibility in defining what "optimal" performance actually means.
+
+\subsubsection{Handling Cross-Coupling in MIMO Systems}
+In many real-world systems, the inputs and outputs are "coupled". This means that tweaking one input to control a particular output will inevitably affect other outputs as well. MPC handles this problem very well. 
+
+\begin{examplebox}{The Shower Analogy.}
+	Consider the everyday challenge of adjusting a shower. You've got two goals: keeping the water at a specific temperature and achieving your desired flow pressure. You also have two controls at your disposal: the hot tap and the cold tap.
+	
+	\begin{itemize}
+		\item \textbf{The PID Approach (Decentralised):} A traditional strategy might assign one controller to temperature (operating the hot tap) and another to pressure (operating the cold tap). If you want more pressure, the pressure controller opens the cold tap. This increases the flow, but immediately throws off the temperature, causing the water to go freezing cold. The temperature controller then scrambles to fix this, which in turn messes with the pressure. The two loops end up fighting each other, leading to an oscillation and a rather uncomfortable shower.
+		
+		\item \textbf{The MPC Approach (Centralised):} MPC uses a multivariable model that understands how everything interacts. It knows that to increase pressure \textit{without} disturbing the temperature, it needs to open \textit{both} the hot and cold taps at the same time in just the right ratio. Because it works out all the inputs together, it accounts for cross-coupling automatically—no need for complicated decoupling networks.
+	\end{itemize}
+\end{examplebox}
+
+\subsubsection{Defining \emph{Optimality} via Cost Functions}
+
+Classical controllers such as PID typically have a very narrow notion of what constitutes success: the control objective is simply to drive the tracking error to zero. While this makes PID controllers effective and easy to deploy, it also means that they have no inherent understanding of \emph{cost} or \emph{trade-offs}. Model Predictive Control (MPC), by contrast, is built around an explicit cost function, denoted by \(J\), which allows the engineer to state mathematically what aspects of performance are important for a given application.
+
+By tuning the relative \emph{weights} of the different terms in the cost function, the behaviour of an MPC controller can be shaped to handle more complex and realistic scenarios, where competing objectives must be balanced rather than optimised in isolation.
+
+Consider, for example, a high-precision servo system. A PID controller may react very aggressively in its attempt to eliminate even tiny tracking errors, leading to rapid actuator motion and unwanted vibrations. An MPC controller can be designed to include a penalty on the \emph{rate of change} of the control input, \(\Delta u\). This effectively tells the controller to prioritise accurate tracking, but only insofar as it does not require excessive or abrupt actuation. The resulting control signal is smoother, reducing mechanical wear and helping to extend the lifespan of the hardware.
+
+A similar principle applies in process control applications such as chemical plants. There may be several different ways to achieve the desired product quality. One strategy might rely more heavily on steam, which is effective but expensive, while another might use additional catalyst, which is cheaper but leads to slower dynamics. Within an MPC framework, such preferences can be encoded directly by assigning different economic weights to each input. The optimiser then determines the specific combination of control actions that satisfies the quality constraints while minimising the overall financial cost.
+
+
+
+\section{Operation of MPC}
+
+The Model Predictive Control problem is fundamentally defined as a finite-horizon optimisation problem that is solved repeatedly at each time step. To understand how MPC operates, one must examine its three core mathematical components: Modelling the cost function, imposing constraints, and applying the receding horizon principle.
+
+\subsection{The Prediction Model}
+Predicting the future evolution of a system requires an explicit mathematical description of its dynamics. As digital controllers operate at discrete sampling instants, this description is typically expressed in discrete time. For a linear, time-invariant system, the prediction model is written in State–Space form as
+\begin{equation}
+	x_{k+1} = A x_k + B u_k .
+\end{equation}
+Here, $x_k \in \mathbb{R}^n$ denotes the \emph{state vector}, which encapsulates the variables describing the system’s current condition (such as position, velocity, or temperature), while $u_k \in \mathbb{R}^m$ denotes the \emph{control input} applied at time step $k$. The matrices $A$ and $B$ characterise the system dynamics and determine how the state evolves from time step $k$ to $k+1$ under the applied input.
+
+\subsection{The Objective (Cost Function)}
+With a model capable of predicting future behaviour, the next step is to define what constitutes desirable performance. In MPC, this is achieved through the definition of a scalar cost function, $J$, which evaluates the quality of a predicted state and input trajectory over a finite prediction horizon of length $N$. A widely adopted choice is the quadratic cost function
+\begin{equation}
+	J(x_0, {u}) = \sum_{k=0}^{N-1} \left( x_k^\top  Q x_k + u_k^\top  R u_k \right) + x_N^\top  Q_N x_N .
+\end{equation}
+\begin{notebox}{Cost function scaling}
+Some references (and Chapter~5) include a factor $\tfrac{1}{2}$ in front of the cost for compatibility with the standard QP form $\tfrac{1}{2}z^\top H z + f^\top z$. This does not change the optimal solution --- only the numerical value of the cost. We omit the $\tfrac{1}{2}$ here for clarity.
+\end{notebox}
+The quadratic structure ensures that larger deviations are penalised disproportionately more than smaller ones, reflecting a least-squares philosophy. The relative importance of competing objectives is governed by the weighting matrices:
+\begin{itemize}
+	\item \textbf{Performance weight ($Q$):} penalises deviations of the state from its reference. Increasing $Q$ encourages faster error correction and leads to more aggressive closed-loop behaviour.
+	\item \textbf{Input weight ($R$):} penalises control effort. Larger values of $R$ discourage excessive or rapid changes in the control input, resulting in more conservative actuation.
+	\item \textbf{Terminal weight ($Q_N$):} penalises the terminal state $x_N$ at the end of the horizon and is commonly introduced to promote stability and desirable long-term behaviour.
+\end{itemize}
+
+Although the compact matrix notation $x^\top  Q x$ is mathematically convenient, it can obscure the physical interpretation of the tuning parameters. To clarify this intuition, it is instructive to examine a simple example.
+
+Consider a mechanical system, such as a robotic manipulator or a vehicle, with two state variables and a single control input:
+\begin{itemize}
+	\item $x_1$: position error relative to a desired target,
+	\item $x_2$: velocity,
+	\item $u$: applied force (for example, motor voltage or throttle input).
+\end{itemize}
+The state vector is therefore $x_k = \begin{bmatrix} x_1 \\ x_2 \end{bmatrix}$. In practice, the state weighting matrix $Q$ is almost always chosen to be diagonal, allowing each state component to be penalised independently:
+\begin{equation}
+	Q = \begin{bmatrix} q_1 & 0 \\ 0 & q_2 \end{bmatrix} ,
+\end{equation}
+where $q_1 \ge 0$ and $q_2 \ge 0$ are tuning parameters selected by the engineer.
+
+\subsubsection*{Explicit Expansion of the Cost}
+Expanding the quadratic term $x_k^\top  Q x_k$ reveals its interpretation as a weighted sum of squared state variables:
+\begin{equation}
+	\begin{aligned}
+		x_k^\top  Q x_k 
+		&= \begin{bmatrix} x_1 & x_2 \end{bmatrix}
+		\begin{bmatrix} q_1 & 0 \\ 0 & q_2 \end{bmatrix}
+		\begin{bmatrix} x_1 \\ x_2 \end{bmatrix} \\
+		&= \begin{bmatrix} x_1 & x_2 \end{bmatrix}
+		\begin{bmatrix} q_1 x_1 \\ q_2 x_2 \end{bmatrix} \\
+		&= q_1 x_1^2 + q_2 x_2^2 .
+	\end{aligned}
+\end{equation}
+Each state therefore contributes to the overall cost in proportion to both its magnitude and its associated weight. If the control input is scalar, the matrix $R$ reduces to a single non-negative scalar $r$, and the corresponding term simplifies to
+\begin{equation}
+	u_k^\top  R u_k = r u_k^2 .
+\end{equation}
+This formulation highlights that MPC does not merely seek to eliminate state error, but instead explicitly balances tracking performance against the cost of control effort.
+
+
+\subsubsection*{How to Tune the Weights}
+Once the cost function is written out explicitly, its interpretation becomes quite intuitive. In essence, $J$ acts like a balance sheet: at every time step, the controller adds up a set of penalties and then chooses the control action that makes this total as small as possible:
+\begin{equation}
+	J \approx \sum \big( \underbrace{q_1 x_1^2}_{\text{Position penalty}} 
+	+ \underbrace{q_2 x_2^2}_{\text{Velocity penalty}} 
+	+ \underbrace{r u^2}_{\text{Energy penalty}} \big) .
+\end{equation}
+The relative size of the weights determines the controller’s priorities and, ultimately, its behaviour. Several typical tuning regimes are worth highlighting:
+
+\begin{enumerate}
+	\item \textbf{High-precision tuning ($q_1 \gg r$):}  
+	If, for instance, $q_1 = 100$ and $r = 1$, the controller treats position errors as far more costly than the use of control effort. As a result, it will act aggressively, applying large inputs to eliminate even small position errors as quickly as possible.
+	
+	\item \textbf{Energy-saving tuning ($r \gg q_1$):}  
+	Conversely, if $r = 100$ and $q_1 = 1$, control effort is considered expensive. In this case, the controller is willing to tolerate larger or longer-lasting position errors if that reduces the amount of energy or fuel consumed.
+	
+	\item \textbf{Damping-oriented tuning (large $q_2$):}  
+	If the closed-loop response exhibits excessive oscillations, increasing $q_2$ can be effective. Since $x_2$ represents velocity, heavily penalising this term discourages rapid motion, resulting in a smoother, more heavily damped response that behaves much like an electronic damper.
+\end{enumerate}
+
+
+Thus, $Q$ and $R$ are not abstract mathematical abstractions; they are the \emph{knobs} the engineer turns to define the personality of the controller.
+
+\subsection{Constraint Handling}
+
+Unlike classical control approaches (such as PID), which may effectively demand unbounded actuation without regard for physical feasibility, MPC is formulated to explicitly respect real-world limitations. The optimisation problem is therefore solved subject to a set of constraints, typically expressed as linear inequalities. In compact matrix form, these constraints are written as
+\begin{equation}
+	F x_k + G u_k \leq b .
+\end{equation}
+At first glance, this expression may appear rather abstract. In practice, however, it is nothing more than a convenient way of collecting many simple and intuitive rules into a single mathematical statement. Each row of the inequality corresponds to a specific restriction—such as limits on actuator saturation, allowable state ranges, or safety margins—that the controller is required to satisfy at every time step.
+
+
+\begin{examplebox}{Constraints always exist in physical systems}
+Let us revisit our 2-state vehicle system, where $x_1$ is position, $x_2$ is velocity, and $u$ is the acceleration command. Suppose we have the following physical limits:
+\begin{enumerate}
+	\item \textbf{Actuator Limit:} The engine can provide a maximum acceleration of $+10 \, m/s^2$ and a maximum braking (deceleration) of $-10 \, m/s^2$.
+	\item \textbf{Safety Limit:} The vehicle must not exceed a speed limit of $50 \, m/s$.
+\end{enumerate}
+
+Mathematically, these are three separate inequalities:
+\begin{align*}
+	u_k &\leq 10 && \text{(Max Accel)} \\
+	u_k &\geq -10 \implies -u_k \leq 10 && \text{(Max Brake - note the sign flip)} \\
+	x_2 &\leq 50 && \text{(Speed Limit)}
+\end{align*}
+\textit{Note:} Standard solvers usually require all constraints to be in the form "$\dots \leq \text{Constant}$". Therefore, we multiply "greater than" constraints by $-1$ to flip the sign.
+
+To fit these into the standard form $F x_k + G u_k \leq b$, we stack them into matrices. Recall that $x_k = [x_1, x_2]^\top $:
+
+\begin{equation}
+	\underbrace{
+		\begin{bmatrix}
+			0 & 0 \\
+			0 & 0 \\
+			0 & 1
+		\end{bmatrix}
+	}_{F}
+	\begin{bmatrix} x_1 \\ x_2 \end{bmatrix}
+	+
+	\underbrace{
+		\begin{bmatrix}
+			1 \\
+			-1 \\
+			0
+		\end{bmatrix}
+	}_{G}
+	u_k
+	\leq
+	\underbrace{
+		\begin{bmatrix} 
+			10 \\
+			10 \\
+			50 
+		\end{bmatrix}
+	}_{b}
+\end{equation}
+
+By reading this matrix row by row, we can see how the algebra represents the physical reality:
+\begin{itemize}
+	\item \textbf{Row 1:} $0 \cdot x + 1 \cdot u \leq 10 \implies u \leq 10$.
+	\item \textbf{Row 2:} $0 \cdot x - 1 \cdot u \leq 10 \implies -u \leq 10 \implies u \geq -10$.
+	\item \textbf{Row 3:} $1 \cdot x_2 + 0 \cdot u \leq 50 \implies x_2 \leq 50$.
+\end{itemize}
+
+This matrix formulation defines a \textbf{feasible region}—a geometric \emph{safe space} within which the system must operate. If the predicted trajectory tries to leave this space (e.g., predicting a velocity of $51 \, m/s$), the optimiser will actively alter the input $u_k$ to prevent the violation, ensuring the car slows down \textit{before} it breaks the speed limit.
+\end{examplebox}
+
+
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[>={Latex[length=3mm, width=2mm]}, thick, font=\sffamily]
+
+		% ---------------------------------------------------------
+		% 1. TOP BLOCK: The Optimization Problem
+		% ---------------------------------------------------------
+		\node [draw, fill=black!5, rectangle, inner sep=15pt, align=left] (optim) {
+			% We use a minipage to hold the math structure
+			\begin{minipage}{11cm}
+				% The Objective Function
+				\begin{equation*}
+					u^\star(x) := \text{argmin} \quad x_N^\top  Q_N x_N + \sum_{i=0}^{N-1} \left( x_i^\top  Q x_i + u_i^\top  R u_i \right)
+				\end{equation*}
+				
+				% The Constraints (using a tabular for alignment)
+				\vspace{-0.5em}
+				\renewcommand{\arraystretch}{1.4} % Add vertical space between rows
+				\begin{tabular}{rlll}
+					s.t. &  $x_0 = x(t)$ & &  measurement \\
+					&  $x_{i+1} = A x_i + B u_i$ & &  system model \\
+					&  $F x_i + G u_i \leq b$ & &  constraints \\
+					&  $R \succ 0, Q \succeq 0$ & &  performance weights
+				\end{tabular}
+			\end{minipage}
+		};
+		
+		% ---------------------------------------------------------
+		% 2. THE PLANT BLOCK
+		% ---------------------------------------------------------
+		% Positioned below and slightly to the right
+		\node [draw, fill=black!20, rectangle, minimum height=2.5cm, minimum width=5cm, rounded corners=3pt, below=5.5cm of optim] (plant) at (optim.center) {\large Plant};
+		
+		% ---------------------------------------------------------
+		% 3. THE CONTROL SEQUENCE (u*)
+		% ---------------------------------------------------------
+		% We split this into nodes to circle the u_0 term easily
+		
+		% The left part "u*(x) = {"
+			\node [below=0.5cm of optim.south west, anchor=west, xshift=0.5cm] (seq_left) { $u^\star(x) = \{$};
+			
+			% The term to be circled "u*_0"
+			\node [right=0.1cm of seq_left] (u0) { $u_0^\star$};
+			
+			% The Red Circle
+			\node[draw=red!70!black, line width=2pt, inner sep=2pt, fit=(u0)] (square) {};
+			
+			
+			% The rest ", ..., u*_N-1 }"
+		\node [right=0.0cm of u0] (seq_right) { $, \dots, u_{N-1}^\star \}$};
+		
+		% ---------------------------------------------------------
+		% 4. CONNECTIONS
+		% ---------------------------------------------------------
+		
+		% Feedback Arrow: Plant -> Optimization (state x)
+		% Starts from top of plant, goes to bottom of Optimization box
+		\draw [->, line width=1.2pt] (plant.north) -- (plant.north |- optim.south) node [midway, right=0.3cm] { plant state,  $x(t)$ / predicted state, $\hat x(t)$};
+		
+		% Control Input Arrow: From the sequence to the Plant
+		% Following the visual style: Line goes down from the sequence area, then right into the plant
+		\draw [->, line width=1.2pt] (seq_left.south) |- (plant.west);
+		
+		% Output Arrow: Plant -> Output y
+		\node [right=2.5cm of plant] (output) { Output $y(t)$};
+		\draw [->, line width=1.2pt] (plant.east) -- (output.west);
+		
+	\end{tikzpicture}
+	\caption{Mathematical formulation of the MPC problem and the Receding Horizon implementation.}
+	\label{fig:mpc_math_formulation}
+\end{figure}
+
+\subsection{The Receding Horizon Principle}
+
+The final piece of the MPC puzzle is the strategy of implementation. As illustrated in Figure~\ref{fig:mpc_math_formulation}, and shown in the flow chart Figure~\ref{fig:rhc_flowchart}, the process operates in closed loop, but still relying on an open-loop anticipation.
+
+At every specific time step $t$, the controller solves the optimisation problem to find the optimal \textbf{sequence} of future control inputs, denoted as ${U}^\star$:
+\begin{equation}
+	{U}^\star = \{u^\star_{0}, u^\star_{1}, \dots, u^\star_{N-1}\} = \arg \min_{{U}} J(x_0, {U})
+\end{equation}
+This sequence represents a complete plan for the next $N$ time steps. For example, in a self-driving car, this sequence might represent the steering angles for the next 10 seconds. However,  MPC does \textbf{not} implement the entire plan but follows the following rules:
+
+\begin{enumerate}
+	\item \textbf{Extract:} Take only the first element of the optimal sequence, $u^\star_{0}$.
+	\item \textbf{Apply:} Send this single signal to the plant actuators.
+	\item \textbf{Discard:} Throw away the remaining calculated inputs ($u^\star_{1} \dots u^\star_{N-1}$).
+	\item \textbf{Evolve:} Wait for one sample step ($t \to t+1$), measure the new state $x_{t+1}$, and shift the horizon forward by one step.
+	\item \textbf{Repeat:} Solve the entire optimisation problem again from scratch.
+\end{enumerate}
+
+
+% Define block styles for the flowchart
+\tikzstyle{block} = [rectangle, draw, fill=blue!10, 
+text width=8em, text centered, rounded corners, minimum height=3em]
+\tikzstyle{cloud} = [ellipse, draw, fill=red!10, 
+text width=4em, text centered, minimum height=2.5em]
+\tikzstyle{line} = [draw, -latex', thick]
+
+\begin{figure}[htbp]
+	\centering
+	\begin{tikzpicture}[node distance=2.5cm, auto]
+		
+		% Nodes
+		\node [block] (solve) {\textbf{Solve} optimisation problem};
+		\node [block, below of=solve] (extract) {\textbf{Extract} $u^\star_{0}$};
+		\node [block, below of=extract] (apply) {\textbf{Apply} to plant actuators};
+		\node [cloud, below of=apply] (plant) {Plant};
+		\node [block, below of=plant] (evolve) {\textbf{Evolve} $t \to t+1$ \\ Measure $x_{t+1}$};
+		
+		% Position the Shift node to the right of Apply
+		\node [block, right of=apply, node distance=5cm] (shift) {\textbf{Shift} horizon forward};
+		
+		% Position the Discard node to the left of Plant
+		\node [block, left of=plant, node distance=4cm] (discard) {\textbf{Discard} $u^\star_{1} \dots u^\star_{N-1}$};
+		
+		% Paths
+		\path [line] (solve) -- (extract);
+		\path [line] (extract) -- node [right] {$u^\star_0$} (apply);
+		\path [line] (apply) -- (plant);
+		\path [line] (plant) -- node [right] {$x_{t+1}$} (evolve);
+		\path [line] (evolve) -| (shift);
+		\path [line] (shift) |- (solve);
+		
+		% Discard arrow from extract (dashed)
+		\path [line, dashed] (extract) -| node [above, pos=0.2] {unused} (discard);
+		
+	\end{tikzpicture}
+	
+	\caption{Summary of the Receding Horizon Control (RHC) loop.}
+	\label{fig:rhc_flowchart}
+\end{figure}
+The reader might ask: \textit{"Why waste computational power calculating $N$ steps if we only use the first?"}
+
+The answer is \textbf{feedback}. The model used for prediction is never a perfect representation of reality. If we applied the entire sequence ${U}^\star$ blindly, any unmodelled disturbance (e.g., a gust of wind) or parameter mismatch (e.g., a change in friction) would cause the system to drift off course. By re-planning at every single time step based on fresh measurements, MPC converts an "open-loop optimal control" problem into a "closed-loop feedback" strategy, ensuring robustness against uncertainty.
+
+\vspace{0.5cm}
+\begin{notebox}{Practical Guideline: When to use MPC?}
+	MPC comes at a cost: it requires a mathematical model and significant computational power to solve the optimisation problem in real-time (often within milliseconds). Therefore, 
+	\begin{itemize}
+		\item If a system is simple (SISO), linear, and operates far from its physical limits, a classical \textbf{PID controller} is computationally cheaper and often sufficient.
+		\item MPC should be reserved for problems where its unique ability to handle \textbf{constraints}, \textbf{multivariable interactions}, and \textbf{future look-ahead} justifies the added complexity.
+	\end{itemize}
+\end{notebox}
+
+\section{Applications of Model Predictive Control}
+
+Model Predictive Control (MPC) is widely used across an exceptionally broad
+range of application domains. One of its distinguishing characteristics is
+its scalability across vastly different time scales. Nowadays, it is applied to different systems ranging from nanoseconds in embedded electronic systems to weeks in large-scale industrial and logistical decision-making. This diversity reflects MPC’s ability to exploit predictions, incorporate  constraints, and handle multivariable interactions in a unified framework.
+
+\subsubsection*{Nanosecond to Millisecond Domains}
+
+At the fastest end of the spectrum, MPC is deployed in
+\begin{itemize}
+	\item \textbf{Computer control (ns scale)}, where extremely rapid
+	decision-making is required, for example in advanced semiconductor
+	manufacturing or embedded hardware processes.
+	
+	\item \textbf{Traction control (ms scale)}, where vehicles must respond
+	quickly to rapid variations in tyre–road interaction. MPC allows the
+	controller to anticipate future slip conditions while respecting actuator
+	limits, improving safety and performance.
+\end{itemize}
+
+\subsubsection*{Second to Hour Domains}
+
+For slower mechanical and thermal systems, MPC operates at time scales of
+seconds to hours:
+\begin{itemize}
+	\item \textbf{Power systems ($\mu$s--s)} benefit from MPC’s ability to
+	regulate voltage and frequency, incorporate network constraints, and
+	schedule generation resources.
+	
+	\item \textbf{Buildings (seconds)} are a classical MPC application area.
+	The building thermal response, HVAC equipment limitations, and comfort
+	constraints make MPC highly effective for energy-efficient control.
+	
+	\item \textbf{Refineries (minutes)} rely on MPC for large multivariable
+	process control. Here MPC has been an industry standard for decades,
+	particularly for maintaining optimal operating points close to constraints.
+	
+	\item \textbf{Nurse rostering (hours)} and other personnel scheduling
+	problems use MPC-inspired formulations to accommodate work rules,
+	hospital demand patterns, and staffing constraints.
+\end{itemize}
+
+\subsubsection*{Day to Week Domains}
+
+At even larger horizons, MPC ideas extend into logistical and economic
+decision-making:
+\begin{itemize}
+	\item \textbf{Train and airline scheduling (days)} requires the coordination of resources,
+	timetables, and infrastructure. MPC provides a mechanism for repeatedly
+	updating schedules based on predicted passenger demand and network delays.
+	
+	\item \textbf{Production planning (weeks)} uses MPC to optimise inventory,
+	production rates, and resource allocation. The receding-horizon structure
+	ensures that plans remain feasible as forecasts and operational conditions
+	evolve.
+\end{itemize}
+
+
+\section{Case Study: Energy-Efficient Building Control}
+
+Buildings are one of the best places to implement Model Predictive Control. Buildings account for roughly 40\% of total energy consumption in many industrialised countries, with HVAC systems representing a large share of that demand. Most of this energy is consumed during day-to-day operation rather than construction, and the systems involved are full of physical and operational constraints that MPC handles well. Better control of heating, cooling, ventilation, and lighting does not just cut costs; it also has a real effect on environmental impact.
+
+What makes buildings particularly interesting is that cutting their carbon emissions can actually be profitable. Figure~\ref{fig:building} shows a Marginal Abatement Cost Curve for London's building stock. The vertical axis shows what it costs to eliminate one tonne of $\mathrm{CO_2}$, while each bar's width indicates how much carbon a particular technology can cut. Notably, bars below the zero line represent measures that save money over their lifetime---the energy bill reductions more than cover the upfront investment.
+
+Building controls fall within this profitable zone (number 4). Unlike expensive physical retrofits or new renewable infrastructure, improving building control strategies through MPC delivers significant efficiency gains that pay for themselves.
+
+There's another practical reason MPC works so well here: building owners expect upgrades to pay back through lower energy bills. MPC is built for exactly this scenario. It can anticipate weather forecasts and occupancy patterns, handle the slow thermal dynamics of buildings, and respect comfort requirements and equipment limits—all while optimising systematically over time. This means it can shift heating and cooling to more efficient periods, shave peak demand, and keep occupants comfortable.
+
+In short, buildings tick all the boxes that make MPC attractive: multiple interacting systems, real constraints, long-term dynamics, and measurable financial returns. That is why the built environment has become one of the most active areas for MPC research and real-world application~\cite{Oldewurtel2012}.
+\begin{figure}
+	\centering
+	\includegraphics[width=0.99\linewidth]{Figures/building}
+	\caption{Marginal Abatement Cost Curve (MACC) for the residential and commercial sectors. The vertical axis represents the cost to abate one tonne of CO$_2$, whilst the horizontal axis shows the cumulative reduction potential. Measures below the zero line—such as the \emph{optimisation of building controls}—offer a negative abatement cost, meaning they generate net financial savings over their lifetime. Source: Adapted from Siemens and McKinsey \& Company, \textit{\href{https://w3.siemens.com/topics/global/en/sustainable-cities/resilience/Documents/London_Final_Report_en.pdf}{Sustainable Urban Infrastructure: London Edition — A view to 2025}} (2008).}
+	\label{fig:building}
+\end{figure}
+
+\subsection{Model Predictive Control for a One-Zone Building}
+
+To illustrate how MPC can be applied in building energy management, this section
+considers a simplified but representative example: a single thermal zone with
+electrical heating and external disturbances from weather and solar radiation as shown in Figure~\ref{fig:singlezone}. Although simplified, the model captures the essential thermal dynamics and constraints that arise in real buildings, and it provides a clear foundation for constructing an MPC.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{Figures/SingleZone}
+	\caption{Single zone of a building.}
+	\label{fig:singlezone}
+\end{figure}
+
+The example is based on an EnergyPlus building model that has been
+linearised and reduced automatically using the \emph{openBuild} tool.  
+The resulting discrete-time state-space model has four states:
+\[
+x = \begin{bmatrix}
+	x_1 \\ x_2 \\ x_3 \\ x_4
+\end{bmatrix},
+\qquad
+x_1 = \text{zone air temperature}, \qquad
+x_{2..4} = \text{wall temperatures}.
+\]
+
+The system evolves according to
+\begin{equation}
+	x_{k+1} = A x_k + B u_k
+	+ E_{\mathrm{rad}}\, v^{\mathrm{rad}}_k
+	+ E_{\mathrm{amb}}\, T^{\mathrm{amb}}_k,
+	\label{eq:onezone_dynamics}
+\end{equation}
+where
+\begin{itemize}
+	\item \(u_k\) is the control input, representing the heat flux delivered to the zone,
+	\item \(v^{\mathrm{rad}}_k\) is the incident solar radiation (a disturbance),
+	\item \(T^{\mathrm{amb}}_k\) is the outdoor ambient temperature (another disturbance),
+	\item \(A, B, E_{\mathrm{rad}}, E_{\mathrm{amb}}\) are obtained from linearisation.
+\end{itemize}
+
+The output of interest is the zone air temperature:
+\[
+y_k = c^\top x_k,
+\]
+where \(c^\top =\begin{bmatrix}
+	1 & 0 & 0 & 0
+\end{bmatrix}\) extracts the first state corresponding to \(x_1\).
+
+\subsubsection{Control Objectives and Constraints}
+
+The primary objective is to maintain the indoor temperature within a predefined
+comfort band (e.g., around \(21^\circ\mathrm{C}\)) while minimising energy use.  
+This naturally leads to the following requirements:
+\begin{enumerate}
+	\item \textbf{Comfort constraint}:
+	\[
+	|\,y_k - 21\,| \leq 2^\circ\mathrm{C}.
+	\]
+	\item \textbf{Actuator constraint} (electric heater):
+	\[
+	0 \leq u_k \leq 1,
+	\]
+	where \(u_k\) is normalised to the 0--100\% heating range.
+	\item \textbf{Disturbance forecasts}:  
+	Predictions of future weather (solar radiation and ambient temperature) 
+	are incorporated over the MPC prediction horizon.  
+	These forecasts are available from standard meteorological data.
+\end{enumerate}
+
+\subsubsection{MPC Problem Formulation}
+
+The MPC problem aims to minimise energy use while satisfying comfort constraints.
+Over a prediction horizon \(N\), the optimisation problem is:
+
+\begin{equation}
+	\begin{aligned}
+		\min_{\{u_0,\dots,u_{N-1}\}} \quad &
+		\sum_{i=0}^{N-1} |u_i|
+		\\
+		\text{s.t.} \quad &
+		x_{i+1} = A x_i + B u_i + E_{\mathrm{rad}}\, v^{\mathrm{rad}}_i
+		+ E_{\mathrm{amb}}\, T^{\mathrm{amb}}_i,
+		\\
+		& y_i = c^\top x_i,
+		\\
+		& |\,y_i - 21\,| \leq 2,
+		\\
+		& 0 \leq u_i \leq 1,
+	\end{aligned}
+	\label{eq:onezone_mpc}
+\end{equation}
+
+where:
+\begin{itemize}
+	\item The cost function \(\sum |u_i|\) represents total thermal energy consumption.
+	\item The constraints enforce comfort and equipment limitations.
+	\item Disturbance predictions enter the model explicitly through
+	\(v^{\mathrm{rad}}_i\) and \(T^{\mathrm{amb}}_i\).
+\end{itemize}
+
+This formulation is intentionally simple and is the first step toward more advanced building MPC strategies. Later we shall extend this model to incorporate night-time temperature setbacks, pre-heating strategies, and time-of-use
+ economic considerations while maintaining comfort. Figure~\ref{fig:building1} shows the application of the MPC and its evaluation. 
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.95\linewidth]{Figures/building1}
+	\caption{Closed-loop simulation results of Model Predictive Control (MPC) for a single-zone building. The top panel demonstrates the controller's ability to maintain the zone temperature (red line) within the specified comfort constraints (dashed lines), despite significant fluctuations in the ambient temperature (blue line). The bottom panel illustrates the relationship between the control input and disturbances; heating (red line) is applied primarily during nighttime or periods of low solar radiation (blue line) to compensate for heat loss, effectively minimizing energy use to an annualized rate of 81.6 kWh/m². (\textit{Taken from lecture slides of ME-425, EPFL with the permission of Prof C. Jones})}
+	\label{fig:building1}
+\end{figure}
+
+\textbf{Can we do better with Model Predictive Control with Time-of-Use Pricing?}\\
+
+In its simplest form, the controller's job is to minimise the total thermal energy consumed. But in modern smart grid setups, electricity prices change throughout the day depending on demand. To reflect this reality, we can shift the focus from minimising raw energy use to minimising the actual economic cost of running the system. We do this by incorporating a Time-of-Use tariff into the cost function.
+
+\subsubsection{Problem Formulation}
+
+We define a time-varying price vector $p \in \mathbb{R}^N$ over the prediction horizon. The tariff structure is defined based on peak and off-peak hours as follows:
+
+\begin{equation*}
+	p_k =
+	\begin{cases}
+		P_{\text{day}} & \text{if } 09:00 \le t_k < 18:00 \quad \text{(Peak)} \\
+		P_{\text{night}} & \text{if } 18:00 \le t_k < 09:00 \quad \text{(Off-Peak)}
+	\end{cases}
+\end{equation*}
+
+where $P_{\text{day}} > P_{\text{night}}$. The optimisation problem is now reformulated to minimise the weighted sum of the control inputs. Additionally, to ensure feasibility during aggressive load shifting, we introduce a slack variable $\sigma_i$ to relax the comfort constraints (soft constraints). If this is not done, the problem might become infeasible. The resulting optimisation problem can be written as:
+
+\begin{align*}
+	\min_{u, \sigma} \quad & \sum_{i=0}^{N-1} p_i |u_i| + \rho \|\sigma_i\| \\
+	\text{s.t.} \quad & x_{i+1} = A x_i + B u_i + E_{\text{rad}} v_{i,\text{rad}} + E_{\text{amb}} T_{i,\text{amb}} \\
+	& y_i = C x_i \\
+	& |y_i - 21| \le 2 + \sigma_i \\
+	& 0 \le u_i \le 1 \\
+	& \sigma_i \ge 0
+\end{align*}
+
+where $\rho$ is a very large penalty weight to discourage comfort violations unless necessary. 
+
+Introducing a price signal fundamentally changes how the controller behaves. Unlike the energy-optimal controller, which puts off heating until the very last moment, the economic-optimal controller uses the building's thermal mass as a kind of energy battery.
+
+As Figure \ref{fig:tou_results} shows, the controller engages in load shifting and pre-heating. Knowing that prices will jump at 09:00, it heats the zone aggressively during the cheap off-peak hours in the early morning, pushing the temperature up towards the upper comfort limit of $23^\circ$. The thermal energy stored in the building's fabric then allows the system to dial back or switch off heating entirely during the expensive peak hours (09:00–18:00), keeping costs down whilst still maintaining occupant comfort.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.95\linewidth]{Figures/building2}
+	\caption{Simulation results under Time-of-Use (ToU) tariff. The bottom plot demonstrates the shifting of heating inputs to night-time hours to avoid high daytime electricity prices. (\textit{Taken from lecture slides of ME-425, EPFL with the permission of Prof C. Jones.})}
+	\label{fig:tou_results}
+\end{figure}
+
+
+\section{A First MPC Example in MATLAB}
+
+Before diving into the mathematical theory in the chapters that follow, it is instructive to see MPC in action on a simple example. The short MATLAB script below implements a complete MPC controller for a scalar unstable system using the YALMIP toolbox, so that the reader can run it immediately and build intuition for how the algorithm works.
+
+\begin{lstlisting}[language=Matlab, caption={A minimal MPC example for a scalar unstable system.}, label={lst:first_mpc}]
+	% 1. Define the scalar unstable system: x_{k+1} = 1.2*x_k + u_k
+	A = 1.2;  B = 1;
+	Q = 1;    R = 0.1;
+	N = 10;   % Prediction horizon
+
+	% Terminal cost from the discrete Riccati equation
+	[P,~,~] = dare(A, B, Q, R);
+
+	% 2. YALMIP formulation
+	u = sdpvar(1, N);
+	x = sdpvar(1, N+1);
+	x0 = sdpvar(1, 1);        % Parameter: current state
+
+	obj = 0;
+	cons = [x(:,1) == x0];    % Initial condition constraint
+
+	for k = 1:N
+		obj  = obj + x(:,k)'*Q*x(:,k) + u(:,k)'*R*u(:,k);
+		cons = [cons, x(:,k+1) == A*x(:,k) + B*u(:,k)];
+		cons = [cons, -1 <= u(:,k) <= 1];   % Input constraint
+	end
+	obj = obj + x(:,N+1)'*P*x(:,N+1);       % Terminal cost
+
+	% 3. Build the optimizer object (parametric in x0)
+	opts = sdpsettings('verbose', 0, 'solver', 'quadprog');
+	controller = optimizer(cons, obj, opts, x0, u(:,1));
+
+	% 4. Closed-loop simulation
+	T_sim = 30;
+	x_state = 5;              % Initial condition
+	x_hist = zeros(1, T_sim+1);  u_hist = zeros(1, T_sim);
+	x_hist(1) = x_state;
+
+	for t = 1:T_sim
+		[u_opt, errcode] = controller(x_state);
+		if errcode ~= 0, warning('Solver failed!'); end
+		u_hist(t) = u_opt;
+		x_state = A*x_state + B*u_opt;
+		x_hist(t+1) = x_state;
+	end
+
+	% 5. Plot results
+	figure;
+	subplot(2,1,1);
+	stairs(0:T_sim, x_hist, 'b', 'LineWidth', 2); grid on;
+	ylabel('State (x)'); title('MPC Closed-Loop Response');
+	subplot(2,1,2);
+	stairs(0:T_sim-1, u_hist, 'b', 'LineWidth', 2); hold on;
+	yline( 1, 'r--', 'LineWidth', 1.5);
+	yline(-1, 'r--', 'LineWidth', 1.5);
+	ylabel('Input (u)'); xlabel('Time step (k)'); grid on;
+\end{lstlisting}
+
+When you run this script, you should observe that the controller successfully drives the unstable state from $x_0 = 5$ to the origin despite the system being open-loop unstable ($a = 1.2$). Notice that the control input saturates at $u = -1$ during the first several time steps, when the state is large and the controller must apply maximum effort; once the state is sufficiently small, the input comes off the constraint and the controller smoothly regulates the state to zero.
+
+\begin{notebox}{Prerequisites}
+	This script requires MATLAB with the YALMIP toolbox and a QP solver such as \texttt{quadprog}. Installation instructions for YALMIP are given in the Foreword.
+\end{notebox}
+
+
+\section{Chapter Summary}
+
+This chapter introduced Model Predictive Control (MPC) and contrasted it with classical control methods like PID. Unlike classical approaches that rely on pre-designed, fixed control laws, MPC solves a constrained optimisation problem on-line at each time step.
+
+The main points are:
+
+\begin{itemize}
+	\item \textbf{Optimisation-Based Control:} MPC separates the \textit{control law} from the \textit{performance specifications}. Instead of tuning gains, the engineer defines a mathematical model of the plant, a cost function (objective), and physical constraints. The controller then solves an optimisation problem at every time step to find the best input sequence.
+	
+	\item \textbf{Receding Horizon Principle:} The operational backbone of MPC is the Receding Horizon Control (RHC) strategy. The controller measures the current state, plans a future trajectory over a finite horizon $N$, executes only the first step ($u_0$), and then repeats the process. This iterative re-planning provides the necessary feedback to handle uncertainties and disturbances, similar to a driver adjusting steering through a corner.
+	
+	\item \textbf{Explicit Constraint Handling:} A distinguishing feature of MPC is its ability to explicitly account for physical and safety limitations (e.g., valve limits, temperature bounds) during the design phase. While classical controllers clip signals when limits are reached, MPC anticipates these limits and steers the system along the constraint boundary to maximise performance safely.
+	
+	\item \textbf{Anticipation and Future Knowledge:} MPC is inherently predictive. It can utilise forecasts of known disturbances (such as weather or customer demand) to take pre-emptive action. 
+	
+	\item \textbf{Scalability:} The methodology is applicable across a vast range of time scales, from nanosecond-level processor control to week-level production planning, provided the optimisation problem can be solved within the sampling interval.
+\end{itemize}
+
+The chapter concluded with a practical application of MPC to a single-zone building, illustrating two distinct behaviours:
+\begin{enumerate}
+	\item \textbf{Energy Minimisation:} By incorporating weather forecasts, the MPC controller can reject disturbances (solar radiation, ambient temperature) efficiently, maintaining occupant comfort while minimising total energy use.
+	\item \textbf{Economic Optimisation (Time-of-Use):} When electricity prices vary, MPC exploits the time-varying tariff structure. The controller exhibits \textit{load shifting} behaviours—specifically \textit{pre-heating}—where it overheats the building during off-peak hours (using the thermal mass as storage) to reduce expensive consumption during peak hours.
+\end{enumerate}
+
+MPC provides a systematic approach to controlling constrained, multivariable systems by formulating the control problem directly as a mathematical optimisation. For a comprehensive treatment of MPC theory and practice, the reader is referred to~\cite{Rawlings2017}.
+
+
+\section*{Exercises}
+
+\begin{enumerate}
+
+	\item \textbf{The Receding Horizon Principle.}
+	The receding horizon strategy is the operational backbone of MPC.
+	\begin{enumerate}
+		\item[(a)] In your own words, explain what ``receding horizon'' means. Why does the horizon ``recede'' at each time step?
+		\item[(b)] At each time step, MPC computes an optimal sequence of $N$ future control inputs but only \emph{applies the first one} before solving the problem again. A student argues: ``This is wasteful—why not just apply the entire sequence and save computation?'' Write a short paragraph explaining why this approach would fail in practice. Your answer should mention at least two reasons (e.g., model mismatch, disturbances).
+		\item[(c)] Consider the flowchart in Figure~\ref{fig:rhc_flowchart}. List, in order, the five steps the MPC controller performs at each sampling instant.
+	\end{enumerate}
+
+	\item \textbf{MPC versus PID and LQR.}
+	Classical controllers such as PID and LQR are still widely used in industry.
+	\begin{enumerate}
+		\item[(a)] Give \emph{two} advantages that MPC has over a standard PID controller. For each advantage, briefly describe a real-world scenario where that advantage is critical.
+		\item[(b)] Give \emph{one} practical disadvantage of MPC compared with PID. Under what circumstances would you recommend keeping a PID controller rather than replacing it with MPC?
+		\item[(c)] The Linear Quadratic Regulator (LQR) also minimises a quadratic cost function of the form $\sum(x^\top Q x + u^\top R u)$. Identify \emph{one key difference} between LQR and MPC that explains why MPC is preferred when hard constraints on inputs or states must be satisfied.
+		\item[(d)] Referring to the ``shower analogy'' in Section~1.4, describe in plain language how a \emph{decentralised PID} strategy and the \emph{MPC centralised} strategy each attempt to regulate both temperature and pressure. Why does the PID strategy lead to oscillation?
+	\end{enumerate}
+
+	\item \textbf{Numerical Exercise: Scalar System with Input Constraints.}
+	Consider the scalar unstable system used in the MATLAB example (Listing~\ref{lst:first_mpc}):
+	\[
+		x_{k+1} = 1.2\, x_k + u_k,
+	\]
+	with initial state $x_0 = 5$ and input constraint $-1 \le u_k \le 1$.
+	\begin{enumerate}
+		\item[(a)] Without any controller ($u_k = 0$ for all $k$), compute the state values $x_1$, $x_2$, and $x_3$ starting from $x_0 = 5$. What does this tell you about the open-loop behaviour of the system?
+		\item[(b)] Suppose the MPC controller applies the maximum allowed braking effort $u_k = -1$ at every step. Compute $x_1$, $x_2$, and $x_3$ under this saturated input. Is the system being stabilised? (\emph{Hint:} check whether $|x_k|$ is growing or shrinking.)
+		\item[(c)] From the MATLAB description (Listing~\ref{lst:first_mpc} and the paragraph following it), the control input saturates at $u = -1$ during the first several time steps. Explain in one or two sentences \emph{why} the constraint is active at the start and why it eventually becomes inactive as the simulation progresses.
+		\item[(d)] The cost function uses weights $Q = 1$ and $R = 0.1$. What does the choice $R < Q$ imply about the controller's priorities? What would change qualitatively if you set $R = 10$ instead?
+	\end{enumerate}
+
+	\item \textbf{Constraint Types: Hard vs.\ Soft, State vs.\ Input.}
+	Constraints in MPC are categorised in two ways: by \emph{type} (hard or soft) and by \emph{variable} (state or input).
+	\begin{enumerate}
+		\item[(a)] \emph{Hard constraints} are constraints that must never be violated, while \emph{soft constraints} are relaxed by introducing a penalty term in the cost function. Give one example of a hard constraint and one example of a soft constraint in the building energy case study (Section~1.6). Explain why treating the comfort band as a soft constraint—rather than a hard one—can be important for ensuring the optimisation problem always has a solution.
+		\item[(b)] In the building model, the actuator bound $0 \le u_k \le 1$ is an \emph{input constraint}, while the comfort requirement $|y_k - 21| \le 2$ is a \emph{state (output) constraint}. Explain, in plain language, the difference between these two types. Which type is typically easier to guarantee will always be satisfied, and why?
+		\item[(c)] The Time-of-Use formulation in Section~1.6 introduces a slack variable $\sigma_i \ge 0$ that relaxes the comfort constraint to $|y_i - 21| \le 2 + \sigma_i$. Describe what happens to the comfort constraint if the penalty weight $\rho$ is set to a very large value versus a very small value.
+		\item[(d)] Consider the vehicle example in Section~1.5 with state $x = [x_1, x_2]^\top$ (position, velocity) and acceleration input $u$. Write down, in words rather than matrices, one input constraint and one state constraint that would be physically reasonable for a road vehicle.
+	\end{enumerate}
+
+	\item \textbf{Building Energy Application: Forecast Errors and Controller Behaviour.}
+	The building MPC case study relies on weather forecasts for outdoor temperature and solar radiation over the prediction horizon.
+	\begin{enumerate}
+		\item[(a)] Suppose the weather forecast predicts a mild day, but in reality a sudden cold snap arrives halfway through the day. Describe qualitatively what you would expect to happen to the indoor temperature under MPC. Would the situation be better or worse if the same forecast error occurred under a classical reactive (PID) controller? Justify your answer.
+		\item[(b)] In the Time-of-Use strategy, the controller pre-heats the building during cheap off-peak hours in anticipation of expensive peak electricity prices (09:00--18:00). If the forecast for solar radiation is \emph{overestimated} (i.e., the controller expects more free solar heat than actually arrives), describe the likely consequence for occupant comfort during peak hours. Would you classify this as a failure of the model, the constraints, or the forecast?
+		\item[(c)] The case study states that the annualised energy consumption is 81.6 kWh/m\textsuperscript{2}. Explain, in two or three sentences, how incorporating a Time-of-Use electricity tariff changes the \emph{pattern} of energy consumption even if the \emph{total} energy used over a day remains roughly the same.
+		\item[(d)] MPC for buildings is listed as a ``negative abatement cost'' measure on the Marginal Abatement Cost Curve in Figure~\ref{fig:building}. In plain terms, what does this mean for a building owner? Why does smart control fall into this category whereas many other carbon-reduction measures do not?
+	\end{enumerate}
+
+\end{enumerate}
+
+
+

@@ -1,0 +1,2102 @@
+% ===================================================================
+% CHAPTER 2: OPTIMISATION
+% ===================================================================
+
+\chapter{Optimisation: The Engine of MPC}
+\label{chap:optimisation}
+
+\begin{quote}
+	\textit{``Since the fabric of the universe is most perfect and the work of a most wise Creator, nothing at all takes place in the universe in which some rule of maximum or minimum does not appear.''} \\
+	
+	\hfill --- \textbf{Leonhard Euler}
+\end{quote}
+
+
+In Chapter~\ref{chap:introduction}, we introduced MPC as a controller that looks ahead and adjusts control actions by solving an optimisation problem at every time step. But this raises a fundamental question: how exactly does the computer decide which adjustment is the \emph{correct} one?
+
+A classical PID controller follows a simple, fixed rule: if the error increases, push back harder. It is reactive and rigid. An MPC controller, however, does not follow a pre-written rule. Instead, at every single time step, it faces a choice. It determines the best control action within the given constraints. This process of systematic selection is called \emph{optimisation}.
+
+Optimisation provides the mathematical framework for translating engineering objectives—such as \emph{drive fast but be safe}—into precise numerical instructions that a computer can understand. If the system model is the map that tells the controller where it \textit{can} go, optimisation is the navigator that decides where it \textit{should} go.
+
+In this chapter, we step away from system dynamics for a moment to focus purely on this decision-making engine. We will learn how to formulate engineering goals as objective functions, how to translate physical limits into mathematical constraints, and how to distinguish between problems that are easy for computers to solve and those that are computationally impossible.
+
+\section{What is Optimisation?}
+
+In a general sense, the Oxford Dictionary defines optimisation as:
+\begin{itemize}
+	\item ``The action of making the \textbf{best} or \textbf{most effective} use of a situation or resource.''
+\end{itemize}
+
+In engineering, we translate this concept into a precise mathematical framework. We are not just ``trying to do our best''; we are systematically searching for a specific numerical value that satisfies a mathematical criterion.
+
+\begin{defnbox}{Mathematical Definition of Optimisation}
+	A numerical approach for seeking a \textbf{best} decision or action from a \textbf{set of alternatives}.
+\end{defnbox}
+
+\section{The Anatomy of an Optimisation Problem}
+
+Formally, optimisation equates to the minimisation (or maximisation) of an \textit{objective function} $J(x)$, depending on a variable vector $x$, subject to constraints. The general mathematical problem is written as:
+
+\begin{equation}
+	\begin{aligned}
+		\min_{x} \quad & J(x) \\
+		\text{s.t.} \quad & x \in S
+	\end{aligned}
+\end{equation}
+
+To translate a real-world engineering problem into the mathematical form described above, we must identify three fundamental components. Regardless of the complexity, almost every optimisation problem consists of:
+
+\begin{enumerate}
+	\item \textbf{Decision Variables ($x$):} These are the \emph{knobs} the solver can turn to minimise the cost. In the context of MPC, these variables usually represent the sequence of future control inputs (e.g., valve positions, motor currents, steering angles) over the prediction horizon.
+	
+	\item \textbf{Objective Function ($J$):} A scalar mathematical expression that quantifies \emph{performance}. The solver attempts to find the decision variables that result in the smallest possible value for this function. It typically represents physical quantities such as energy cost, tracking error, fuel consumption, or elapsed time.
+	
+	\item \textbf{Constraints:} The rules that must be obeyed. These define the \textit{feasible set} (denoted as $S$). Constraints distinguish practical engineering from pure mathematics by strictly enforcing physical limits (e.g., maximum voltage, tank capacity) or safety bounds (e.g., obstacle avoidance).
+\end{enumerate}
+
+Mathematically, we often denote the decision variables as $z$ to distinguish them from the system state $x$ used in control theory. The standard optimisation form is written as:
+
+\begin{equation}
+	\begin{aligned}
+		\min_{x} \quad & J (x) \\
+		\text{s.t.} \quad & g_i(x) \leq 0, \quad i=1,\ldots,m & \text{(Inequality constraints)} \\
+		& h_j(x) = 0, \quad j=1,\ldots,q & \text{(Equality constraints)}
+	\end{aligned}
+\end{equation}
+
+\begin{notebox}{Study note: Constraint Types}
+	\begin{itemize}
+	\item \textbf{Inequalities ($g \le 0$)} describe ranges, like ``speed must be less than 100 km/h''. \\
+	\item \textbf{Equalities ($h = 0$)} describe strict physics, like $F = ma$. In MPC, the system dynamics ($x_{k+1} = Ax_k + Bu_k$) are treated as equality constraints. Note that here $x$ is the state of the system and not a decision variable. 
+	\end{itemize}
+\end{notebox}
+
+\section{Illustrative Examples}
+
+To make the abstract definitions of decision variables, objective functions, and constraints concrete, let us consider two distinct optimisation problems.
+
+The process of translating a physical or data-driven problem into a mathematical optimisation format is known as \textbf{modelling}. This step is often more challenging than the solution itself. In both examples below, we follow a systematic three-step approach:
+\begin{enumerate}
+	\item \textbf{Identify the Decision Variables:} What are the \emph{knobs} we can turn?
+	\item \textbf{Formulate the Objective:} What is the single metric that defines \emph{best}?
+	\item \textbf{Define the Constraints:} What are the physical or logical limits we must obey?
+\end{enumerate}
+
+The first example (Box Volume) illustrates a geometric design problem where \emph{physical constraints} play a critical role—analogous to actuator limits in control systems. The second example (Linear Regression) introduces the concept of \emph{least-squares minimisation}, which is the mathematical foundation for data science.
+
+\begin{examplebox}{Maximising Box Volume}
+	\textbf{Problem Statement:} Given a square piece of cardboard with dimensions $1\,\text{m} \times 1\,\text{m}$ as shown in Figure~\ref{fig:box_volume}, we wish to construct an open-top box with the maximum possible volume. We achieve this by cutting equal squares of side length $x$ from the four corners and folding up the sides.
+	
+
+	\begin{center}
+		\begin{tikzpicture}[scale=1.5]
+			% SMALLER VERSION OF THE FIGURE FOR INSIDE THE BOX
+			% 2D Sheet
+			\fill[red!20] (0,0) rectangle (2,2);
+			\draw[thick] (0,0) rectangle (2,2);
+			\foreach \x/\y in {0/0, 1.6/0, 0/1.6, 1.6/1.6} {
+				\fill[white, draw=black] (\x,\y) rectangle (\x+0.4,\y+0.4);
+			}
+			\node at (0.2, 1.5) {\small $x$};
+			\node at (-0.5, 1) {\small $1-2x$};
+			\node at (0.2, 0.5) {\small $x$};
+			
+			% Arrow
+			\draw[->, thick, bend left] (2.2, 1) to (2.8, 1);
+			
+			% 3D Box
+			\begin{scope}[xshift=3cm, yshift=0.5cm]
+				\coordinate (A) at (0,0);
+				\node at (-0.1, 0.2) {\small $x$};
+				\coordinate (B) at (1.0, -0.3); 
+				\coordinate (C) at (1.8, 0.2); 
+				\coordinate (Ah) at (0, 0.4);
+				\coordinate (Bh) at (1.0, 0.1);
+				\coordinate (Ch) at (1.8, 0.6);
+				\coordinate (Dh) at (0.8, 0.9);
+				\fill[red!30] (A) -- (B) -- (C) -- (0.8,0.5) -- cycle;
+				\fill[red!15] (A) -- (B) -- (Bh) -- (Ah) -- cycle;
+				\fill[red!15] (B) -- (C) -- (Ch) -- (Bh) -- cycle;
+				\draw (A) -- (B) -- (C);
+				\draw (Ah) -- (Bh) -- (Ch) -- (Dh) -- cycle;
+				\draw (A) -- (Ah); \draw (B) -- (Bh); \draw (C) -- (Ch);
+				\node[rotate=-17] at (0.4, -0.25) {\small $1-2x$};
+			\end{scope}
+		\end{tikzpicture}
+	\end{center}
+	\captionof{figure}{Box volume maximisation problem.}
+	\label{fig:box_volume}
+	\solution
+	
+	We map this problem to the three components of optimisation:
+	
+	\begin{enumerate}
+		\item \textbf{Decision Variable ($x$):} The size of the corner cut.
+		\item \textbf{Constraints:} 
+		\begin{itemize}
+			\item The cut must be positive: $x \geq 0$.
+			\item The cut cannot overlap (total width is 1m): $2x \leq 1 \implies x \leq 0.5$.
+		\end{itemize}
+		\item \textbf{Objective Function:} Maximise Volume $V = \text{length} \times \text{width} \times \text{height}$.
+		\[ J(x) = \underbrace{(1-2x) \cdot (1-2x)}_{\textbf{Base Area}} \cdot x = x(1-2x)^2 \]
+	\end{enumerate}
+	
+	\textbf{Mathematical Formulation:}\footnote{ \textbf{Note on Standard Form:} While this example seeks to \textit{maximise} volume, most standard solvers (including \texttt{quadprog} in MATLAB) are designed to \textit{minimise} functions. In engineering practice, we simply flip the sign of the objective function. Maximising $f(x)$ is mathematically equivalent to minimising $-f(x)$.}
+	\begin{equation*}
+		\begin{aligned}
+			\max_{x} \quad & x(1-2x)^2 \\
+			\text{s.t.} \quad & 0 \leq x \leq 0.5
+		\end{aligned}
+	\end{equation*}
+	or equivalently
+		\begin{equation*}
+		\begin{aligned}
+			\min \quad & -x(1-2x)^2 \\
+			\text{s.t.} \quad & 0 \leq x \leq 0.5
+		\end{aligned}
+		\end{equation*}
+\end{examplebox}
+
+
+\begin{examplebox}{Linear Regression (Least Squares)}
+	\textbf{Problem Statement:} Suppose we are given a dataset containing $N$ pairs of experimental measurements: $\{(x_1, y_1), (x_2, y_2), \dots, (x_N, y_N)\}$ as shown in Figure~\ref{fig:linear_regression}.
+	
+	We want to find the linear model (a straight line) that "best fits" this data.
+	
+	\begin{center}
+		\begin{tikzpicture}[scale=0.8]
+			% Axes
+			\draw[->, thick] (0,0) -- (6,0) node[right] {$x$};
+			\draw[->, thick] (0,0) -- (0,5) node[above] {$y$};
+			\draw[step=1cm, gray!20, very thin] (0,0) grid (5.9,4.9);
+			
+			% The Model Line
+			\draw[blue, very thick] (0,1) -- (5.5, 4.3) node[right] {$\hat{y} = a^T x + b$};
+			
+			% Data Points
+			\foreach \p/\x/\y in {1/1/2.2, 2/2/1.5, 3/3/3.5, 4/4/3.0, 5/5/4.5} {
+				\draw[dashed, red, thick] (\x, \y) -- (\x, {0.6*\x + 1}); % Residual
+				\fill[red] (\x, \y) circle (3pt);
+			}
+			% Labels
+			\node[red, above] at (1, 2.2) {\tiny $(x_1, y_1)$};
+			\node[right, red] at (3, 3.1) {\tiny error};
+		\end{tikzpicture}
+		\captionof{figure}{Dataset (red), linear interpolation (blue).}
+		\label{fig:linear_regression}
+	\end{center}
+	
+	\solution
+	
+	Note that in this specific problem, the $x$ values are \textbf{constants} (data we measured), not decision variables.
+	
+	\begin{enumerate}
+		\item \textbf{Decision Variables:}  The parameters of the line: the slope vector $a \in \mathbb{R}^n$ and the intercept $b \in \mathbb{R}$.
+		\begin{itemize}
+			\item Note: In the 2D plot above, $n=1$, so $a$ is a scalar slope. However, the math holds for $n$-dimensional vectors.
+		\end{itemize}
+		
+		\item \textbf{Objective Function:} We define the prediction for the $i$-th data point as $\hat{y}_i = a^T x_i + b$. We want to minimise the Sum of Squared Errors (SSE):
+		\[ J(a, b) = \sum_{i=1}^{N} (y_i - \hat{y}_i)^2 = \sum_{i=1}^{N} \left( y_i - (a^T x_i + b) \right)^2 \]
+		
+		\item \textbf{Constraints:} In this case, $a$ and $b$ can be any real numbers. There are no restrictions. Therefore this is an unconstrained optimisation. 
+	\end{enumerate}
+	
+	\textbf{Mathematical Formulation:}\\
+	
+	\begin{equation*}
+		\min_{a, b} \quad \sum_{i=1}^{N} \left( y_i - (a^T x_i + b) \right)^2 
+	\end{equation*}
+\end{examplebox}
+
+
+\section{Ingredients of Multi-Variable Optimisation}
+
+In the previous examples (the box and the line fitting), we dealt with specific cases. Now, let us formalise the general structure of an optimisation problem involving multiple variables. This is the exact structure used in Model Predictive Control, where we must simultaneously optimise a sequence of inputs over time.
+
+\subsection{Problem Setting: The Decision Vector}
+
+In real-world engineering, we rarely make a single scalar decision. Instead, we must determine a set of $n$ values simultaneously. To handle this mathematically, we collect all individual decision variables ($x_1, x_2, \dots, x_n$) into a single \emph{decision vector}: $x \in \mathbb{R}^n$:
+\begin{equation}
+	x = \begin{bmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{bmatrix}
+\end{equation}
+Then the objective function $J$ maps this vector to a scalar real number (a score or cost):
+\[ J: \mathbb{R}^n \to \mathbb{R} \]
+For example, in MPC, if we have a control horizon of 10 steps and 2 inputs, our decision vector $x$ has a dimension of $n=20$.
+
+\subsection{Understanding Vector-to-Scalar Mapping: The \emph{cost} function}
+
+The mathematical notation $J: \mathbb{R}^n \to \mathbb{R}$ often confuses beginners. It reads: \textit{"The function $f$ takes a vector of $n$ numbers and transforms it into a single real number."}
+
+To understand why this is necessary, let us consider a relatable real-world analogy: The Shopping Basket.
+
+\subsubsection*{The Analogy}
+
+Imagine you are at a supermarket checkout.
+
+\begin{enumerate}
+	\item \textbf{The Vector ($x$):} Your shopping basket contains many different items. You might have 2 loaves of bread, 6 eggs, and 1 litre of milk. We can list these quantities as a vector:
+	\[ 
+	x = \begin{bmatrix} 2 \\ 6 \\ 1 \end{bmatrix} 
+	\begin{matrix} \leftarrow \text{Bread} \\ \leftarrow \text{Eggs} \\ \leftarrow \text{Milk} \end{matrix}
+	\]
+	This vector represents the \textit{state} of your shopping. It is multi-dimensional because it contains different types of information.
+	
+	\item \textbf{The Objective Function ($J$):} The checkout till scans your items. It applies a specific rule (the price list) to your vector. It multiplies each item by its value and sums them up:
+	\[ 
+	J(x) = (2 \times \pounds 1.00) + (6 \times \pounds 0.20) + (1 \times \pounds 0.80) 
+	\]
+	
+	\item \textbf{The Scalar ($J$):} The till produces a single number: {\pounds 4.00}.
+\end{enumerate}
+This is visually described in Figure~\ref{fig:cost_function_analogy}. 
+\begin{center}
+	\begin{tikzpicture}[node distance=2cm, auto, >=latex', thick]
+		% Nodes
+		\node [draw, rectangle, align=center, fill=blue!10, minimum height=2.5em] (vector) {Vector $x$\\ \scriptsize (Bread, Eggs, Milk)};
+		\node [right=1.5cm of vector] (func) {\large $J(\cdot)$};
+		\node [draw, circle, align=center, fill=green!10, right=1.5cm of func, minimum size=2.5em] (scalar) {Scalar $J$\\ \scriptsize (\pounds 4.00)};
+		
+		% Arrows
+		\draw [->] (vector) -- (func);
+		\draw [->] (func) -- (scalar);
+		
+		% Label
+		\node [below=0.5cm of func] {\small The Objective Function};
+	\end{tikzpicture}
+	\captionof{figure}{Analogy of cost function.}
+	\label{fig:cost_function_analogy}
+\end{center}
+
+\subsubsection*{Why is this important in Engineering?}
+
+You cannot easily say which of two shopping baskets is \emph{larger} just by looking at the items—one might have more eggs but no milk. However, once you map them to a {scalar} (the total price), comparison becomes easy. You can instantly say which basket costs less.
+
+In Model Predictive Control, our \emph{basket} ($x$) contains complex decisions: valve positions, heater settings, and motor speeds over the next 20 minutes. We cannot simply look at two different plans and say \emph{Plan A is better than Plan B,} because Plan A might use less fuel but Plan B might track the temperature better.
+
+The objective function $J(x)$ squashes all these complex, multi-dimensional decisions into a single number (a score). 
+\begin{itemize}
+	\item If Plan A scores $10.5$ and Plan B scores $8.2$, and we are minimising cost, we know for a fact that {Plan B is the mathematical winner}.
+\end{itemize}
+
+\begin{notebox}{Key Takeaway}
+	Optimisation algorithms cannot minimise a list or a vector. They can only minimise a single number. The objective function acts as a \emph{translator}, converting a complex list of engineering decisions into a single score that allows us to rank them.
+\end{notebox}
+
+\subsection{Constraints and the Feasible Set}
+
+
+We rarely operate in an ideal world. Our decisions are restricted by physical limits. These restrictions are defined by a finite number of equations or inequalities involving the decision variables.
+
+\begin{enumerate}
+	\item \textbf{Inequality Constraints ($g_i$):} These represent bounds, such as "Temperature must be less than $100^{\circ}\mathrm{C}$" or "Valve must be open at least 10\%".
+	\[ g_i(x) \leq b_i, \quad i = 1, \dots, m \]
+	
+	\item \textbf{Equality Constraints ($h_j$):} These represent strict physics or model dynamics, such as \emph{Input flow must equal output flow} or $F = ma$.
+	\[ h_j(x) = 0, \quad j = 1, \dots, q \]
+	
+	\item \textbf{Domain Restrictions:} Sometimes variables are not continuous. For instance, a switch is either ON (1) or OFF (0). If $p$ variables are discrete (integers) and the rest are continuous, we denote the domain as $x \in \mathbb{R}^{n-p} \times \mathbb{Z}^p$. Note that dealing with domain restrictions is difficult in optimisation. 
+\end{enumerate}
+
+
+Collectively, these constraints define a specific region in the $n$-dimensional space called the \emph{Feasible Set} $S$. The optimisation algorithm is only allowed to search for solutions within this set.
+\begin{equation}
+	S = \{ x \in \mathbb{R}^n \mid g_i(x) \leq b_i \ \forall i, \ h_j(x) = 0 \ \forall j \}
+\end{equation}
+If the intersection of these constraints is empty (e.g., $x > 5$ AND $x < 3$), the problem is \textit{infeasible}—there is no solution.
+
+\begin{examplebox}{Visualising the Feasible Set}
+	Consider a 2-dimensional problem ($x \in \mathbb{R}^2$) with two inequality constraints:
+	\begin{enumerate}
+		\item $g_1(x) = x_1^2 + x_2^2 \leq 4$ (Must be inside a circle of radius 2).
+		\item $g_2(x) = x_1^3 - x_2 \leq 0 \implies x_2 \geq x_1^3$ (Must be above the cubic curve).
+	\end{enumerate}
+	The feasible set $S$ is the intersection of these two regions (the purple area as shown in Figure~\ref{fig:intersection_of_constraints}).
+	
+	\begin{center}
+		\begin{tikzpicture}[scale=1.2]
+			% Draw Axes
+			\draw[->] (-2.5,0) -- (2.5,0) node[right] {$x_1$};
+			\draw[->] (0,-2.5) -- (0,2.5) node[above] {$x_2$};
+			
+			% Region 1: Circle x^2 + y^2 <= 4 (Red)
+			% We fill with opacity
+			\fill[red!30, opacity=0.7] (0,0) circle (2cm);
+			
+			% Region 2: x2 >= x1^3 (Blue)
+			% We clip a rectangle to the area above the curve
+			\begin{scope}
+				\clip (-2.5, -2.5) rectangle (2.5, 2.5);
+				\fill[blue!30, opacity=0.6] plot[domain=-2:2, samples=50] (\x, {\x*\x*\x}) |- (-2,2.5) -- cycle;
+			\end{scope}
+			
+			% Re-draw Intersection (Purple/Darker) to emphasize
+			\begin{scope}
+				\clip (0,0) circle (2cm);
+				\fill[blue!50!red, opacity=0.8] plot[domain=-1.3:1.3, samples=50] (\x, {\x*\x*\x}) |- (-2,2.5) -- (-2, -2.5) -- cycle;
+			\end{scope}
+			
+			% Draw Boundaries
+			\draw[thick, red] (0,0) circle (2cm);
+			\node[red] at (.5, -1.) {$g_1(x) \le 4$};
+			
+			\draw[thick, blue, domain=-1.35:1.35, samples=50] plot (\x, {\x*\x*\x});
+			\node[blue] at (0.7, 2.2) {$x_2 \ge x_1^3$};
+			
+			\node at (-0.5, 0.5) {\textbf{S}};
+		\end{tikzpicture}
+		\captionof{figure}{Intersection of constraints. Blue region $x_2 \ge x_1^3$, red region $x_1^2+x_2^2 \le 4$. $S$ is the intersection and the feasible domain.}
+		\label{fig:intersection_of_constraints}
+	\end{center}
+\end{examplebox}
+
+\subsection{Standard Form: Minimisation vs. Maximisation}
+
+Standard numerical solvers (like \texttt{quadprog} or \texttt{fmincon} in MATLAB) are typically written to perform \textbf{minimisation}. However, engineering problems are often phrased as maximisation (e.g., maximise profit, maximise volume).
+
+To reconcile this, we rely on a mathematical identity. But first, we must clarify a precise piece of notation often used in optimisation: the difference between $\min$ and $\arg \min$.
+
+\textbf{Notation Note: Minimum vs. Argument of the Minimum:} \\
+
+\begin{itemize}
+	\item \textbf{$\min f(x)$:} Returns the \textbf{value} of the function at the minimum. This is the score (the vertical axis on a graph).
+	\item \textbf{$\arg \min f(x)$:} Returns the {argument} (the variable $x$) that produces that minimum. This is the decision (the horizontal axis).
+\end{itemize}
+
+In MPC, we are primarily interested in the $\arg \min$ because we need to know \textit{what input $u$ to apply} to the system, not just what the theoretical cost is.
+
+\textbf{Converting Maximisation to Minimisation:}\\
+
+With this notation in mind, we can state the equivalence principle. We do not need separate software to solve maximisation problems. We rely on the identity that finding the argument that maximises a function is equivalent to finding the argument that minimises its negative:
+
+\begin{equation}
+	\underbrace{\arg \max_{x \in S} f(x)}_{\text{Best Decision}} \equiv \underbrace{\arg \min_{x \in S} \{-f(x)\}}_{\text{Equivalent Search}}
+\end{equation}
+
+Visually, multiplying the objective function by $-1$ flips the curve upside down. A peak (maximum) in the original function becomes a valley (minimum) in the negated function. While the vertical values flip signs, the \textbf{horizontal location ($x$)} of the optimal point remains exactly the same. This is pictured in Figure~\ref{fig:minimization_vs_max}.
+
+\begin{figure}
+	\begin{center}
+		\begin{tikzpicture}[scale=1]
+			% Maximisation Plot
+			\begin{scope}
+				\draw[->] (-0.5,0) -- (3.5,0) node[right] {$x$};
+				\draw[->] (0,-1.5) -- (0,1.5);
+				
+				% Draw the function
+				\draw[thick, green!60!black] plot[domain=0:3, samples=50] (\x, {sin(\x*100)});
+				\node[green!60!black] at (1.7, 1.5) {Maximise $f(x)$};
+				
+				% Draw x* lines and labels
+				\draw[dashed] (0.85, 0) -- (0.85, 1);
+				\draw (0.85, 0.1) -- (0.85, -0.1) node[below] {$x^*$}; % Tick mark and label
+				
+				% Draw the optimal point
+				\fill[black] (0.85, 1) circle (3pt);
+			\end{scope}
+			
+			% Equivalence Symbol
+			\node at (4.5, 0) {\Large $\equiv$};
+			
+			% Minimisation Plot
+			\begin{scope}[xshift=6cm]
+				\draw[->] (-0.5,0) -- (3.5,0) node[right] {$x$};
+				\draw[->] (0,-1.5) -- (0,1.5);
+				
+				% Draw the function
+				\draw[thick, red] plot[domain=0:3, samples=50] (\x, {-sin(\x*100)});
+				\node[red] at (1.7, -1.6) {Minimise $-f(x)$};
+				
+				% Draw x* lines and labels
+				\draw[dashed] (0.85, 0) -- (0.85, -1);
+				\draw (0.85, 0.1) -- (0.85, -0.1) node[above] {$x^*$}; % Tick mark and label
+				
+				% Draw the optimal point
+				\fill[black] (0.85, -1) circle (3pt);
+			\end{scope}
+		\end{tikzpicture}
+	\end{center}
+	\caption{Visual representation of the equivalence between maximisation and minimisation. To maximise an objective function $f(x)$ (green curve), one can equivalently minimise its negative, $-f(x)$ (red curve). Note that while the vertical value flips sign, the optimal decision variable $x^*$ (the horizontal position of the black dot) remains identical.}
+	\label{fig:minimization_vs_max}
+\end{figure}
+
+Therefore, in this course, we will consistently formulate our MPC problems as minimisation tasks, usually minimising an energy or error cost function.
+
+
+
+% ===================================================================
+% SECTION: CLASSIFICATION OF PROBLEMS
+% ===================================================================
+
+\section{Terminology in Optimisation}
+
+With the general structure of an optimisation problem in place, we now refine the vocabulary. Some optimisation problems can be solved in milliseconds on a cheap microcontroller, whilst others might take days on a supercomputer and still fail to find the best solution.
+
+The distinguishing factor is rarely just the size of the problem (the number of variables); rather, it is the geometry of the problem.
+
+The difference between easy and hard problems lies not in the number of variables but in the geometry of the search space. The central concept here is \textbf{Convexity}: if the objective is convex and the constraints form a convex set, then any local minimum is guaranteed to be the global minimum. We begin by defining the building blocks of this geometry: sets and functions.
+
+\subsection{Convex Sets}
+
+A fundamental concept in optimisation, particularly in Model Predictive Control (MPC), is that of a \textbf{convex set}. Working with convex sets and functions simplifies the optimisation problem significantly, often guaranteeing that any local optimum is also a global optimum.
+
+\begin{defnbox}{Convex Set}
+	A set $\mathcal{X}$ is \textbf{convex} if and only if for any pair of points $x$ and $y$ in $\mathcal{X}$, any \textbf{convex combination} of $x$ and $y$ lies in $\mathcal{X}$.
+\end{defnbox}
+
+Mathematically, this definition is stated as:
+$$
+\mathcal{X} \text{ is convex} \quad \Longleftrightarrow \quad \lambda x + (1 - \lambda)y \in \mathcal{X}, \quad \forall \lambda \in [0, 1], \quad \forall x, y \in \mathcal{X}
+$$
+The term $\lambda x + (1 - \lambda)y$ represents a line segment connecting $x$ and $y$.
+
+\begin{notebox}{Interpretation}
+	All line segments starting and ending in $\mathcal{X}$ stay within $\mathcal{X}$.
+\end{notebox}
+
+
+To illustrate the concept, consider the following examples of convex and non-convex sets.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{Figures/convex_sets}
+	\caption{Visual examples of convex and non-convex sets. A set is non-convex if a line segment connecting two of its points leaves the set.}
+	\label{fig:convexsets}
+\end{figure}
+
+In the context of Model Predictive Control (MPC), constraints are often defined by linear inequalities. Geometrically, these constraints represent hyperplanes and half-spaces. Understanding these geometric primitives is essential because they form the building blocks of convex sets.
+
+
+\begin{defnbox}{Hyperplane}
+A hyperplane is a set of the form:
+\begin{equation}
+	\{x \in \mathbb{R}^n \mid a^\top x = b\}
+\end{equation}
+where $a \in \mathbb{R}^n$ (with $a \neq 0$) and $b \in \mathbb{R}$. The vector $a$ is the \textit{normal vector} to the hyperplane; it is orthogonal to any vector lying within the hyperplane.
+
+In $\mathbb{R}^2$, a hyperplane defines a line. In $\mathbb{R}^3$, it defines a plane. This is shown on the left of Figure~\ref{fig:hyperplane_halfspace}.
+\end{defnbox}
+
+\begin{defnbox}{Half space}
+	A hyperplane divides the space $\mathbb{R}^n$ into two halves. A half-space is the set of points on one side of (or on) the hyperplane:
+\begin{equation}
+	\{x \in \mathbb{R}^n \mid a^\top x \leq b\}
+\end{equation}
+This is known as a \textit{closed} half-space because it includes the boundary (the hyperplane itself). If the inequality is strict ($<$), it is an \textit{open} half-space. This is shown on the right of Figure~\ref{fig:hyperplane_halfspace}.
+\end{defnbox}
+
+Hyperplanes and half-spaces are always convex sets. This property ensures that optimisation problems with linear constraints remain convex.
+
+\begin{figure}[!h]
+	\centering
+	\begin{tikzpicture}[scale=1, >=stealth]
+		% LEFT PLOT: Hyperplane
+		\begin{scope}
+			\draw[->] (-2,0) -- (2,0) node[right] {$x_1$};
+			\draw[->] (0,-2) -- (0,2) node[above] {$x_2$};
+			
+			% Line: x1 + x2 = 1 => x2 = -x1 + 1
+			\draw[thick, blue!80!black] (-1, 2) -- (2, -1) node[below] {$\{x \mid a^\top x = b\}$};
+			
+			% Normal vector a = (1,1). Placed at (0.5, 0.5)
+			\draw[->, thick] (0.5, 0.5) -- (1.2, 1.2) node[right] {$a$};
+			
+			% Right angle symbol
+			\draw[rotate around={-45:(0.5,0.5)}] (0.5, 0.7) -- (0.7, 0.7) -- (0.7, 0.5);
+			
+			\node at (0, -2.5) {\textbf{A Hyperplane}};
+		\end{scope}
+		
+		% RIGHT PLOT: Half-space
+		\begin{scope}[xshift=6cm]
+			\draw[->] (-2,0) -- (2,0) node[right] {$x_1$};
+			\draw[->] (0,-2) -- (0,2) node[above] {$x_2$};
+			
+			% Fill the area x1 + x2 <= 1
+			\fill[gray!30] (-2, -2) rectangle (2, 2);
+			\fill[white] (-1, 2) -- (2, -1) -- (2, 2) -- (-1, 2); 
+			% (Alternative simple clip for halfspace)
+			\begin{scope}
+				\clip (-2,-2) rectangle (2,2);
+				\fill[gray!30] (-3, 4) -- (4, -3) -- (-3, -3) -- cycle;
+			\end{scope}
+			
+			% Line
+			\draw[thick, blue!80!black] (-1, 2) -- (2, -1);
+			\node[blue!80!black, below left] at (0.9, 0.3) {$\{x \mid a^\top x \leq b\}$};
+			
+			% Normal vector
+			\draw[->, thick] (0.5, 0.5) -- (1.2, 1.2) node[right] {$a$};
+			
+			% Right angle symbol
+			\draw[rotate around={-45:(0.5,0.5)}] (0.5, 0.7) -- (0.7, 0.7) -- (0.7, 0.5);
+			
+			\node at (0, -2.5) {\textbf{A Closed Half-Space}};
+		\end{scope}
+	\end{tikzpicture}
+	\caption{Visual representation of a hyperplane (left) and a closed half-space (right). The vector $a$ is normal to the boundary.}
+	\label{fig:hyperplane_halfspace}
+\end{figure}
+
+\begin{examplebox}{Linear Constraint in $\mathbb{R}^2$}
+	
+	Consider a linear relation defined by the equation:
+	\begin{equation}
+		2x_1 + 1x_2 = 2
+	\end{equation}
+	This represents a line in 2D space. To relate this to the standard hyperplane definition $a^\top x = b$, we define the vectors:
+	\begin{equation}
+		a = \begin{pmatrix} 2 \\ 1 \end{pmatrix}, \quad x = \begin{pmatrix} x_1 \\ x_2 \end{pmatrix}, \quad b = 2
+	\end{equation}
+	Thus, the equation becomes:
+	\begin{equation}
+		\underbrace{\begin{pmatrix} 2 & 1 \end{pmatrix}}_{a^\top} \begin{pmatrix} x_1 \\ x_2 \end{pmatrix} = \underbrace{2}_{b}
+	\end{equation}
+	
+	\textbf{Connection to the Gradient:}\\
+
+	Readers needing a refresher on vectors, matrices, and eigenvalues may consult Appendix~\ref{app:linalg}.
+
+	We can also view this through the lens of multivariate calculus. Let us define a function $f(x)$ implicitly by the zero-level set:
+	\begin{equation}
+		f(x) = 2x_1 + x_2 - 2 = 0
+	\end{equation}
+	The gradient of this function, denoted as $\nabla f$, is a column vector containing the partial derivatives with respect to $x_1$ and $x_2$:
+	\begin{equation}
+		a = \nabla_x f = \begin{pmatrix} \dfrac{\partial f}{\partial x_1} \\[12pt] \dfrac{\partial f}{\partial x_2} \end{pmatrix} = \begin{pmatrix} 2 \\ 1 \end{pmatrix}
+	\end{equation}
+	This confirms that the vector $a = (2, 1)^\top$ is the gradient of the linear function defining the hyperplane. Geometrically, the gradient vector is perpendicular to the level sets of the function, meaning $a$ is perpendicular to the line $2x_1 + x_2 = 2$, as shown in Figure \ref{fig:example_hyperplane}.
+	
+		\begin{center}
+		\begin{tikzpicture}[scale=1.5, >=stealth]
+			% Grid
+			\draw[step=0.5cm, gray!20, very thin] (-2.5,-1.5) grid (3.5,3.5);
+			
+			% Axes
+			\draw[<->, thick] (-2.5,0) -- (3.5,0) node[right] {$x_1$};
+			\draw[<->, thick] (0,-1.5) -- (0,3.5) node[above] {$x_2$};
+			
+			% The Line: 2x1 + x2 = 2  => x2 = -2x1 + 2
+			% Intercepts: (1,0) and (0,2)
+			% Plot from x1 = -0.5 to 1.5
+			% x = -0.5 => y = 3
+			% x = 1.5 => y = -1
+			\draw[thick, black] (-0.5, 3) -- (1.5, -1) node[midway, sloped, above, yshift=2pt] {$2x_1 + x_2 = 2$};
+			
+			% Intercept Points
+			\filldraw (0,2) circle (1.5pt) node[above right] {$(0,2)$};
+			\filldraw (1,0) circle (1.5pt) node[below left] {$(1,0)$};
+			
+			% Normal Vector calculation
+			\coordinate (P) at (0.5, 1);
+			\draw[->, red, thick] (P) -- ++(1, 0.5) node[right] {$a = \begin{pmatrix} 2 \\ 1 \end{pmatrix}$};
+			
+			% Right angle marker
+			\draw[thick] ($(P)!0.2cm!-63.4:(1.5,-1)$) -- ++(26.6:0.2) -- ($(P)!0.2cm!26.6:(1.5,1.5)$);
+			
+			% Annotation Box (Blue rounded rectangle)
+			\node[draw=blue!50, fill=blue!5, rounded corners, align=left, anchor=north west] 
+			at (1.8, -0.2) {
+				$x_2 = -2x_1 + 2$ \\[0.5em]
+				$2x_1 + 1x_2 = 2$ \\[0.5em]
+				$\underbrace{(2 \quad 1)}_{a^\top} \underbrace{\binom{x_1}{x_2}}_{x} = \underbrace{2}_{b}$
+			};
+			
+			% Curved arrow from box to line
+			\draw[->, blue!50, thick, bend right=20] (1.8, -0.5) to (1.2, -0.4);
+			
+		\end{tikzpicture}
+		\captionof{figure}{Geometric example of the hyperplane $2x_1 + x_2 = 2$. The normal vector $a=(2,1)^\top$ determines the orientation of the line.}
+		\label{fig:example_hyperplane}
+	\end{center}
+	
+	
+	
+\end{examplebox}
+
+
+
+\begin{defnbox}{Polyhedron}
+	Let $a_i \in \mathbb{R}^n$ and $b_i \in \mathbb{R}$ for $i=1,\dots,m$.  
+	A \emph{polyhedron} $P \subset \mathbb{R}^n$ is the intersection of a finite
+	number of closed half–spaces,
+	\[
+	P := \{ x \in \mathbb{R}^n \mid a_i^\top x \le b_i,\; i = 1,\dots,m \}.
+	\]
+	If we collect the row vectors $a_i^\top$ into a matrix
+	$A := [a_1,\dots,a_m]^\top \in \mathbb{R}^{m \times n}$ and
+	$b := [b_1,\dots,b_m]^\top \in \mathbb{R}^m$, then we may write
+	\[
+	P := \{ x \in \mathbb{R}^n \mid Ax \le b\},
+	\]
+	where the inequality is understood row–wise.
+\end{defnbox}
+
+\begin{defnbox}{Polytope}
+	A \emph{polytope} is a bounded polyhedron, that is, a polyhedron which is
+	contained in a ball of finite radius.
+\end{defnbox}
+
+\begin{alertbox}{Important observation}
+	Any intersection of convex sets is convex. Each closed half–space
+	$\{x \mid a_i^\top x \le b_i\}$ is convex, therefore every polyhedron
+	(and hence every polytope) is a convex set. However, union of convex sets are not convex in general.
+\end{alertbox}
+
+\begin{examplebox}{Numerical Example: Defining a Polytope}
+	
+	Consider the set $P \subset \mathbb{R}^2$ defined by the inequalities
+	\begin{align*}
+		x_1 &\ge 0, &
+		x_2 &\ge 0, \\
+		x_1 &\le 3, &
+		x_2 &\le 2, \\
+		x_1 + x_2 &\le 4.
+	\end{align*}
+	We can rewrite these in the standard form $Ax \le b$ as
+	\[
+	A=
+	\begin{bmatrix}
+		-1 & 0 \\
+		0 &-1 \\
+		1 & 0 \\
+		0 & 1 \\
+		1 & 1
+	\end{bmatrix},
+	\qquad
+	b=
+	\begin{bmatrix}
+		0 \\ 0 \\ 3 \\ 2 \\ 4
+	\end{bmatrix},
+	\qquad
+	P := \{x\in\mathbb{R}^2 \mid Ax \le b\}.
+	\]
+	The intersection of these half–spaces is a bounded polygon with vertices
+	\[
+	\{(0,0),\ (3,0),\ (3,1),\ (2,2),\ (0,2)\},
+	\]
+	so $P$ is a polytope.
+	
+	The polytope $P$ can be visualised in the $(x_1,x_2)$–plane as shown in Figure~\ref{fig:polyhedron}:
+	
+	\begin{center}
+	\begin{tikzpicture}[scale=1.5]
+		% Axes
+		\draw[->] (-0.5,0) -- (3.5,0) node[below] {$x_1$};
+		\draw[->] (0,-0.5) -- (0,2.5) node[left] {$x_2$};
+		
+		% Feasible region (polytope)
+		\fill[blue!15]
+		(0,0) -- (3,0) -- (3,1) -- (2,2) -- (0,2) -- cycle;
+		
+		\draw[thick,blue]
+		(0,0) -- (3,0) -- (3,1) -- (2,2) -- (0,2) -- cycle;
+		
+		% Constraint lines (optional, dashed)
+		\draw[dashed] (0,0) -- (3.6,0);          % x2 = 0
+		\draw[dashed] (0,0) -- (0,2.6);          % x1 = 0
+		\draw[dashed] (3,0) -- (3,2.6);          % x1 = 3
+		\draw[dashed] (0,2) -- (3.6,2);          % x2 = 2
+		\draw[dashed] (0,4) -- (4,0);            % x1 + x2 = 4
+		
+		% Vertex labels
+		\foreach \x/\y/\name in {0/0/A, 3/0/B, 3/1/C, 2/2/D, 0/2/E}
+		\fill (\x,\y) circle (1.2pt) node[above right] {\scriptsize $\name$};
+		
+		% Text labels for half-spaces
+		\node at (0.7,1.8) {\scriptsize $x_2 \le 2$};
+		\node at (2.6,0.4) {\scriptsize $x_1 \le 3$};
+		\node at (0.5,2.9) {\scriptsize $x_1 + x_2 \le 4$};
+		
+		\node at (1.4,1.0) {$P$};
+	\end{tikzpicture}
+	\captionof{figure}{Intersection of half spaces is a convex polyhedron.}
+	\label{fig:polyhedron}
+	\end{center}
+	
+\end{examplebox}
+
+
+\subsection{Convex Functions}
+
+Let $S$ be a convex subset of a vector space. We define the properties of functions mapping $S$ to the real numbers $\mathbb{R}$ as follows.
+
+\begin{defnbox}{Convex Function}
+	A function $f: S \rightarrow \mathbb{R}$ is said to be \textbf{convex} if $S$ is convex and the following inequality holds for all $z_1, z_2 \in S$ and for all $\lambda \in [0, 1]$:
+	\begin{equation}
+		f(\lambda z_1 + (1 - \lambda)z_2) \leq \lambda f(z_1) + (1 - \lambda)f(z_2)
+	\end{equation}
+	Geometrically, this means that the line segment connecting any two points on the graph of the function lies above or on the graph between the two points.
+\end{defnbox}
+	
+\begin{defnbox}{Concave Function}
+	A function $f: S \rightarrow \mathbb{R}$ is \textbf{concave} if $S$ is convex and $-f$ is a convex function. Equivalently, the inequality in the definition of convexity is reversed.
+\end{defnbox}
+
+
+The concept of convexity is illustrated in Figure \ref{fig:convex_func}. The curve represents the function $f$. The red secant line connects two points $(z_1, f(z_1))$ and $(z_2, f(z_2))$. For a convex function, the value of the function evaluated at a weighted average of two points (the black dot on the curve) is always less than or equal to the weighted average of the function values (the black dot on the red line).
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[scale=1.2, >=stealth]
+		% Define the function (simple parabola shifted)
+		\def\func(#1){0.5*(#1-2.5)*(#1-2.5) + 1}
+		
+		% Define points
+		\def\zOne{0.8}
+		\def\zTwo{4.2}
+		\def\zMix{2.8} 
+		
+		% Calculate y values
+		\pgfmathsetmacro{\yOne}{\func(\zOne)}
+		\pgfmathsetmacro{\yTwo}{\func(\zTwo)}
+		\pgfmathsetmacro{\yCurve}{\func(\zMix)}
+		
+		% Calculate y value on the secant line (linear interpolation)
+		% slope m = (y2 - y1) / (z2 - z1)
+		% y_line = y1 + m * (zMix - z1)
+		\pgfmathsetmacro{\slope}{(\yTwo - \yOne) / (\zTwo - \zOne)}
+		\pgfmathsetmacro{\yLine}{\yOne + \slope * (\zMix - \zOne)}
+		
+		% Coordinate Axes
+		\draw[->] (-0.5,0) -- (5.5,0) node[right] {$S$};
+		\draw[->] (0,-0.5) -- (0,5) node[above] {$f(S)$};
+		
+		% Draw the curve
+		\draw[line width=1.2pt] plot[domain=0.2:4.8, samples=100] (\x, {0.5*(\x-2.5)*(\x-2.5) + 1});
+		
+		% Draw the secant line (Red)
+		\draw[red, line width=1.2pt] (\zOne, \yOne) -- (\zTwo, \yTwo);
+		
+		% Draw points
+		\filldraw (\zOne, \yOne) circle (1.5pt) node[above left, text=blue] {$f(z_1)$};
+		\filldraw (\zTwo, \yTwo) circle (1.5pt) node[above left, text=green!50!black] {$f(z_2)$};
+		\filldraw (\zMix, \yCurve) circle (1.5pt); % Point on curve
+		\filldraw (\zMix, \yLine) circle (1.5pt);  % Point on line
+		
+		% Dashed projection lines (Vertical)
+		\draw[dashed] (\zOne, 0) -- (\zOne, \yOne);
+		\draw[dashed] (\zTwo, 0) -- (\zTwo, \yTwo);
+		\draw[dashed] (\zMix, 0) -- (\zMix, \yCurve); % To curve
+		\draw[dashed] (\zMix, \yCurve) -- (\zMix, \yLine); % Connect curve to line
+		
+		% Dashed projection lines (Horizontal)
+		\draw[dashed] (0, \yCurve) -- (\zMix, \yCurve);
+		\draw[dashed] (0, \yLine) -- (\zMix, \yLine);
+		
+		% Labels on X-axis
+		\node[below, text=blue] at (\zOne, 0) {$z_1$};
+		\node[below, text=green!50!black] at (\zTwo, 0) {$z_2$};
+		\node[below] at (\zMix, 0) {$\lambda z_1 + (1-\lambda)z_2$};
+		
+		% Labels on Y-axis
+		\node[left, font=\small] at (0, \yLine) {$\lambda f(z_1) + (1-\lambda)f(z_2)$};
+		\node[left, font=\small] at (0, \yCurve) {$f(\lambda z_1 + (1-\lambda)z_2)$};
+		
+	\end{tikzpicture}
+	\caption{Geometric interpretation of a convex function. The line segment connecting any two points on the curve lies above the function values.}
+	\label{fig:convex_func}
+\end{figure}
+
+
+
+\section{Classification of Optimisation Problems}
+
+In the previous sections, we defined the general anatomy of an optimisation problem (Variables, Objectives, Constraints). However, in engineering practice, identifying the specific \textit{class} of a problem is critical.
+
+Different classes of problems require different numerical algorithms (solvers). For instance, solving a linear problem is instantaneous, whereas solving a non-convex nonlinear problem might take hours or fail completely. If we can mathematically massage our engineering problem to fit a standard form, we can solve it efficiently using off-the-shelf software.
+
+We typically classify problems in two ways:
+\begin{enumerate}
+	\item By the \textbf{existence and type of constraints} (Constrained vs. Unconstrained).
+	\item By the \textbf{mathematical structure} of the cost and constraint functions (Linear, Quadratic, Nonlinear).
+\end{enumerate}
+
+\subsection{Classification I: Existence of Constraints}
+
+The most fundamental distinction is whether the decision variables are restricted by boundaries.
+
+\subsubsection{Unconstrained Optimisation}
+
+An unconstrained problem is one where the decision variables can take any value in the Euclidean space $\mathbb{R}^n$. There are no boundaries, fences, or rules limiting $x$.
+
+\begin{equation}
+	\min_{x \in \mathbb{R}^n} J(x)
+\end{equation}
+
+\paragraph*{Visualising Unconstrained Problems: Level Curves}
+
+When dealing with $n$ variables, the function $J(x)$ describes a surface in $n+1$ dimensions. This is hard to visualise. Instead, we use {Level Curves} (or contour lines). A level curve is a hypersurface defined by $J(x) = c$, where $c$ is a constant scalar. This is exactly like looking at a topographical map of a mountain; each line represents a constant height.
+
+\begin{examplebox}{Unconstrained Example: The Bowl}
+	Consider the simple quadratic function:
+	\[ J(x) = x_1^2 + x_2^2 \]
+	Here, $x = [x_1, x_2]^\top$. We want to find the minimum. The level curves are circles where $x_1^2 + x_2^2 = c$.
+	\begin{itemize}
+		\item If $c=5$, the curve is a circle of radius $\sqrt{5}$.
+		\item If $c=0$, the curve is a single point at the origin.
+	\end{itemize}
+	Figure~\ref{fig:level_curves} shows several level curves $J=2$, $J=6$, $J=12$ and $J=20$.
+	
+	
+	\begin{center}
+		\begin{tikzpicture}[scale=1.2]
+			\begin{axis}[
+				axis lines = middle,
+				xlabel = $x_1$,
+				ylabel = $x_2$,
+				xmin = -5, xmax = 5,
+				ymin = -5, ymax = 5,
+				axis equal image,
+				grid = major,
+				xtick = {-4,-2,0,2,4},
+				ytick = {-4,-2,0,2,4},
+				]
+				% Draw contours (circles)
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=1.5]; % f approx 2.25
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=2.5]; % f approx 6.25
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=3.5]; % f approx 12.25
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=4.5]; % f approx 20.25
+				
+				% Labels for the contours
+				\node[blue, font=\tiny, fill=white, inner sep=1pt] at (axis cs: 1.1, 1.1) {$J=2$};
+				\node[blue, font=\tiny, fill=white, inner sep=1pt] at (axis cs: 1.8, 1.8) {$J=6$};
+				\node[blue, font=\tiny, fill=white, inner sep=1pt] at (axis cs: 2.5, 2.5) {$J=12$};
+				\node[blue, font=\tiny, fill=white, inner sep=1pt] at (axis cs: 3.2, 3.2) {$J=20$};
+				
+				% The Minimum
+				\draw[fill=green, draw=black, thick] (axis cs:0,0) circle [radius=0.15];
+				\node[anchor=north west] at (axis cs:0.1, 0.6) {\tiny min $(0,0)$};
+			\end{axis}
+		\end{tikzpicture}
+		\captionof{figure}{Level Curves of $J(x) = x_1^2 + x_2^2$.}
+		\label{fig:level_curves}
+	\end{center}
+	
+	The optimiser searches for the level curve with the smallest possible $c$. Geometrically, this is the centre of the concentric circles.
+\end{examplebox}
+
+\subsubsection{Constrained Optimisation}
+
+In most engineering applications, particularly MPC, we are restricted. Valves cannot open more than 100\%, and tanks cannot hold negative volume. This leads to constrained optimisation, where $x$ must belong to a specific feasible set $S$. We classify these based on how the set $S$ is defined.
+
+\paragraph{Type A: Equality Constraints}
+
+An equality constrained problem restricts the decision variables to lie strictly on a specific curve or surface ($h(x)=0$). The solver is not allowed to choose any point off this line. Mathematically, this reduces the dimension of the search space.
+
+\begin{examplebox}{Equality Constraints: The Tangent Point}
+	\textbf{Problem Statement:} 
+	Minimise the same quadratic function as before, but subject to a linear equality constraint.
+	
+	\begin{equation*}
+		\begin{aligned}
+			& \min_{x} \quad  J(x) = x_1^2 + x_2^2 \\
+			\text{subject to:} &\\
+			 & h(x) = x_1 + 2x_2 - 4 = 0
+		\end{aligned}
+	\end{equation*}
+	
+	\textbf{Visualisation:}
+	This problem is visualised in Figure~\ref{fig:optimization_with_constraints}. 
+	\begin{center}
+		\begin{tikzpicture}[scale=1.2]
+			\begin{axis}[
+				axis lines = middle,
+				xlabel = $x_1$,
+				ylabel = $x_2$,
+				xmin = -1, xmax = 5,
+				ymin = -1, ymax = 4,
+				axis equal image,
+				grid = major,
+				]
+				% 1. Draw Level Curves
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=1];
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=1.788];
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=2.5];
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=3.5];
+				
+				% 2. Draw Constraint Line: x1 + 2x2 - 4 = 0  =>  x2 = 2 - 0.5*x1
+				\addplot[domain=-1:5, samples=2, color=red, ultra thick, dashed] {2 - 0.5*x};
+				\node[red, rotate=-24, anchor=south] at (axis cs: 2.2, 0.3) {$h(x)=0$};
+				
+				% 3. Draw Unconstrained Minimum (Origin)
+				\fill[gray] (axis cs:0,0) circle (2pt) node[below left] {\tiny Unconstrained};
+				
+				% 4. Draw Constrained Minimum
+				\fill[green, draw=black, thick] (axis cs:0.8, 1.6) circle (3pt);
+				\node[anchor=south west] at (axis cs:0.85, 1.6) {\textbf{Optimal} $(0.8, 1.6)$};
+			\end{axis}
+		\end{tikzpicture}
+		\captionof{figure}{Minimising $J(x)$ on the line $h(x)=0$}.
+		\label{fig:optimization_with_constraints}
+	\end{center}
+	
+	\solution
+	The optimal point is found where the constraint line is exactly {tangent} to a level curve.
+\end{examplebox}
+
+\paragraph{Type B: Inequality Constraints}
+
+Unlike equality constraints, inequality constraints confine the solution to a \textit{region} (a set of alternatives). The optimal solution may lie on the boundary of this region (active constraint) or strictly inside it (inactive constraint).
+
+\begin{examplebox}{Inequality Constraints: The Feasible Region}
+	Minimise the cost function $J(x) = x_1^2 + x_2^2$, subject to four linear inequalities:
+	\[
+	\begin{aligned}
+		-x_1 - 2x_2 + 5 &\leq 0 \\
+		2x_1 + x_2 - 5 &\leq 0 \\
+		x_1 \ge 0, \ x_2 &\ge 0
+	\end{aligned}
+	\]
+	\solution
+	
+
+	Visualisation is excellent for understanding, but to get numerical answers, we use software. In this course, we utilise \textbf{YALMIP}, an open source MATLAB toolbox that allows us to write optimisation problems using syntax that looks almost identical to the mathematics.
+	
+	The workflow always follows three steps: 
+	\begin{center}
+	Define Optimisation Variables $\to$ Define Model $\to$ Solve.
+	\end{center}
+
+	
+	\begin{lstlisting}[language=Matlab]
+		% 1. Define Decision Variables
+		% 'sdpvar' creates a symbolic variable that YALMIP tracks.
+		x = sdpvar(2,1); 
+		
+		% 2. Define the Objective Function
+		J = x(1)^2 + x(2)^2;
+		
+		% 3. Define Constraints
+		% We create a list of inequalities using standard MATLAB brackets.
+		Constraints = [ -x(1) - 2*x(2) + 5 <= 0, ...
+								2*x(1) +   x(2) - 5 <= 0, ...
+								x(1) >= 0, ...
+								x(2) >= 0 ];
+		
+		% 4. Call the Solver
+		% We ask YALMIP to minimise J subject to Constraints
+		optimize(Constraints, J);
+		
+		% 5. Extract Result
+		% The symbolic variable 'x' now holds the optimal value.
+		x_star = value(x) % Result: (1, 2)
+	\end{lstlisting}
+	
+	\textbf{Visualisation:}
+	Geometrically, the optimiser ``expands'' the level curves (blue circles) from the origin until they first touch the feasible region (grey polygon).
+	
+	\begin{center}
+		\begin{tikzpicture}[scale=1.5]
+			\begin{axis}[
+				axis lines = middle,
+				xlabel = $x_1$,
+				ylabel = $x_2$,
+				xmin = -1, xmax = 5,
+				ymin = -1, ymax = 6,
+				axis equal image,
+				grid = major,
+				]
+				
+				% 1. Level Curves
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=2.236]; % Radius sqrt(5) approx 2.23
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=3.5];
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=4.5];
+				
+				\node[rotate= -40, blue, font=\tiny] at (axis cs: 1.3, 1.5) {$J=5$};
+				\node[rotate= -40, blue, font=\tiny] at (axis cs: 2.2, 2.5) {$J=12$};
+				% 2. Feasible Region
+				\fill[gray, opacity=0.3] (axis cs:0, 2.5) -- (axis cs:0, 5) -- (axis cs:1.666, 1.666) -- cycle;
+				
+				% 3. Constraint Lines
+				\addplot[domain=-0.5:5, color=red, thick] {2.5 - 0.5*x};
+				\addplot[domain=-0.5:3, color=green!50!black, thick] {5 - 2*x};
+				
+				% 4. Optimal Point
+				\fill[green, draw=black, thick] (axis cs:1, 2) circle (3pt);
+				\node[anchor=north east] at (axis cs:1, 2) {{\tiny \textbf{Optimal} $(1, 2)$}};
+			\end{axis}
+		\end{tikzpicture}
+	\end{center}
+\end{examplebox}
+\paragraph{Type C: General Constraints}
+
+In the most general case, a problem contains both equality and inequality constraints. The solver must find a solution that lies inside the inequality region \textbf{and} lies exactly on the equality curve.
+
+Geometrically, the feasible set is the intersection of the regions defined by all constraints. This often effectively reduces the dimensionality of the search space.
+
+\begin{examplebox}{General Constraints: Mixing Equalities and Inequalities}
+	\textbf{Problem Statement:}
+	Consider a scenario where we must satisfy both safety limits (inequalities) and strict physical laws (equalities). We wish to minimise the quadratic cost $J(x) = x_1^2 + x_2^2$ subject to:
+	\begin{equation*}
+		\begin{aligned}
+			\text{s.t.} \quad & -x_1 - 2x_2 + 5 \leq 0 \\
+			& 2x_1 + x_2 - 5 \leq 0 \\
+			& x_1 \ge 0, \quad x_2 \ge 0 \\
+			& x_1 + 2x_2 - 7 = 0 \quad {(Equality)}
+		\end{aligned}
+	\end{equation*}
+	
+	\solution
+	
+	\textbf{YALMIP Implementation:}
+	When translating this into code, pay close attention to the syntax for the equality constraint. In MATLAB, a single equals sign (\texttt{=}) represents assignment (e.g., setting a variable's value). To represent a logical equality condition ($h(x)=0$), we must use the double equals sign (\texttt{==}).
+	
+	\begin{lstlisting}[language=Matlab]
+		% 1. Define Variables and Objective
+		x = sdpvar(2,1);
+		J = x(1)^2 + x(2)^2;
+		
+		% 2. Define Inequality Constraints (The Feasible Region)
+		g1 = [-x(1) - 2*x(2) + 5 <= 0]; 
+		g2 = [ 2*x(1) + x(2) - 5 <= 0]; 
+		g3 = [x(1) >= 0];               
+		g4 = [x(2) >= 0];     
+		
+		% 3. Define Equality Constraint (The Manifold)
+		% Note the use of '==' for logical equality
+		h  = [x(1) + 2*x(2) - 7 == 0];
+		
+		% 4. Combine and Solve
+		Constraints = [g1, g2, g3, g4, h];
+		optimize(Constraints, J);
+		
+		x_star = value(x) % Result: (1, 3)
+	\end{lstlisting}
+	
+	\textbf{Visualisation and Analysis:}
+	The geometry of this problem is illustrated in Figure~\ref{fig:Intersection_of_constraints}.
+	\begin{itemize}
+		\item The inequalities form the grey triangular region.
+		\item The equality constraint is represented by the orange dashed line.
+	\end{itemize}
+	A valid solution must satisfy \textit{both} conditions. Therefore, the feasible set is reduced to the specific line segment where the orange line slices through the grey triangle.
+	
+	\begin{center}
+		\begin{tikzpicture}[scale=1.2]
+			\begin{axis}[
+				axis lines = middle,
+				xlabel = $x_1$,
+				ylabel = $x_2$,
+				xmin = -4, xmax = 5,
+				ymin = -2, ymax = 6,
+				axis equal image,
+				grid = major,
+				]
+				
+				% 1. Level Curves
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=2.236]; % f=5 (Old optimum)
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=3.162]; % f=10 (New optimum)
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=4.5];
+				\draw[blue, dashed] (axis cs:0,0) circle [radius=1];
+				
+				
+				% 2. Feasible Region (Grey Triangle from Inequalities)
+				\fill[gray, opacity=0.3] (axis cs:0, 2.5) -- (axis cs:0, 5) -- (axis cs:1.666, 1.666) -- cycle;
+				
+				% 3. Equality Constraint Line: x + 2y = 7 -> y = 3.5 - 0.5x
+				\addplot[domain=-0.5:5, color=orange, ultra thick, dashed] {3.5 - 0.5*x};
+				\node[red, font=\normalsize, rotate=-26, anchor=south] at (axis cs: 3, 1.9) { $x_1 + 2x_2 = 7$};
+				
+				% 4. Previous Optimal Point (Inequalities only)
+				\fill[gray, draw=black] (axis cs:1, 2) circle (2pt);
+				\node[darkgray, font=\scriptsize, anchor=north east] at (axis cs:1, 2) {Old Optimum $(1, 2)$};
+				
+				% 5. New Optimal Point
+				\fill[green, draw=black, thick] (axis cs:1, 3) circle (3pt);
+				\node[anchor=south west, font=\scriptsize] at (axis cs:1, 3) { \textbf{New Optimum} $(1, 3)$};
+				
+			\end{axis}
+		\end{tikzpicture}
+		\captionof{figure}{Intersection of Equality and Inequalities}
+		\label{fig:Intersection_of_constraints}
+	\end{center}
+	
+	\textbf{The Cost of Constraints:}
+	In the previous example (inequalities only), the optimiser could reach the point $(1,2)$, which yielded a cost of $J=5$. 
+	
+	However, the new equality constraint forces the solution to lie on the line $x_1 + 2x_2 = 7$. The point $(1,2)$ is no longer valid because $1 + 2(2) = 5 \neq 7$. The solver is forced to move further away from the origin to satisfy this new rule, settling at $(1,3)$ with a higher cost of $J=10$.
+	
+	This illustrates a fundamental rule of engineering optimisation: {Adding constraints generally worsens (increases) the minimum cost}, as it restricts the freedom of the solver to find "cheaper" solutions.
+\end{examplebox}
+
+\subsection{Classification II: Mathematical Structure}
+
+Optimisation problems vary greatly in difficulty depending on the structure of their objective functions and constraints. In this section we review some of the most commonly encountered problem classes, beginning with those that are considered \emph{easy} from a computational point of view, and progressing to problems that are, in general, far more challenging to solve.
+
+% --------------------------------------------------------
+\subsubsection{Linear Programmes (LPs)}
+
+Linear Programmes constitute one of the most fundamental classes of convex optimisation problems. Both the objective and the constraints are linear:
+\begin{align*}
+	&\min_{x} \; c^{\top} x \\
+	 \text{subject to: } & \\
+	&Gx \le h \\
+	&Ax = b 
+\end{align*}
+
+The feasible set of an LP is a polyhedron, and the optimum, when it exists, is attained at an extreme point (vertex) of this polyhedron. Linear optimisation on a polytope may be visualised as shifting parallel hyperplanes of constant cost until they touch the feasible region. Figure~\ref{fig:LP} shows a 2D example where the polytope  corresponds to the closed area modelled by $Gx\le h$ and dashed lines shows the cost for different values of $c^\top x$.
+
+\begin{figure}[!htb]
+	\centering
+	\begin{tikzpicture}[scale=2]
+		
+		% Define the vertices of the pentagon (polytope P)
+		\coordinate (A) at (0.5, 0);
+		\coordinate (B) at (0, 0.8);
+		\coordinate (C) at (0.8, 1.5);
+		\coordinate (D) at (2, 1.3);
+		\coordinate (E) at (2.2, 0.5);
+		
+		% Draw and fill the polytope
+		\fill[gray!40] (A) -- (B) -- (C) -- (D) -- (E) -- cycle;
+		\draw[line width=1.2pt] (A) -- (B) -- (C) -- (D) -- (E) -- cycle;
+		
+		% Draw the dashed parallel lines (level sets of objective function) - AFTER the polytope
+		\foreach \y in {-0.3, 0.3, 0.9, 1.5, 2.1, 2.7} {
+			\draw[dashed, gray, rotate = -36, thick] (-0.5, \y) -- (3, \y);
+		}
+		
+		% Label the polytope
+		\node at (1.1, 0.9) { $Gx \le h$};
+		
+		% Mark the optimal point
+		\node[circle, fill=black, inner sep=2pt] at (A) {};
+		\node[below right] at (A) {$x^*$};
+		
+		
+	\end{tikzpicture}
+	\caption{Linear optimisation on a polytope.}
+	\label{fig:LP}
+\end{figure}
+
+\begin{examplebox}{Linear Programme: Minimum-Effort Steady State}
+	
+	\textbf{The Goal:}
+	Consider a discrete-time linear system $$x_{k+1} = Ax_k + Bu_k$$ We wish to find a steady-state pair $(x_{\mathrm{ss}}, u_{\mathrm{ss}})$ (an equilibrium point where the system stays at rest ($x_{k+1} = x_k$)) subject to safety constraints.
+	
+	Crucially, among all possible valid equilibria, we want to find the one that requires the \emph{least control effort}. In engineering (e.g., satellite thrusters), "effort" is often quantified by fuel consumption, which corresponds to the sum of the absolute values of the inputs.
+	
+	\textbf{1. The 1-Norm and Notation:}
+	Mathematically, we want to minimise the \textbf{1-norm} of the input vector $u \in \mathbb{R}^m$:
+	\begin{equation}
+		\|u\|_1 = \sum_{i=1}^{m} |u_i| = |u_1|+|u_2|+\cdots + |u_m|
+	\end{equation}
+	However, the absolute value function $|u|$ is non-linear. Standard LP solvers cannot handle it directly. To solve this, we use a standard optimisation trick involving the vector $1$.
+	\begin{itemize}
+		\item Let $1$ be a column vector of ones: $1 = [1, 1, \dots, 1]^\top$.
+		\item Then $1^\top t$ is simply the sum of the elements of vector $t$: $\sum t_i$.
+	\end{itemize}
+	
+	\textbf{2. The Epigraph Trick:}
+	We introduce an auxiliary decision vector $t \in \mathbb{R}^m$. We constrain $t$ to be an upper bound on the magnitude of $u$:
+	\begin{equation}
+		-t_i \le u_i \le t_i \implies |u_i| \le t_i
+	\end{equation}
+	If we minimise the sum of elements in $t$ (i.e., $\min 1^\top t$), the solver will squeeze $t_i$ down until $t_i = |u_i|$. This effectively minimises $|u_i|$ using only linear inequalities.
+	
+	\textbf{3. The Formulation:}
+	We can now pose the full Linear Programme. The decision variables are the input $u$, the state $x_{\mathrm{ss}}$, and the auxiliary bound $t$.
+	
+	\[
+	\begin{aligned}
+		&\min_{u,\, x_{\mathrm{ss}},\, t} \quad   1^\top t  && \text{(Minimise total fuel/effort)}\\
+		\text{subject to:} &&& \\ 
+		& (I-A)x_{\mathrm{ss}} - Bu = 0, && \text{(Equilibrium Physics)}\\
+		& G\,x_{\mathrm{ss}} \le h, && \text{(Safety Constraints)}\\
+		& u_{\min} \le u \le u_{\max}, && \text{(Actuator Limits)}\\
+		& -t \le u \le t. && \text{(Norm Linearisation)}
+	\end{aligned}
+	\]
+	
+	This formulation allows us to find the most efficient operating point for the system using extremely fast and reliable Linear Programming solvers.
+\end{examplebox}
+
+\begin{examplebox}{Stigler's Diet Problem:}
+	
+The Stigler Diet Problem is a classic linear optimisation problem. The objective is to determine the most cost-effective daily diet that meets specific nutritional requirements using a limited set of foods.
+
+In this simplified 2D version, we consider two food items: {Corn} and {Wheat Bread}. We aim to minimise the total daily cost while satisfying constraints for {Energy (Calories)} and {Vitamin A}.
+
+We first define the problem using general parameters and units.
+
+\textbf{Decision Variables:}
+\begin{itemize}
+	\item $x_1$: Quantity of Corn [kg]
+	\item $x_2$: Quantity of Bread [kg]
+\end{itemize}
+
+\textbf{Parameters:}
+\begin{itemize}
+	\item $c_1, c_2$: Price of food [\$/kg]
+	\item $k_1, k_2$: Energy content [kcal/kg]
+	\item $v_1, v_2$: Vitamin A content [$\mu$g/kg]
+	\item $K_{min}, K_{max}$: Daily energy limits [kcal]
+	\item $V_{min}, V_{max}$: Daily Vitamin A limits [$\mu$g]
+\end{itemize}
+
+\textbf{Optimisation Model:}
+\begin{align*}
+	\underset{x_1,\,x_2}{\text{min}} \quad & J(x) = c_1 x_1 + c_2 x_2 \\
+	\text {Subject to:} \quad & K_{min} \leq k_1 x_1 + k_2 x_2 \leq K_{max} \\
+	& V_{min} \leq v_1 x_1 + v_2 x_2 \leq V_{max} \\
+	& x_1 \geq 0, \quad x_2 \geq 0
+\end{align*}
+
+Using the specific data provided for the problem:
+
+\textbf{Data:}
+\begin{itemize}
+	\item Costs: $c_1 = 2.0$, $c_2 = 0.5$
+	\item Energy: $k_1 = 750$, $k_2 = 650$ (Target: $2000 - 3000$ kcal)
+	\item Vitamin A: $v_1 = 250$, $v_2 = 0$ (Target: $500 - 800$ $\mu$g)
+\end{itemize}
+
+Numerically, the problem can be stated as follows:
+
+	\begin{align*}
+			&\underset{x_1,x_2}{\min }  \quad J(x) = 2x_1 + 0.5x_2 & \\
+			\text{Subject to:} &&\\
+		&2000 \leq 750x_1 + 650x_2 \leq 3000 & \text{(Energy)} \\
+		&500 \leq 250x_1 \phantom{{} + 650x_2} \leq 800 & \text{(Vitamin A)} \\
+		& x_1 \geq 0, \quad x_2 \geq 0 & \text{(Nonnegativity)}
+	\end{align*}
+	Figure~\ref{fig:stigler2d} shows the feasible solution set along with the optimal solution that minimises the cost of nutrition. 
+	
+\begin{lstlisting}[language=Matlab, caption=Solving Stigler's Problem with YALMIP]
+	clear; clc;
+	
+	x1 = sdpvar(1); % Corn (kg)
+	x2 = sdpvar(1); % Bread (kg)
+	
+	Objective = 2*x1 + 0.5*x2;
+	
+	% 3. Define Constraints
+	Constraints = [];
+	Constraints = [Constraints, 2000 <= 750*x1 + 650*x2 <= 3000];
+	Constraints = [Constraints, 500 <= 250*x1 <= 800];
+	Constraints = [Constraints, x1 >= 0, x2 >= 0];
+	
+	% 'linprog' for LP; use 'quadprog' or 'osqp' for QP/SOCP variants.
+	options = sdpsettings('verbose', 0, 'solver', 'linprog');
+	sol = optimize(Constraints, Objective, options);
+	
+	if sol.problem == 0
+		fprintf('Optimal Solution:\n');
+		fprintf('x1 (Corn) : %.4f kg\n', value(x1));
+		fprintf('x2 (Bread): %.4f kg\n', value(x2));
+		fprintf('Min Cost  : $%.4f\n', value(Objective));
+	else
+		disp('Problem could not be solved.');
+	end
+\end{lstlisting}
+\end{examplebox}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\linewidth]{Figures/Stigler2d}
+	\caption{Numerical solution of the 2d Stigler problem in MATLAB.}
+	\label{fig:stigler2d}
+\end{figure}
+
+% --------------------------------------------------------
+\subsubsection{Convex Quadratic Programmes (QPs)}
+
+Quadratic Programmes (QPs) extend linear optimisation by allowing a quadratic objective function whilst retaining linear equality and inequality constraints.
+A QP takes the general form
+\begin{align*}
+	&\min_{x} \quad \frac{1}{2} x^{\top} P x + q^{\top} x \\ 
+	 \text{subject to: } & \\
+	 & Gx \le h \\ 
+	 & Ax = b 
+\end{align*}
+
+where, $x\in \mathbb R^n$, $P \in \mathbb{R}^{n \times n}$, $q \in \mathbb{R}^n$, $G \in
+\mathbb{R}^{m \times n}$, and $A \in \mathbb{R}^{p \times n}$.  
+The feasible region defined by the linear constraints is always a polyhedron.
+
+The QP is \emph{convex} if and only if the Hessian matrix $P$ is
+positive semidefinite:
+\[
+P \succeq 0 .
+\]
+This is shown in Figure~\ref{fig:QP}.
+
+\begin{notebox}{Tests for Positive Semidefiniteness ($P \succeq 0$)}
+	For a \emph{symmetric} matrix \(P\), the following statements are equivalent and may be used to verify that \(P\) is positive semidefinite:
+	
+	\begin{enumerate}
+		\item \textbf{Eigenvalues:} All eigenvalues of \(P\) are non-negative:
+		\[
+		\lambda_i(P) \ge 0, \qquad i=1,\dots,n.
+		\]
+		
+		\item \textbf{Quadratic Form:} The quadratic form is non-negative for every vector \(z \in \mathbb{R}^n\):
+		\[
+		z^\top P z \ge 0, \qquad \forall z \in \mathbb{R}^n.
+		\]
+		
+		\item \textbf{Principal Minors:} All \emph{principal minors} of \(P\) are non-negative.
+		In other words, the determinant of every principal submatrix must satisfy
+		\[
+		\det(P_{\mathcal I,\mathcal I}) \ge 0
+		\]
+		for every index set \(\mathcal I \subseteq \{1,\dots,n\}\).
+	\end{enumerate}
+	
+	\textbf{Important note:}  
+	For \emph{positive definite} matrices \((P \succ 0)\), Sylvester's criterion states that it is enough to check that all \emph{leading principal minors} are strictly positive. However, for \emph{positive semidefinite} matrices \((P \succeq 0)\), checking only the leading principal minors is \emph{not} sufficient in general; one must check all principal minors, or use one of the equivalent tests above.
+
+	(For a review of eigenvalues, definiteness, and related matrix concepts, see Appendix~\ref{app:linalg}.)
+\end{notebox}
+
+\begin{defnbox}{Hessian}
+	The Hessian matrix, denoted as $\nabla^2 f(x)$ or $H(x)$, collects all second-order partial derivatives of a scalar-valued function $f: \mathbb{R}^n \to \mathbb{R}$. If $x = [x_1, x_2, \dots, x_n]^\top$, the element in the $i$-th row and $j$-th column is given by:
+	\begin{equation*}
+		H_{ij} = \dfrac{\partial^2 f}{\partial x_i \partial x_j}
+	\end{equation*}
+\end{defnbox}
+
+\begin{examplebox}{Example: Hessian}
+	Consider a simple function of two variables:
+	\[
+	f(x) = 3x_1^2 + 2x_1 x_2 + 5x_2^2
+	\]
+	First, we find the gradient (first derivatives):
+	\[
+	\dfrac{\partial f}{\partial x_1} = 6x_1 + 2x_2, \quad \dfrac{\partial f}{\partial x_2} = 2x_1 + 10x_2
+	\]
+	Differentiating again gives the Hessian matrix:
+	\[
+	H = \begin{bmatrix}
+		\dfrac{\partial^2 f}{\partial x_1^2} & \dfrac{\partial^2 f}{\partial x_1 \partial x_2} \\[12pt]
+		\dfrac{\partial^2 f}{\partial x_2 \partial x_1} & \dfrac{\partial^2 f}{\partial x_2^2}
+	\end{bmatrix}
+	= \begin{bmatrix}
+		6 & 2 \\
+		2 & 10
+	\end{bmatrix}
+	\]
+	Note that for smooth functions, the Hessian is always a \textbf{symmetric} matrix ($H_{ij} = H_{ji}$).
+\end{examplebox}
+
+
+
+In the strictly convex case (where $P \succ 0$), the level sets of the objective function form concentric ellipses. This structure guarantees that the optimisation problem yields a \textbf{unique global minimiser}, provided the feasible region is non-empty. 
+
+Geometrically, the solver searches for the smallest possible ellipse that still overlaps with the constraints. The optimal solution is found at the precise point where this lowest-cost contour touches (or \emph{grazes}) the feasible polytope. This graphical interpretation is illustrated in Figure~\ref{fig:QP}.
+
+\begin{figure}[!h]
+	\centering
+	\begin{tikzpicture}[scale=1.5]
+		
+		% Polytope
+		\fill[gray!30]
+		(0,0) -- (1.4,0.2) -- (1.9,1.4) -- (1.0,2.2) -- (-0.4,1.4) -- cycle;
+		\draw[black, thick]
+		(0,0) -- (1.4,0.2) -- (1.9,1.4) -- (1.0,2.2) -- (-0.4,1.4) -- cycle;
+		
+		% Quadratic contours (elliptical shapes)
+		\foreach \scale in {0.6,1.2,1.8,3,4,6} {
+			\draw[dashed, domain=0:360]
+			plot ({2.55 + 0.45*\scale*cos(\x)}, {0.9 + 0.25*\scale*sin(\x)});
+		}
+		
+		% Optimal point
+		\filldraw[black] (1.65,0.9) circle (2pt);
+		\node at (1.38,0.65) {$x^\star$};
+		
+		% Label inside polytope
+		\node at (0.4,1.2) {$P$};
+		
+	\end{tikzpicture}
+	\caption{Convex quadratic optimisation on a polytope. Contours indicate
+		decreasing objective value towards the optimal point $x^\star$.}
+	\label{fig:QP}
+\end{figure}
+
+Convex QPs benefit from strong theoretical guarantees and can be solved
+efficiently using interior-point, active-set, or first-order optimisation
+methods. They are widely used in control, signal processing, finance,
+estimation, and engineering design.
+
+\begin{examplebox}{Example: Robot Distance to a Restricted Zone}
+	\textbf{Scenario:} Let a robot is located at coordinates $p = (3, 2)$. A restricted geometric zone $\mathcal{X}$ (representing an obstacle or a target landing pad) is defined as a unit box centered at the origin. The robot must compute the shortest distance to this zone to plan its trajectory.
+	
+	\solution
+	
+	\textbf{Optimisation Problem:}
+	Find the point $x \in \mathcal{X}$ closest to $p$:
+	\begin{equation*}
+		\min_{x \in \mathbb{R}^2} \; (x_1 - 3)^2 + (x_2 - 2)^2
+	\end{equation*}
+	
+	\textbf{Constraints (Standard Format):}
+	The unit box is defined by bounds $-1 \leq x_1 \leq 1$ and $-1 \leq x_2 \leq 1$. In standard linear inequality form $Ax \leq b$, these are written as:
+	\begin{align*}
+		x_1 &\leq 1 \\
+		-x_1 &\leq 1 \\
+		x_2 &\leq 1 \\
+		-x_2 &\leq 1
+	\end{align*}
+	
+	\textbf{Visualising the Solution:}
+	By inspecting the geometry (see Figure \ref{fig:qp_distance}), the closest point within the box to $(3,2)$ is the upper-right corner of the box, $x^* = (1, 1)$.
+	
+	\begin{center}
+		\begin{tikzpicture}[scale=1.5, >=stealth]
+			% Draw Axes
+			
+			
+			% Draw the Box (Constraint Set X)
+			% Fill with light blue, thick border
+			\filldraw[fill=blue!20, draw=blue!80!black, thick] (-1, -1) rectangle (1, 1);
+			\node[blue!80!black] at (0.3, -0.3) {$\mathcal{X}$};
+			
+			% Draw the Robot/Target Point p
+			\coordinate (P) at (3, 2);
+			\filldraw[black] (P) circle (2pt) node[above right] {$p = (3, 2)$};
+			
+			% Draw the Solution Point x*
+			\coordinate (Sol) at (1, 1);
+			\filldraw[red] (Sol) circle (2pt) node[below right, yshift=-5pt] {$x^* = (1, 1)$};
+			
+			% Draw the distance line
+			\draw[red, dashed, thick] (P) -- (Sol) node[midway, above left, text=black] {min dist};
+			
+			% Draw projection lines for the Point P
+			\draw[dotted] (3, 0) node[below] {$3$} -- (P);
+			\draw[dotted] (0, 2) node[left] {$2$} -- (P);
+			
+			% Draw projection lines for the Box limits
+			\draw[dotted] (1, 0) node[below, xshift=-5pt] {$1$} -- (1, -1);
+			\draw[dotted] (0, 1) node[left, yshift=-5pt] {$1$} -- (-1, 1);
+			
+			\draw[->] (-2, 0) -- (4.5, 0) node[right] {$x_1$};
+			\draw[->] (0, -2) -- (0, 3) node[above] {$x_2$};
+			
+		\end{tikzpicture}
+		\captionof{figure}{Geometry of the optimisation problem.}
+		\label{fig:qp_distance}
+	\end{center}
+	
+	To solve this problem numerically using a solver (like OSQP, quadprog, or GUROBI), we must map the problem into the standard Quadratic Programming form:
+	\begin{equation}
+		\min_{x} \; \frac{1}{2} x^\top P x + q^\top x \quad \text{subject to} \quad Gx \leq h
+	\end{equation}
+	
+	
+	We expand the squared Euclidean distance objective:
+	\begin{align*}
+		J(x) &= (x_1 - 3)^2 + (x_2 - 2)^2 \\
+		&= (x_1^2 - 6x_1 + 9) + (x_2^2 - 4x_2 + 4) \\
+		&= \underbrace{x_1^2 + x_2^2}_{\text{Quadratic part}} \underbrace{- 6x_1 - 4x_2}_{\text{Linear part}} + \underbrace{13}_{\text{Constant}}
+	\end{align*}
+	The constant term ($13$) does not affect the optimal location $x^*$ and is discarded. To match the standard form $\frac{1}{2} x^\top P x$, the matrix $P$ must be scaled such that the diagonal elements are 2.
+	\[
+	\frac{1}{2} \underbrace{\begin{bmatrix} x_1 & x_2 \end{bmatrix}}_{x^\top}
+	\underbrace{\begin{bmatrix} 2 & 0 \\ 0 & 2 \end{bmatrix}}_{P} 
+	\underbrace{\begin{bmatrix} x_1 \\ x_2 \end{bmatrix}}_{x}
+	+ 
+	\underbrace{\begin{bmatrix} -6 & -4 \end{bmatrix}}_{q^\top} 
+	\begin{bmatrix} x_1 \\ x_2 \end{bmatrix}
+	\]
+	Thus, we define:
+	\[
+	P = \begin{bmatrix} 2 & 0 \\ 0 & 2 \end{bmatrix}, \quad 
+	q = \begin{bmatrix} -6 \\ -4 \end{bmatrix}
+	\]
+	
+	
+	The unit box constraints are:
+	\[
+	-1 \leq x_1 \leq 1 \quad \text{and} \quad -1 \leq x_2 \leq 1
+	\]
+	These must be rewritten as "less than or equal to" inequalities ($Gx \leq h$):
+	\begin{align*}
+		x_1 &\leq 1 \\
+		-x_1 &\leq 1 \\
+		x_2 &\leq 1 \\
+		-x_2 &\leq 1 
+	\end{align*}
+	In matrix notation, this becomes:
+	\[
+	\underbrace{\begin{bmatrix} 
+			1 &  0 \\
+			-1 &  0 \\
+			0 &  1 \\
+			0 & -1 
+	\end{bmatrix}}_{G} 
+	\begin{bmatrix} x_1 \\ x_2 \end{bmatrix} 
+	\leq 
+	\underbrace{\begin{bmatrix} 
+			1 \\ 1 \\ 1 \\ 1 
+	\end{bmatrix}}_{h}
+	\]	
+
+\subsection*{MATLAB Implementation using YALMIP}
+Having derived the standard QP matrices manually, we can now solve the problem using MATLAB. The following code demonstrates YALMIP's symbolic framework to automate the process.
+
+\begin{lstlisting}[caption={Solving the Robot Trajectory QP using YALMIP and quadprog.}, label={lst:yalmip_qp}]
+	clear; clc;
+	ops = sdpsettings('solver', 'quadprog', 'verbose', 0);
+	
+	p = [3; 2];          % Robot position
+	x = sdpvar(2, 1);    % Variable
+	
+	Objective  = (x(1) - p(1))^2 + (x(2) - p(2))^2;
+	
+	Constraints = [-1 <= x <= 1];
+	
+	optimize(Constraints , Objective, ops);
+	
+	x_opt = value(x);
+	fprintf('Optimal Sol : x1=%.2f, x2=%.2f\n', x_opt(1), x_opt(2));
+\end{lstlisting}	
+
+\subsection*{Direct Implementation using quadprog}
+While YALMIP offers a convenient high-level interface, it is essential to understand how to pass the problem matrices directly to a solver. This effectively opens the "black box" of the optimisation tool.
+
+In MATLAB, the native solver \texttt{quadprog}\footnote{requires optimization toolbox} solves problems of the form:
+\begin{equation*}
+	\min_x \frac{1}{2}x^\top H x + f^\top x \quad \text{subject to} \quad A x \leq b
+\end{equation*}
+This syntax requires a direct mapping from our mathematical notation ($P, q, G, h$) to MATLAB's standard arguments ($H, f, A, b$).
+
+\begin{lstlisting}[caption={Direct solution using MATLAB's built-in quadprog solver.}, label={lst:quadprog_direct}]
+	clear; clc;
+	
+	% 1. Map the Mathematical Notation to MATLAB Syntax
+	% Objective: 1/2 * x'*P*x + q'*x
+	H = [2, 0; 
+			0, 2];         	% Our Matrix P
+	f = [-6; -4];       % Our Vector q
+	
+	% Constraints: G*x <= h
+	A = [ 1,  0; 
+			-1,  0; 
+			0,  1; 
+			0, -1];       % Our Matrix G
+	b = [1; 1; 1; 1];   % Our Vector h
+	
+	% 2. Set Options (optional, to suppress command window output)
+	options = optimoptions('quadprog', 'Display', 'off');
+	
+	% 3. Call the Solver
+	% Syntax: x = quadprog(H, f, A, b)
+	x_opt = quadprog(H, f, A, b, [], [], [], [], [], options);
+	
+	% 4. Display Results
+	fprintf('Optimal Sol : x1=%.2f, x2=%.2f\n', x_opt(1), x_opt(2));
+\end{lstlisting}
+	
+\end{examplebox}
+
+
+
+
+
+% --------------------------------------------------------
+\subsubsection{Nonconvex Quadratic Programmes}
+
+Not all optimisation problems retain convexity. Once convexity is lost, global optimality becomes substantially harder to guarantee. While standard MPC relies on convex optimisation, certain control formulations lead to nonconvex problems. A specific class of these "hard" problems is the Nonconvex Quadratic Programme (QP).
+
+When the matrix $P$ in the quadratic objective is not positive semidefinite ($P \not\succeq 0$), the objective function is nonconvex. This often manifests as saddle-shaped level sets. Consequently, the feasible polytope may contain multiple local minima, making the global optimum difficult to find efficiently.
+
+The formulation is given by:
+\begin{align*}
+	&\min_x \quad \frac{1}{2} x^{\top} Px + q^{\top} x\\
+	 \text{subject to: }& \\
+	&Gx \le h \\
+	& Ax = b 
+\end{align*}
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[scale=1.5]
+		% Clip everything to a reasonable viewing box
+		\clip (-3,-2.5) rectangle (3,2.5);
+		
+		% 2. Draw the Polytope (Feasible Set)
+		% Arbitrary shape crossing the saddle
+		\coordinate (P1) at (-1.5, -1.2);
+		\coordinate (P2) at (1.5, -0.5);
+		\coordinate (P3) at (1.2, 1.8);
+		\coordinate (P4) at (-0.8, 1.2);
+		
+		\fill[gray!40, opacity=0.5] (P1) -- (P2) -- (P3) -- (P4) -- cycle;
+		\draw[thick, black] (P1) -- (P2) -- (P3) -- (P4) -- cycle;
+		
+		% 3. Annotations
+		\node at (0,0) [font=\large, opacity=0.6] {$P$};
+		
+		% Labels matching the visual style of the slide
+		\node[font=\footnotesize, fill=white, inner sep=1pt] at (0, 2.3) {high};
+		\node[font=\footnotesize, fill=white, inner sep=1pt] at (0, -2.3) {high};
+		\node[font=\footnotesize, fill=white, inner sep=1pt] at (-2.8, 0) {low};
+		\node[font=\footnotesize, fill=white, inner sep=1pt] at (2.8, 0) {low};
+		
+		% Example stationary point / vertex
+		\filldraw (P2) circle (2pt); 
+		\node[right, font=\footnotesize] at (P2) {local min?};
+		
+		% Vertical Hyperbolas (Opening Up/Down)
+		% y = +/- sqrt(x^2 - c) for c < 0 (or x^2 - y^2 = -k)
+		\foreach \k in {0.2, 1, 2, 3, 4} {
+			\draw[dashed, gray] plot[domain=-3:3, samples=50] (\x, {sqrt(\x*\x + \k)});
+			\draw[dashed, gray] plot[domain=-3:3, samples=50] (\x, {-sqrt(\x*\x + \k)});
+		}
+		
+		% Horizontal Hyperbolas (Opening Left/Right)
+		% x = +/- sqrt(y^2 + k) 
+		% We use \x as the parameter for the vertical axis (y-value) here
+		\foreach \k in {0.2, 1, 2, 3, 4} {
+			\draw[dashed, gray] plot[domain=-2.5:2.5, samples=50] ({sqrt(\x*\x + \k)}, \x);
+			\draw[dashed, gray] plot[domain=-2.5:2.5, samples=50] ({-sqrt(\x*\x + \k)}, \x);
+		}
+		
+	\end{tikzpicture}
+	\caption{Nonconvex quadratic optimisation on a polytope. The dashed lines represent the contours of a saddle-shaped objective function. The global optimum is likely at a vertex, but local minima may exist.}
+	\label{fig:NonconvexQP}
+\end{figure}
+
+% --------------------------------------------------------
+\subsubsection{Mixed-Integer Linear Programmes (MILPs)}
+
+A Mixed-Integer Linear Programme retains the linear objective and constraints of an LP but imposes integrality restrictions on some or all decision variables:
+\begin{align*}
+	&\min_{x} \quad c^{\top} x \\
+	 \text{subject to: } & \\
+	&Gx \le h \\
+	&Ax = b \\
+	&x \in \{0,1\}^n \;\; \text{or} \;\; x \in \mathbb{Z}^n .
+\end{align*}
+
+The feasible set becomes a set of discrete points embedded within a polyhedron, leading to a combinatorial explosion in complexity. Figure~\ref{fig:MIP} shows a sketch of a possible mixed-integer problem. 
+
+\begin{examplebox}{MILP: Industrial Energy Management}
+	
+	\textbf{The General Problem:}
+	Consider an industrial site supplied by the electrical grid and equipped with a dispatchable generator and a battery energy storage system. The objective is to minimise the total operating cost over a finite horizon of $N$ discrete time steps of duration $\Delta t$, while meeting the site demand and respecting operational constraints.
+	
+	The generator can be switched on or off and incurs both fuel and start-up costs. The battery is subject to energy dynamics and cannot charge and discharge simultaneously.
+	
+	\medskip
+	
+	For each time step $k=1,\dots,N$, define:
+	\begin{align*}
+		p_g(k) &\ge 0 && \text{generator power (kW)},\\
+		p_{\mathrm{grid}}(k) &\ge 0 && \text{grid import power (kW)},\\
+		p_{\mathrm{ch}}(k),\, p_{\mathrm{dis}}(k) &\ge 0 && \text{battery charge/discharge power (kW)},\\
+		E(k) & && \text{battery energy (kWh)},\\
+		u(k) &\in \{0,1\} && \text{generator on/off status},\\
+		s(k) &\in \{0,1\} && \text{generator start-up indicator},\\
+		z(k) &\in \{0,1\} && \text{battery charge mode indicator}.
+	\end{align*}
+	
+	\medskip
+	\textbf{Objective function:}
+	The total operating cost is given by
+	\begin{equation}
+		\min \sum_{k=1}^{N} \Delta t 
+		\left(
+		c_{\mathrm{grid}}(k)\,p_{\mathrm{grid}}(k)
+		+
+		c_f\,p_g(k)
+		\right)
+		+
+		\sum_{k=1}^{N} c_{\mathrm{start}}\, s(k),
+	\end{equation}
+	where $c_{\mathrm{grid}}(k)$ denotes the time-varying electricity price, $c_f$ the generator fuel cost coefficient, and $c_{\mathrm{start}}$ the generator start-up cost.
+	
+	\medskip
+	\textbf{Constraints:}
+	
+	\emph{Power balance:}
+	\begin{equation}
+		p_{\mathrm{grid}}(k) + p_g(k) + p_{\mathrm{dis}}(k) - p_{\mathrm{ch}}(k) = d(k),
+		\quad \forall k.
+	\end{equation}
+	The term $d(k)$ represents the exogenous electrical demand (load) of the system at time step $k$, assumed to be known over the prediction horizon.
+	
+	\emph{Generator operating limits:}
+	\begin{equation}
+		P_{g,\min} u(k) \le p_g(k) \le P_{g,\max} u(k),
+		\quad \forall k.
+	\end{equation}
+	
+	\emph{Generator start-up logic:}
+	\begin{align}
+		s(1) &\ge u(1),\\
+		s(k) &\ge u(k) - u(k-1), \quad k=2,\dots,N.
+	\end{align}
+	where $s(k)$ is a binary variable that equals one if the generator is started at time $k$, i.e. when the on/off status $u(k)$ transitions from 0 to 1.
+	
+	\emph{Battery energy dynamics:}
+	\begin{equation}
+		E(k+1) = E(k) + \Delta t\,\eta_{\mathrm{ch}}\,p_{\mathrm{ch}}(k)
+		- \Delta t\,\frac{1}{\eta_{\mathrm{dis}}}\,p_{\mathrm{dis}}(k),
+	\end{equation}
+	with $E(1)=E_0$. Also, $\eta_{\mathrm{ch}}\in(0,1]$ and $\eta_{\mathrm{dis}}\in(0,1]$ denote the charging and discharging efficiencies of the battery, respectively.
+	
+	\emph{Battery and grid limits:}
+	\begin{align}
+		E_{\min} &\le E(k) \le E_{\max},\\
+		0 &\le p_{\mathrm{ch}}(k) \le P_{\mathrm{ch},\max},\\
+		0 &\le p_{\mathrm{dis}}(k) \le P_{\mathrm{dis},\max},\\
+		0 &\le p_{\mathrm{grid}}(k) \le P_{\mathrm{grid},\max}.
+	\end{align}
+	
+	\emph{Nonsimultaneous charging and discharging:}
+	\begin{align}
+		p_{\mathrm{ch}}(k) &\le P_{\mathrm{ch},\max} z(k),\\
+		p_{\mathrm{dis}}(k) &\le P_{\mathrm{dis},\max} [1-z(k)].
+	\end{align}
+	
+	\tcbline
+	\textbf{Solving this problem:}
+	The model above is a Mixed-Integer Linear Programme (MILP) due to the binary variables $u(k), s(k), z(k)$. It requires specialised solvers like Gurobi or CPLEX. In the software section later, we will implement a \textbf{simplified} version of this (a continuous LP) to demonstrate the concept in MATLAB.
+	
+\end{examplebox}
+
+
+\begin{figure}[!htb]
+	\centering
+	\begin{tikzpicture}[scale=1.5]
+		
+		% Polytope
+		\fill[gray!30]
+		(0,0) -- (1.4,0.2) -- (1.9,1.4) -- (0.9,2.2) -- (-0.4,1.4) -- cycle;
+		
+		% Grid of integer points
+		\foreach \x in {-1,-0.5,...,3} {
+			\foreach \y in {-1,-0.5,...,3} {
+				\fill (\x,\y) circle (1.2pt);
+			}
+		}
+		
+		% Parallel cost hyperplanes
+		\foreach \y in {0.0,0.6,1.2,1.8,2.4} {
+			\draw[dashed] (-1,\y) -- (3,\y+0.25);
+		}
+		
+		% Integer-optimal point
+		\filldraw[black] (0.1,0.1) circle (2pt);
+		\node at (-0.2,-0.1) {$x^\star$};
+		
+		\node at (2.9,-0.4) {\small Linear optimisation with integer constraints};
+		
+	\end{tikzpicture}
+	\caption{MILP feasible set: discrete integer lattice points within a polytope.}
+	\label{fig:MIP}
+\end{figure}
+
+\section{Software Tools for Optimisation}
+
+Implementing Model Predictive Control (MPC) requires a robust software stack. Generally, the implementation workflow is divided into two distinct layers:
+\begin{enumerate}
+	\item \textbf{Parsers (Modelling Languages):} High-level interfaces that allow the user to define the optimisation problem using intuitive algebraic syntax (e.g., \texttt{x\^{}2 + y\^{}2 <= 1}). The parser translates this symbolic representation into the standard numerical matrix formats required by the solver.
+	\item \textbf{Solvers:} The low-level numerical engines that perform the mathematical iterations to find the optimal solution (e.g., Active-Set methods or Interior-Point methods).
+\end{enumerate}
+
+\subsection{Modelling Languages (Parsers)}
+
+Choosing the right parser depends heavily on the programming environment (MATLAB vs. Python) and the type of problem (Convex vs. Nonlinear).
+
+For \textbf{MATLAB} users, \textbf{YALMIP} is the de facto standard for prototyping. It supports a vast array of solvers and allows users to switch between them by changing a single line of code. \textbf{CVX} is another popular option, specifically designed for Disciplined Convex Programming (DCP), a methodology that requires users to compose their optimisation problems from a fixed library of convex functions and composition rules so that convexity is automatically verified.
+
+For \textbf{Python} users, \textbf{CVXPY} is the equivalent of CVX, providing a clean object-oriented interface for convex problems. 
+
+For \textbf{Nonlinear MPC (NMPC)} and high-performance applications, \textbf{CasADi} is widely used in both Python and MATLAB. Unlike standard parsers, CasADi implements Algorithmic Differentiation (AD), allowing it to compute exact gradients and Hessians automatically, which is critical for solving nonlinear control problems efficiently.
+
+\begin{table}[h]
+	\centering
+	\caption{Comparison of Common Modelling Languages (Parsers)}
+	\label{tab:parsers}
+	\renewcommand{\arraystretch}{1.3}
+	\begin{tabularx}{\textwidth}{@{}l l l X@{}}
+		\toprule
+		\textbf{Name} & \textbf{Platform} & \textbf{License} & \textbf{Primary Purpose \& Notes} \\
+		\midrule
+		\textbf{YALMIP} & MATLAB & Free & The \emph{Swiss Army Knife} of MATLAB optimisation. Excellent for prototyping QP, LP, SDP, and MIP. \\
+		\textbf{CVX} & MATLAB & Free & Enforces Disciplined Convex Programming (DCP). Guarantees convexity but stricter than YALMIP. \\
+		\textbf{CVXPY} & Python & Free (Apache) & The standard for convex optimisation in Python. Intuitive object-oriented syntax. \\
+		\textbf{CasADi} & Python/C++ & Free (LGPL) & Ideal for Nonlinear MPC (NMPC). Features algorithmic differentiation and C-code generation for embedded targets. \\
+		\textbf{Pyomo} & Python & Free (BSD) & General modelling language, widely used in Operations Research (OR) and process systems engineering. \\
+		\textbf{JuMP} & Julia & Free (MIT) & Extremely fast modelling language. Gaining significant popularity in the control community. \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+\subsection{Numerical Solvers}
+
+The choice of solver is dictated by the problem class and the deployment requirements.
+
+\subsubsection*{Linear and Quadratic Solvers (Standard MPC)}
+For linear MPC, we typically solve a \textbf{Quadratic Programme (QP)}. Solvers like \textbf{OSQP} (Operator Splitting Quadratic Programme) and \textbf{quadprog} are popular because they are robust, code-generatable, and solve for moderate accuracy very quickly. \textbf{qpOASES} is an active-set solver specifically designed for MPC; it uses "warm-starting" to solve the next time-step's problem almost instantly based on the previous solution.
+
+For commercial applications, \textbf{Gurobi} and \textbf{CPLEX} are the industry leaders, offering unmatched speed for large-scale Mixed-Integer (MIP) and convex problems.
+
+\subsubsection*{Conic and Nonlinear Solvers (Robust \& Nonlinear MPC)}
+If the MPC formulation involves ellipsoidal constraints (Robust MPC) or Linear Matrix Inequalities (LMIs), a \textbf{Conic Solver} is required. \textbf{MOSEK} is the industry leader for these types of problems (SOCP and SDP). For pure MATLAB-based research involving LMIs, \textbf{SeDuMi} remains a classic open-source option.
+
+For Nonlinear MPC, \textbf{IPOPT} (Interior Point OPTimizer) is the standard open-source engine, often paired with CasADi.
+
+\begin{table}[h]
+	\centering
+	\caption{List of Common Numerical Solvers}
+	\label{tab:solvers}
+	\renewcommand{\arraystretch}{1.3}
+	\begin{tabularx}{\textwidth}{@{}l l l l X@{}}
+		\toprule
+		\textbf{Solver} & \textbf{Type} & \textbf{Method} & \textbf{License} & \textbf{Best For} \\
+		\midrule
+		\textbf{quadprog} & QP & Interior-Point & Proprietary & Standard MATLAB solver (requires Opt. Toolbox). {Primary solver used in this course}. \\
+		\textbf{OSQP} & QP & ADMM\footnote{ADMM (Alternating Direction Method of Multipliers) is a first-order algorithm that decomposes a large optimisation problem into smaller sub-problems that are solved in alternation, making it well suited to embedded and real-time applications.} & Free (Apache) & Embedded MPC. Very robust, division-free code; widely used in Python/Julia. \\
+		\textbf{qpOASES} & QP & Active-Set & Free (LGPL) & Small-to-medium MPC. Excellent {warm-starting} capabilities for dense problems. \\
+		\textbf{Gurobi} & LP, QP, MIP & Simplex/Barrier & Commercial & Gold standard for MIP and convex speed. Free academic licenses available. \\
+		\textbf{MOSEK} & SOCP, SDP & Interior-Point & Commercial & The leader for {Robust MPC} (Conic constraints) and Semidefinite programming. \\
+		\textbf{SeDuMi} & SDP, SOCP & Interior-Point & Free (GPL) & Established MATLAB solver for Linear Matrix Inequality(LMI)-based control and stability analysis. \\
+		\textbf{IPOPT} & NLP & Interior-Point & Free (EPL) & Large-scale nonlinear optimisation (NMPC). Standard engine for CasADi. \\
+		\textbf{SNOPT} & NLP & SQP & Commercial & Highly nonlinear, non-convex problems (e.g., aerospace trajectory planning). \\
+		\textbf{ECOS} & SOCP, LP & Interior-Point & Free (GPL) & Lightweight, embedded-friendly Second-Order Cone solver. \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+
+
+\section{Solving Optimisation Problems: From Theory to Code}
+
+Mathematical formulation is only half the battle. To deploy Model Predictive Control, we must translate these equations into code that a computer can solve. In this section, we explore a complex energy management system as an example.
+
+
+\subsection{Economic MPC for Smart Grids}
+
+In this  example, we explore a sophisticated application of optimisation: \textbf{Economic Energy Management}.  The goal here is purely economic: minimise the total cost of electricity over a 24-hour horizon.
+
+\subsubsection{Problem Scenario}
+Although the general problem formulation (the MILP discussed earlier) included complex generator logic, for this MATLAB example we will solve a simplified but highly relevant subset: {Battery Energy Arbitrage}.
+
+Consider a home with:
+\begin{itemize}
+	\item \textbf{Load ($P_{load}$):} The household power consumption (lighting, appliances).
+	\item \textbf{Solar Generation ($P_{solar}$):} Free renewable energy available during the day.
+	\item \textbf{Battery Storage:} A unit capable of storing energy ($E_{bat}$) to bridge the gap between supply and demand.
+	\item \textbf{Grid Connection:} Allows buying power when needed or selling excess power.
+\end{itemize}
+
+\textbf{The Challenge:} Electricity prices fluctuate throughout the day (Time-of-Use pricing). Prices are low at night and high in the evening. We must decide the optimal battery charge/discharge schedule to minimise the daily bill.
+
+\subsubsection{Mathematical Formulation}
+We define the discrete time step $\Delta t = 1$ hour and the horizon $N=24$ hours.
+
+\textbf{1. Variables:}
+\begin{itemize}
+	\item $P_{grid}(k)$: Power exchanged with the grid (kW). Positive = Buy, Negative = Sell.
+	\item $P_{bat}(k)$: Battery charging power (kW). Positive = Charge, Negative = Discharge.
+	\item $E_{bat}(k)$: Energy stored in the battery (kWh).
+\end{itemize}
+
+\textbf{2. The Objective Function:}
+Minimise the cumulative cost of grid usage:
+\begin{equation}
+	\min_{P_{bat}, P_{grid}} \sum_{k=0}^{N-1} \text{Price}(k) \times P_{grid}(k) \cdot \Delta t
+\end{equation}
+
+\textbf{3. Constraints:}
+\begin{align}
+	\text{Power Balance:} \quad & P_{grid}(k) + P_{solar}(k) = P_{load}(k) + P_{bat}(k) \\
+	\text{Dynamics:} \quad & E_{bat}(k+1) = E_{bat}(k) + P_{bat}(k) \cdot \Delta t \\
+	\text{Capacity Limits:} \quad & E_{min} \leq E_{bat}(k) \leq E_{max} \\
+	\text{Power Limits:} \quad & P_{min} \leq P_{bat}(k) \leq P_{max}
+\end{align}
+
+\subsubsection{Implementation (MATLAB \& YALMIP)}
+We use YALMIP to translate this word problem into a numerical format. Since this problem is purely continuous, we solve it as a Linear Programme (LP) using \texttt{quadprog} (with zero quadratic cost) or \texttt{linprog}.
+
+\begin{lstlisting}[language=Matlab]
+	% --- 1. System Parameters ---
+	N = 24;                 % Horizon (24 hours)
+	E_cap = 13.5;           % Battery Capacity (kWh, e.g., Tesla Powerwall)
+	P_max = 5;              % Max Charge/Discharge rate (kW)
+	dt = 1;                 % Time step (1 hour)
+	
+	% --- 2. Forecast Data (Profiles) ---
+	% Price: 0.10 (Off-peak), 0.30 (Peak: 17:00-21:00)
+	Price = 0.10 * ones(N,1);  Price(18:21) = 0.30; 
+	
+	% Solar: Peak at noon (simple sine wave approx)
+	t = (0:N-1)';
+	Solar = max(0, 4 * sin(pi * (t - 6) / 12)); 
+	
+	% Load: Peaks in morning and evening
+	Load = 1 + 2 * exp(-(t-19).^2/10) + 1 * exp(-(t-8).^2/5);
+	
+	% --- 3. Optimisation Variables ---
+	P_grid = sdpvar(N, 1);   % Grid Power
+	P_bat  = sdpvar(N, 1);   % Battery Power
+	E_bat  = sdpvar(N+1, 1); % Battery State of Charge
+	
+	% --- 4. Constraints Construction ---
+	C = [];
+	
+	% Start with empty battery (Assumption for this specific day)
+	% In real MPC, E_bat(1) would equal the measured sensor value.
+	C = [C, E_bat(1) == 0]; 
+	
+	for k = 1:N
+		% Dynamics: Energy integration
+		C = [C, E_bat(k+1) == E_bat(k) + P_bat(k) * dt];
+	
+		% Power Balance: Supply (Grid+Solar) = Demand (Load+BatteryCharge)
+		C = [C, P_grid(k) + Solar(k) == Load(k) + P_bat(k)];
+	
+		% Physical Constraints
+		C = [C, 0 <= E_bat(k+1) <= E_cap]; % Capacity limits
+		C = [C, -P_max <= P_bat(k) <= P_max]; % Power limits
+	end
+	
+	% --- 5. Objective: Minimise Total Cost ---
+	Objective = Price' * P_grid;
+	
+	% --- 6. Solve ---
+	ops = sdpsettings('solver','quadprog','verbose',0);
+	sol = optimize(C, Objective, ops);
+\end{lstlisting}
+
+
+\subsubsection{Visualising the Result}
+
+The result is best understood visually (Figure \ref{fig:smartgrid}). 
+\begin{enumerate}
+	\item \textbf{Pre-Charging:} Notice that between 00:00 and 06:00, the battery charges (blue bars positive) even though the sun isn't shining. It buys cheap electricity to store it.
+	\item \textbf{Peak Shaving:} During the peak price window (17:00--21:00), the battery discharges (blue bars negative). The optimiser "decided" to sell the stored energy to avoid paying the high grid price, drastically reducing the bill.
+\end{enumerate}
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=1\linewidth]{Figures/energy_management}
+	\caption{\textbf{Economic Optimisation Results.} \textbf{Top:} The Time-of-Use price signal with a peak period between hours 17:00 and 21:00. \textbf{Middle:} Visual verification of the power balance equation ($P_{grid} + P_{solar} = P_{load} + P_{bat}$). Note the \textbf{Grid usage (Red line)}: the system buys power at night to pre-charge the battery (positive red step) and sells power back to the grid during the peak price window (negative red step), effectively performing energy arbitrage. \textbf{Bottom:} The state of charge trajectory, showing the battery filling up in anticipation of the price spike and emptying completely to maximise revenue.}
+	\label{fig:smartgrid}
+\end{figure}
+
+\section{Key Takeaways}
+\begin{itemize}
+	\item \textbf{Optimisation is Translation:} MPC translates qualitative engineering goals (e.g., ``drive fast but don't crash'') into quantitative mathematical statements (e.g., ``minimise travel time subject to velocity limits'').
+\item \textbf{The Scalar Score:} An algorithm cannot minimise a vector or a list of conflicting goals. The \emph{objective function} $J(x)$ serves to compress complex multi-variable decisions into a single scalar number (a cost), allowing different control strategies to be ranked and compared.
+
+\item \textbf{Constraints Define Reality:} Unlike classical control, where saturation is often an afterthought, optimisation explicitly handles physical limitations. The \emph{feasible set} is the intersection of all equality and inequality constraints. If this set is empty, the problem is infeasible, and no solution exists.
+
+\item \textbf{Convexity:} The most critical property of an optimisation problem is convexity. If the objective function is convex (bowl-shaped) and the constraints form a convex set, any local minimum found is guaranteed to be the \textbf{global minimum}. This reliability is essential for safety-critical control systems.
+
+\item \textbf{Standard Forms:}
+\begin{itemize}
+	\item \textbf{LP (Linear Programme):} Linear cost and constraints. extremely fast; used for economic dispatch and simple regulation.
+	\item \textbf{QP (Quadratic Programme):} Quadratic cost (energy/error) and linear constraints. This is the standard formulation for linear MPC.
+	\item \textbf{MILP (Mixed-Integer):} Contains discrete decisions (On/Off). Computationally expensive but necessary for logic-based control.
+\end{itemize}
+
+\item \textbf{Minimisation vs. Maximisation:} Solvers generally seek to minimise cost. To maximise a benefit (like profit), we simply minimise the negative of that function:
+\[ \arg \max f(x) \equiv \arg \min (-f(x)) \]
+\end{itemize}
+
+\section*{Exercises}
+\begin{enumerate}
+	\item \textbf{Convex Sets and Functions.}
+	Determine whether each of the following sets is convex. Justify your answer using the definition $\lambda x + (1-\lambda)y \in \mathcal{X}$ for all $\lambda \in [0,1]$ and all $x, y \in \mathcal{X}$.
+	\begin{enumerate}
+		\item $\mathcal{X}_1 = \{x \in \mathbb{R}^2 \mid x_1^2 + x_2^2 \leq 4\}$
+		\item $\mathcal{X}_2 = \{x \in \mathbb{R}^2 \mid x_1^2 + x_2^2 \geq 1\}$
+		\item $\mathcal{X}_3 = \{x \in \mathbb{R}^2 \mid 2x_1 + 3x_2 \leq 6, \ x_1 \geq 0, \ x_2 \geq 0\}$
+	\end{enumerate}
+	Furthermore, determine whether $f(x) = 5x_1^2 - 4x_1 x_2 + 3x_2^2$ is convex by computing its Hessian and checking the eigenvalues.
+
+	\item \textbf{Gradient and Hessian Computation.}
+	Consider the function
+	\[
+	J(x) = 4x_1^2 + 6x_1 x_2 + 8x_2^2 - 10x_1 + 2x_2.
+	\]
+	\begin{enumerate}
+		\item Compute the gradient $\nabla J(x)$ and find the stationary point by solving $\nabla J(x) = 0$.
+		\item Compute the Hessian matrix $H = \nabla^2 J(x)$.
+		\item Determine whether $H$ is positive definite, positive semidefinite, or indefinite. What does this imply about the stationary point found in~(a)?
+	\end{enumerate}
+
+	\item \textbf{Optimality Conditions for Equality-Constrained Problems.}
+	Consider the problem
+	\begin{equation*}
+		\begin{aligned}
+			\min_{x \in \mathbb{R}^2} \quad & J(x) = x_1^2 + x_2^2 \\
+			\text{s.t.} \quad & h(x) = 3x_1 + x_2 - 6 = 0.
+		\end{aligned}
+	\end{equation*}
+	\begin{enumerate}
+		\item Sketch the level curves of $J(x)$ and the constraint line $h(x)=0$ in the $(x_1, x_2)$-plane.
+		\item Write down the Lagrangian $\mathcal{L}(x, \lambda) = J(x) + \lambda\, h(x)$ and derive the first-order (KKT) necessary conditions $\nabla_x \mathcal{L} = 0$ and $h(x) = 0$.
+		\item Solve the resulting system of equations for $x_1^*$, $x_2^*$, and the Lagrange multiplier $\lambda^*$.
+	\end{enumerate}
+
+	\item \textbf{KKT Conditions with Inequality Constraints.}
+	A process engineer wishes to minimise the cost function $J(x) = (x_1 - 4)^2 + (x_2 - 3)^2$ subject to:
+	\begin{equation*}
+		\begin{aligned}
+			g_1(x) &= x_1 + x_2 - 5 \leq 0 \\
+			g_2(x) &= -x_1 \leq 0 \\
+			g_3(x) &= -x_2 \leq 0
+		\end{aligned}
+	\end{equation*}
+	\begin{enumerate}
+		\item Sketch the feasible set $S$ and the level curves of $J(x)$.
+		\item State the full Karush--Kuhn--Tucker (KKT) conditions for this problem, including stationarity, primal feasibility, dual feasibility, and complementary slackness.
+		\item Identify which constraints are active at the optimum and solve for the optimal point $x^*$ and the associated multipliers.
+	\end{enumerate}
+
+	\item \textbf{Linear Programme Formulation.}
+	A small factory produces two products, A and B, using two machines. The relevant data is given below:
+	\begin{center}
+		\begin{tabular}{lccc}
+			\toprule
+			& Machine~1 (hrs/unit) & Machine~2 (hrs/unit) & Profit (\pounds/unit) \\
+			\midrule
+			Product A & 2 & 1 & 8 \\
+			Product B & 1 & 3 & 6 \\
+			\midrule
+			Available & 10 hrs & 12 hrs & \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+	\begin{enumerate}
+		\item Formulate the problem of maximising total profit as a Linear Programme. Clearly state the decision variables, objective function, and all constraints (including non-negativity).
+		\item Convert the maximisation problem to an equivalent minimisation problem in the standard form $\min\, c^\top x$ subject to $Gx \leq h$.
+		\item Identify the matrices $c$, $G$, and $h$ explicitly.
+	\end{enumerate}
+
+	\item \textbf{Quadratic Programme: Standard Form and Convexity.}
+	Consider the following optimisation problem arising from a simplified MPC formulation:
+	\begin{equation*}
+		\begin{aligned}
+			\min_{u \in \mathbb{R}^2} \quad & J(u) = 3u_1^2 + 2u_1 u_2 + 4u_2^2 - 8u_1 - 6u_2 \\
+			\text{s.t.} \quad & u_1 + u_2 \leq 5 \\
+			& 0 \leq u_1 \leq 3 \\
+			& 0 \leq u_2 \leq 4
+		\end{aligned}
+	\end{equation*}
+	\begin{enumerate}
+		\item Rewrite the objective in the standard QP form $\frac{1}{2} u^\top P u + q^\top u$ by identifying the matrices $P$ and $q$.
+		\item Show that $P$ is positive definite (and hence the problem is convex) by computing its eigenvalues.
+		\item Express all constraints in the standard inequality form $Gu \leq h$ and identify the matrices $G$ and $h$.
+		\item Write a short YALMIP script (or \texttt{quadprog} call) that solves this QP in MATLAB.
+	\end{enumerate}
+
+	\item \textbf{From Engineering to Optimisation: Satellite Fuel Minimisation.}
+	A satellite has two thrusters providing control inputs $u_1$ and $u_2$ (in Newtons). The discrete-time dynamics of its position $x \in \mathbb{R}^2$ are given by:
+	\[
+	x_{k+1} = A x_k + B u_k, \qquad A = \begin{bmatrix} 1 & 0.5 \\ 0 & 1 \end{bmatrix}, \quad B = \begin{bmatrix} 0.125 \\ 0.5 \end{bmatrix}.
+	\]
+	The satellite must reach a desired steady-state position $x_{\mathrm{ss}}$ satisfying $(I-A)x_{\mathrm{ss}} = B u_{\mathrm{ss}}$, while minimising the total fuel consumption $\|u_{\mathrm{ss}}\|_1$, subject to $-10 \leq u_{\mathrm{ss}} \leq 10$.
+	\begin{enumerate}
+		\item Show that the steady-state equilibrium condition leads to an equality constraint that is linear in $(x_{\mathrm{ss}}, u_{\mathrm{ss}})$.
+		\item Using the epigraph trick described in this chapter, reformulate the 1-norm minimisation as a Linear Programme with decision variables $(x_{\mathrm{ss}}, u_{\mathrm{ss}}, t)$.
+		\item Write down all the constraints explicitly, including the equilibrium condition, actuator bounds, and the auxiliary norm linearisation constraints $-t \leq u_{\mathrm{ss}} \leq t$.
+	\end{enumerate}
+\end{enumerate}

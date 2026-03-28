@@ -1,0 +1,76 @@
+\chapter*{Foreword}
+\addcontentsline{toc}{chapter}{Foreword}
+
+Model Predictive Control (MPC) is an optimisation-based control methodology. By explicitly exploiting a dynamical model of the system, MPC predicts future behaviour and determines control actions by solving a constrained optimisation problem in real time. This distinguishes MPC from classical feedback controllers such as PID or lead--lag compensators, which rely on fixed control laws designed offline.
+
+Initially developed in the process industries~\cite{Qin2003}, MPC has since been adopted in robotics (trajectory tracking under actuator limits), autonomous vehicles (path planning with obstacle avoidance), and aerospace (powered descent guidance under thrust constraints). Its ability to handle multivariable dynamics and hard constraints within a single optimisation framework makes it applicable wherever classical single-loop controllers reach their limits.
+
+These lecture notes have been prepared for the Model Predictive Control module delivered as
+part of the MSc Applied Instrumentation and Control programme at Glasgow Caledonian
+University. The material has been designed with a strongly practical emphasis. The primary
+objective is to introduce MPC in a way that allows students to apply the techniques they learn
+directly to realistic engineering problems, rather than treating MPC as a purely theoretical
+topic. Wherever possible, abstract concepts are motivated using physical intuition, illustrative
+examples, and implementation-oriented discussions.
+
+The notes are structured so that they can be followed either as guided lecture material or as a
+self-contained resource for independent study. A student who works through the notes
+sequentially should be able to acquire a working knowledge of MPC sufficient to model
+systems, formulate predictive control problems, and implement controllers using modern
+computational tools. To accommodate delivery within approximately three weeks,
+mathematical depth is deliberately balanced against clarity and applicability.
+
+\textbf{A note on the $^{(*)}$ symbol.} Chapters and sections marked with $^{(*)}$ in their
+title contain supplementary material that is not covered during the timetabled lectures.
+Specifically, this includes the formal stability theory section in the MPC chapter (recursive
+feasibility, terminal sets, and the Lyapunov stability proof), the Simulink implementation
+chapter (Chapter~\ref{chap:simulink_mpc}), the Robust and Tube MPC chapter
+(Chapter~\ref{chap:tube_mpc}), the Nonlinear MPC chapter
+(Chapter~\ref{chap:nmpc}), the MPC with Learning chapter
+(Chapter~\ref{chap:learning_mpc}), and the course conclusion and further topics chapter
+(Chapter~\ref{chap:conclusion}). These chapters and sections are included for completeness
+and for students who wish to deepen their understanding independently. The core assessed
+material is contained in the unmarked chapters and sections.
+
+\paragraph{Software prerequisites.}
+The MATLAB code throughout these notes requires:
+\begin{itemize}[noitemsep]
+  \item MATLAB R2018b or later (for \texttt{yline}, \texttt{tiledlayout}).
+  \item \textbf{Control System Toolbox} --- \texttt{ctrb}, \texttt{obsv}, \texttt{dlqr}, \texttt{dare}, \texttt{c2d}, \texttt{ss}.
+  \item \textbf{Optimization Toolbox} --- \texttt{quadprog}, \texttt{linprog}.
+  \item \textbf{YALMIP} (free, \url{https://yalmip.github.io}) --- used in every MPC chapter.
+  \item \textbf{MPT3} (free, \url{https://www.mpt3.org}) --- polytopic sets in Chapters~\ref{chap:linear_mpc} and~\ref{chap:tube_mpc}.
+  \item \textbf{CasADi} (free, \url{https://web.casadi.org}) --- nonlinear MPC in Chapter~\ref{chap:nmpc}.
+\end{itemize}
+Optional toolboxes: Statistics and Machine Learning Toolbox (\texttt{normpdf}, \texttt{normcdf}, \texttt{norminv}, \texttt{mvnrnd}), Deep Learning Toolbox (\texttt{fitnet}), and Simulink.
+
+Beyond the core assessed material, the notes include several supplementary chapters.
+Robust and Tube MPC is developed in full, including set operations, constraint tightening, worked examples, and MATLAB implementations. A dedicated chapter on Nonlinear MPC covers direct transcription, CasADi/IPOPT, successive convexification, and a powered rocket landing application. The chapter on MPC with Learning treats GP-MPC, Koopman MPC, DeePC, and Learning MPC with complete derivations and MATLAB code. The Simulink chapter demonstrates a closed-loop MPC simulation for a building energy system.
+
+A basic background in SISO control systems, state-space representations, linear algebra, and
+numerical computation is assumed. Familiarity with MATLAB is strongly recommended, as
+examples and implementations throughout the notes rely on MATLAB-based workflows.
+Several examples also use the YALMIP optimisation toolbox, which is freely available at
+\texttt{https://yalmip.github.io}. With this background, the material should be accessible
+to postgraduate students in control, instrumentation, and related engineering disciplines.
+Two self-study appendices are included at the end of these notes: one reviewing the required
+linear algebra and one covering the probability theory used in the Kalman filter chapters.
+Distance learning students are encouraged to consult these appendices as needed.
+
+\begin{itemize}[nosep]
+\item \textbf{Chapter 1} introduces MPC and motivates the receding horizon principle through a building energy case study.
+\item \textbf{Chapter 2} covers optimisation: decision variables, cost functions, constraints, convexity, and problem classifications.
+\item \textbf{Chapter 3} develops the state-space framework, discretisation, and discrete-time stability.
+\item \textbf{Chapter 4} treats controllability and observability with rank conditions and MATLAB verification.
+\item \textbf{Chapter 5} formulates LQR as a finite-horizon optimisation, derives the Riccati recursion and infinite-horizon LQR.
+\item \textbf{Chapter 6} derives the Kalman filter, covers duality and covariance tuning.
+\item \textbf{Chapter 7} presents the standard linear MPC formulation, receding horizon, stability theory$^{(*)}$, explicit MPC$^{(*)}$, and reference tracking MPC$^{(*)}$.
+\item \textbf{Chapter 8} extends MPC to output-feedback and offset-free tracking via disturbance modelling and target calculation.
+\item \textbf{Chapter 9$^{(*)}$} demonstrates MPC implementation in Simulink with a four-zone building heating case study.
+\item \textbf{Tube MPC$^{(*)}$} develops robust MPC for bounded disturbances with Minkowski sums, constraint tightening, and MPT3 code.
+\item \textbf{Nonlinear MPC$^{(*)}$} covers direct transcription, CasADi/IPOPT, SCvx, GuSTO, rocket landing, and Real-Time Iteration.
+\item \textbf{MPC with Learning$^{(*)}$} treats GP-MPC, Koopman MPC, DeePC, and Learning MPC with worked examples and MATLAB code.
+\item \textbf{Conclusion$^{(*)}$} surveys further topics and provides pointers for advanced study.
+\end{itemize}
+
+These notes aim to give students the skills to implement MPC on constrained engineering systems.
