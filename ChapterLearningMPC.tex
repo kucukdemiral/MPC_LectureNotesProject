@@ -1660,6 +1660,43 @@ The term $+1.5 \cdot \Delta t_{\mathrm{look}}$ is a deceleration budget: the car
 
 \paragraph{Step~4: Execute.} The computed target speed is passed to the pure pursuit controller~\eqref{eq:pp_steering}--\eqref{eq:pp_throttle}, which returns the steering angle $\delta$ and throttle command~$D$.
 
+Algorithm~\ref{alg:nnmpc} summarises the complete NN-MPC procedure, combining the outer iterative learning loop with the inner control loop.
+
+\begin{algorithm}[ht]
+\caption{NN-MPC Iterative Learning for Autonomous Racing}
+\label{alg:nnmpc}
+\begin{algorithmic}[1]
+\Require Track centreline $\{(X(s), Y(s))\}$, vehicle model $f$, number of iterations $J$
+\Ensure Trajectories $\{\mathbf{x}^{(j)}, \mathbf{u}^{(j)}\}_{j=0}^{J-1}$ with non-increasing lap times
+
+\Statex \textbf{--- Iteration 0: Data Collection ---}
+\State Run one lap with pure pursuit at $v_{\mathrm{PP}} = 5$\,m/s using~\eqref{eq:pp_steering}--\eqref{eq:pp_throttle}
+\State Store trajectory $\{(\mathbf{x}_k^{(0)}, \mathbf{u}_k^{(0)}, s_k^{(0)})\}_{k=0}^{T_0}$
+\State Initialise safe set $\mathcal{SS}^0$ and cost-to-go $Q^0$
+
+\Statex \textbf{--- Iterations $j = 1, \ldots, J-1$: NN-MPC ---}
+\For{$j = 1$ \textbf{to} $J-1$}
+    \Statex \quad \textit{Train neural networks:}
+    \State Build binned speed targets $\bar{v}_b^{(j)}$ from $\mathcal{SS}^{j-1}$  \hfill \Comment{Eq.~\eqref{eq:bin_speed}}
+    \State Apply boost $\hat{v}_b^{(j)} = \bar{v}_b^{(j)} \cdot \beta_j$, cap by curvature $v_{\max}(s)$ \hfill \Comment{Eqs.~\eqref{eq:boost},~\eqref{eq:curv_limit}}
+    \State Train speed map $v_\theta(s)$ on binned data \hfill \Comment{MLPRegressor}
+    \State Train value function $V_\phi(\mathbf{x})$ on cost-to-go data \hfill \Comment{MLPRegressor}
+
+    \Statex \quad \textit{Run lap with learned controller:}
+    \For{each control step ($k = 0, 1, 2, \ldots$) until lap complete}
+        \State $v_{\mathrm{target}} \gets v_\theta(s_k)$ \hfill \Comment{Step 1: query speed map}
+        \State $v_{\mathrm{target}} \gets \min\!\bigl(v_{\mathrm{target}},\; v_\theta(s_k + v_x \Delta t_{\mathrm{look}}) + 1.5\,\Delta t_{\mathrm{look}}\bigr)$ \hfill \Comment{Step 2: lookahead braking}
+        \If{$V_\phi(\mathbf{x}_{\mathrm{fast}}) < V_\phi(\mathbf{x}_{\mathrm{slow}})$} \hfill \Comment{Step 3: value function check}
+            \State $v_{\mathrm{target}} \gets \min(1.05 \cdot v_{\mathrm{target}},\; v_{x,\max})$
+        \EndIf
+        \State Compute $\delta, D$ via pure pursuit~\eqref{eq:pp_steering}--\eqref{eq:pp_throttle} at $v_{\mathrm{target}}$ \hfill \Comment{Step 4: execute}
+        \State Apply $(\delta, D)$ to vehicle; integrate dynamics~\eqref{eq:racing_dynamics}
+    \EndFor
+    \State Store trajectory; update $\mathcal{SS}^j$ and $Q^j$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
 
 \subsubsection{Track-Keeping Mechanisms}
 
@@ -1736,7 +1773,11 @@ Table~\ref{tab:racing_results} summarises the iteration-by-iteration improvement
 \end{alertbox}
 
 \begin{notebox}{Running the simulation}
-	The companion Python script \texttt{lmpc\_racing.py} implements this example. It requires \texttt{numpy}, \texttt{scipy}, \texttt{scikit-learn}, and \texttt{matplotlib}. Students can modify the \texttt{USER SETTINGS} section to experiment with: the boost factor $\beta_j$ (\texttt{SPEED\_BOOST}), the curvature limit $a_{\mathrm{lat,max}}$ (\texttt{A\_LAT\_MAX}), the network architecture (\texttt{NN\_SPEED\_LAYERS}), the number of iterations, and the track choice (three tracks are included: a 13-waypoint custom circuit and two tracks from the MPCC benchmark~\cite{liniger2015optimization}). A Google Colab notebook is also available for browser-based execution.
+	The companion Python script \texttt{lmpc\_racing.py} implements this example. It requires \texttt{numpy}, \texttt{scipy}, \texttt{scikit-learn}, and \texttt{matplotlib}. Students can modify the \texttt{USER SETTINGS} section to experiment with: the boost factor $\beta_j$ (\texttt{SPEED\_BOOST}), the curvature limit $a_{\mathrm{lat,max}}$ (\texttt{A\_LAT\_MAX}), the network architecture (\texttt{NN\_SPEED\_LAYERS}), the number of iterations, and the track choice (three tracks are included: a 13-waypoint custom circuit and two tracks from the MPCC benchmark~\cite{liniger2015optimization}).
+
+	\medskip
+	\textbf{Code:} \url{https://kucukdemiral.github.io/lmpc_racing.py}\\
+	\textbf{Colab notebook:} \url{https://kucukdemiral.github.io/lmpc_racing.ipynb}
 \end{notebox}
 
 
