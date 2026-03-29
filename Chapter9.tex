@@ -1,5 +1,5 @@
 % ============================================================
-%  File: simulink_mpc_section.tex
+%  File: Chapter9.tex
 %  \input this file as a chapter.
 %  All environments reference the existing preamble; no extra
 %  \usepackage or \definecolor declarations are needed.
@@ -14,7 +14,7 @@
 		align=center, font=\small\bfseries\sffamily
 	},
 	slkblock/.default=2.8cm,
-	slkgreen/.style={slkblock=#1, draw=green!50!black, fill=green!8},
+	slkgreen/.style={slkblock=#1, draw=teal, fill=green!8},
 	slkgreen/.default=2.8cm,
 	slkred/.style={slkblock=#1, draw=red!70!black, fill=red!6},
 	slkred/.default=2.8cm,
@@ -218,14 +218,14 @@ The architecture that best reconciles Simulink's execution model with
 YALMIP's requirements separates the design into two layers, as shown in
 Figure~\ref{fig:architecture}.
 
-\textbf{Layer 1 — the Simulink canvas} contains only standard Simulink
+\emph{Layer 1 — the Simulink canvas} contains only standard Simulink
 blocks and thin MATLAB Function wrapper blocks.  Each wrapper declares
 one helper function as extrinsic, pre-allocates its outputs, and
 forwards its inputs.  Signal routing, the feedback connection, noise
 injection, and input saturation are all handled by built-in Simulink
 blocks.
 
-\textbf{Layer 2 — the helper \texttt{.m} files} contain all
+\emph{Layer 2 — the helper \texttt{.m} files} contain all
 computation: observer updates, YALMIP calls, QP solves, and persistent
 state.  Because they execute in the full MATLAB interpreter they impose
 no restrictions on the code they contain.
@@ -282,10 +282,10 @@ no restrictions on the code they contain.
 				(simbox) {};
 			\end{scope}
 			\begin{scope}[on background layer]
-				\node[draw=green!50!black, fill=green!4, rounded corners=8pt,
+				\node[draw=teal, fill=green!4, rounded corners=8pt,
 				fit=(hgen)(hplant)(hctrl)(hbuild),
 				inner sep=12pt,
-				label={[font=\small\bfseries\sffamily\color{green!50!black}]
+				label={[font=\small\bfseries\sffamily\color{teal}]
 					above:{Layer 2 --- Helper \texttt{.m} Files (MATLAB Path)}}]
 				(helperbox) {};
 			\end{scope}
@@ -357,7 +357,7 @@ In any discrete-time closed-loop Simulink model of the form
 Plant~$\to$~Controller~$\to$~Plant, Simulink detects an
 \emph{algebraic loop}: computing the plant output $y_k$ requires
 the current input $u_k$, which itself requires $y_k$.  The standard
-remedy is to insert a \textbf{Unit Delay} block between the controller
+remedy is to insert a \emph{Unit Delay} block between the controller
 output (or the saturation block) and the plant input:
 
 \[
@@ -472,9 +472,9 @@ simulation.
 			\draw[slkarrow] (r4)--(r5);
 			
 			\begin{scope}[on background layer]
-				\node[draw=green!50!black, fill=green!4, rounded corners=6pt,
+				\node[draw=teal, fill=green!4, rounded corners=6pt,
 				fit=(r1)(r2)(r3)(r4)(r5), inner sep=10pt,
-				label={[font=\small\bfseries\sffamily\color{green!50!black}]
+				label={[font=\small\bfseries\sffamily\color{teal}]
 					above:Simulation Runtime}] {};
 			\end{scope}
 			
@@ -869,9 +869,9 @@ pipeline shown in Figure~\ref{fig:control_pipeline}.
 			
 			%% -- Persistent box --
 			\begin{scope}[on background layer]
-				\node[draw=green!50!black, fill=green!4, rounded corners=6pt,
+				\node[draw=teal, fill=green!4, rounded corners=6pt,
 				fit=(obs)(tgt)(mpc), inner sep=8pt,
-				label={[font=\small\bfseries\sffamily\color{green!50!black}]
+				label={[font=\small\bfseries\sffamily\color{teal}]
 					below:Persistent: \texttt{z\_est}, \texttt{u\_prev},
 					\texttt{target\_calc}, \texttt{mpc\_reg}, \texttt{L}}]
 				(persistbox) {};
@@ -1313,6 +1313,17 @@ produce a four-panel result plot matching Figure~\ref{fig:singlezone2}.
 		pressing \textit{Run}.
 	\end{enumerate}
 \end{summarybox}
+
+\section*{Chapter Summary}
+\begin{itemize}
+    \item Simulink integration allows MPC algorithms written in MATLAB to run inside block-diagram simulations alongside continuous-time plant models.
+    \item MATLAB Function blocks embed custom MATLAB code in Simulink and interface with the solver through input and output ports.
+    \item The \texttt{coder.extrinsic} directive marks functions (e.g.\ YALMIP calls) that cannot be compiled, forcing Simulink to evaluate them in the MATLAB interpreter at each time step.
+    \item Persistent variables declared inside a MATLAB Function block retain their values across simulation steps, enabling stateful operations such as observer updates.
+    \item The YALMIP \texttt{optimizer} object pre-compiles the QP structure once and accepts parameter updates at each call, significantly reducing per-step overhead in Simulink.
+    \item A building energy MPC case study demonstrates zone temperature regulation under occupancy-driven comfort constraints and time-varying electricity pricing.
+    \item The recommended simulation workflow includes model setup, controller block configuration, closed-loop wiring, and post-simulation plotting for verification.
+\end{itemize}
 
 % ─────────────────────────────────────────────────────────────
 \section*{Exercises}

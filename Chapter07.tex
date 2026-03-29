@@ -8,11 +8,11 @@
 	\hfill --- paraphrasing the receding horizon principle
 \end{quote}
 
-This chapter extends unconstrained optimal control (LQR) to handle physical limits. We define the Linear MPC problem, showing how actuator saturation and safety constraints are incorporated directly into the optimisation. We then cover the \textbf{Receding Horizon} principle, introduce the \textbf{YALMIP} toolbox for implementation, and analyse how the prediction horizon $N$ and the terminal cost $P$ affect closed-loop stability and performance.
+This chapter extends unconstrained optimal control (LQR) to handle physical limits. We define the Linear MPC problem, showing how actuator saturation and safety constraints are incorporated directly into the optimisation. We then cover the \emph{Receding Horizon} principle, introduce the \emph{YALMIP} toolbox for implementation, and analyse how the prediction horizon $N$ and the terminal cost $P$ affect closed-loop stability and performance.
 
 \section{Motivation: The Need for Constraints}
 
-In the previous chapters, we derived the Linear Quadratic Regulator (LQR). This method provides a closed-form solution to the optimal control problem, yielding a static feedback gain matrix $K$. However, LQR relies on a critical, often unrealistic assumption: \textbf{the system operates in an unconstrained linear world.}
+In the previous chapters, we derived the Linear Quadratic Regulator (LQR). This method provides a closed-form solution to the optimal control problem, yielding a static feedback gain matrix $K$. However, LQR relies on a critical, often unrealistic assumption: \emph{the system operates in an unconstrained linear world.}
 
 In physical reality, every engineering system has limits:
 \begin{itemize}
@@ -31,7 +31,7 @@ A common naive approach is to design an LQR controller and simply \emph{clip} or
 While this works for small disturbances, it breaks the mathematical guarantee of optimality and stability. Saturating the input effectively turns a linear system into a non-linear one. If the LQR controller requests a strong braking force to stabilise a fast-moving vehicle, but the actuator saturates, the vehicle may overshoot or become unstable because the "planned" energy dissipation did not occur.
 
 \subsection*{From Offline Gains to Online Optimisation}
-\textbf{Model Predictive Control (MPC)} fundamentally alters this approach. Instead of calculating a control law \textit{offline} (like the LQR gain $K$), MPC solves a constrained optimisation problem \textit{online} at every time step.
+\emph{Model Predictive Control (MPC)} fundamentally alters this approach. Instead of calculating a control law \textit{offline} (like the LQR gain $K$), MPC solves a constrained optimisation problem \textit{online} at every time step.
 
 By incorporating the constraints directly into the prediction model, MPC "knows" about the limits in advance. It does not blindly request impossible inputs; instead, it plans a trajectory that rides the very edge of the feasible region without crossing it. This capability—to operate safely and optimally against constraints—is what makes MPC the standard in advanced industrial control.
 
@@ -67,19 +67,19 @@ Where:
 \end{itemize}
 
 \section{The Receding Horizon Principle}
-The defining feature of MPC is its \textbf{Receding Horizon} strategy. Rather than computing a single fixed trajectory from start to finish, the controller operates in a loop:
+The defining feature of MPC is its \emph{Receding Horizon} strategy. Rather than computing a single fixed trajectory from start to finish, the controller operates in a loop:
 
 \begin{enumerate}
 	\item \textbf{Measure:} Obtain the current state $x(t)$.
 	\item \textbf{Solve:} Compute the optimal sequence $\{u_0, u_1, \dots, u_{N-1}\}$ by solving the constrained optimisation problem (\ref{eq:mpc_cost}).
-	\item \textbf{Apply:} Inject \textbf{only the first input} $u_0$ into the system. The rest of the sequence is discarded.
+	\item \textbf{Apply:} Inject \emph{only the first input} $u_0$ into the system. The rest of the sequence is discarded.
 	\item \textbf{Recede:} Wait for the next sampling instant $t+1$, measure the new state $x(t+1)$, and repeat the process.
 \end{enumerate}
 
-By re-solving the problem at every time step based on fresh measurements, the MPC converts an open-loop optimal plan into a \textbf{closed-loop feedback strategy}, capable of rejecting disturbances and correcting model mismatches.
+By re-solving the problem at every time step based on fresh measurements, the MPC converts an open-loop optimal plan into a \emph{closed-loop feedback strategy}, capable of rejecting disturbances and correcting model mismatches.
 
 \begin{examplebox}{Hand-Worked MPC: Scalar Integrator with Constraints}
-We now solve the MPC problem \textbf{entirely by hand} to make the mechanics concrete before moving to MATLAB.
+We now solve the MPC problem \emph{entirely by hand} to make the mechanics concrete before moving to MATLAB.
 
 \textbf{System:}
 \[
@@ -134,7 +134,7 @@ The manual approach above --- fixing the active constraint and solving the remai
 
 \textbf{Step 5 --- Apply the Receding Horizon:}
 
-We apply \textbf{only} $u_0^\star = -0.5$ and \textbf{discard} $u_1^\star = -0.25$.
+We apply \emph{only} $u_0^\star = -0.5$ and \emph{discard} $u_1^\star = -0.25$.
 
 The plant advances: $x_1 = 0.5$. We now re-measure and re-solve with $x_0 = 0.5$.
 
@@ -165,14 +165,14 @@ Step $t$ & $x(t)$ & $u^\star_0$ & Constraint active? \\
 
 \section{Efficient Implementation via YALMIP}
 
-To implement MPC, we utilise \textbf{YALMIP}~\cite{Lofberg2004}, a MATLAB toolbox that allows us to define optimisation problems using high-level symbolic code.
+To implement MPC, we utilise \emph{YALMIP}~\cite{Lofberg2004}, a MATLAB toolbox that allows us to define optimisation problems using high-level symbolic code.
 
-A naive implementation would define and solve the problem from scratch inside the simulation loop. This is computationally prohibitive because YALMIP would need to re-parse the mathematical structure every few milliseconds. Instead, we use a technique known as \textbf{Parametric Programming}.
+A naive implementation would define and solve the problem from scratch inside the simulation loop. This is computationally prohibitive because YALMIP would need to re-parse the mathematical structure every few milliseconds. Instead, we use a technique known as \emph{Parametric Programming}.
 
-We construct the problem \textbf{once} offline, treating the initial state $x_0$ as a symbolic \textbf{parameter}. The YALMIP \texttt{optimizer} object then maps this parameter to the optimal decision variables, allowing for extremely fast execution during the simulation.
+We construct the problem \emph{once} offline, treating the initial state $x_0$ as a symbolic \emph{parameter}. The YALMIP \texttt{optimizer} object then maps this parameter to the optimal decision variables, allowing for extremely fast execution during the simulation.
 
 \section{Stability and the Terminal Cost}
-Before writing the code that solves standard MPC, we must ensure stability~\cite{Mayne2000}. For a finite horizon $N$, MPC is not automatically guaranteed to stabilise the system. To address this, we include a \textbf{Terminal Cost} weighted by a matrix $Q_N$:
+Before writing the code that solves standard MPC, we must ensure stability~\cite{Mayne2000}. For a finite horizon $N$, MPC is not automatically guaranteed to stabilise the system. To address this, we include a \emph{Terminal Cost} weighted by a matrix $Q_N$:
 \begin{equation*}
 	J_{term} = x_N^\top Q_N x_N
 \end{equation*}
@@ -373,7 +373,7 @@ The following script demonstrates the complete setup. Note that MATLAB uses 1-ba
 
 	\begin{center}
 	\includegraphics[width=0.7\linewidth]{Figures/Simple_MPC}
-	\captionof{figure}{\textbf{MPC Regulation of an Unstable Oscillatory System.} 
+	\captionof{figure}{\emph{MPC Regulation of an Unstable Oscillatory System.}
 		The top plot displays the state trajectories starting from $x_0 = [1; -2]^\top$. The characteristic "zig-zag" behaviour is caused by the negative eigenvalue $\lambda = -1.5$, while the instability drives the amplitude growth. 
 		The bottom plot shows the control effort. The MPC controller effectively "clamps" the input to the constraint boundary ($u_{\min} = -5$) for the first 16 steps to counteract the unstable dynamics. Once the system energy is sufficiently reduced (around $t=18$), the control signal enters the linear region and smoothly drives the states to the origin.}
 	\label{fig:simplempc}
@@ -404,12 +404,12 @@ We can solve this problem in two ways:
 	\item \textbf{Add Terminal Cost $P$:} This adds an "artificial" cost to the end of the horizon. By setting $P$ equal to the infinite-horizon LQR cost, we trick the controller into thinking it plans for eternity, even if $N$ is small.
 \end{enumerate}
 
-While short horizons can lead to instability, a more common issue in practice is \textbf{Performance Degradation}. If the control authority is "expensive" (high $R$) and the horizon is short, the controller becomes "lazy."
+While short horizons can lead to instability, a more common issue in practice is \emph{Performance Degradation}. If the control authority is "expensive" (high $R$) and the horizon is short, the controller becomes "lazy."
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.9\linewidth]{Figures/Effect_of_N.pdf} 
-	\caption{\textbf{Performance Degradation with Short Horizons.} The system starts at $x_0=4$ with expensive control ($R=10$). The Short Horizon controller (Red) tries to save control effort in the short term as it cannot see long enough, leading to extremely slow convergence. The Terminal Cost controller (Green) recognises the long-term value of aggressive action, matching the performance of the Long Horizon controller (Blue).}
+	\caption{\emph{Performance Degradation with Short Horizons.} The system starts at $x_0=4$ with expensive control ($R=10$). The Short Horizon controller (Red) tries to save control effort in the short term as it cannot see long enough, leading to extremely slow convergence. The Terminal Cost controller (Green) recognises the long-term value of aggressive action, matching the performance of the Long Horizon controller (Blue).}
 	\label{fig:mpc_lazy}
 \end{figure}
 
@@ -437,7 +437,7 @@ While short horizons can lead to instability, a more common issue in practice is
 		By adding the Terminal Cost ($P$) or extending the horizon ($N=10$), the controller accounts for the \emph{infinite tail} of the cost function. It realises that while braking hard ($u=-1$) is expensive \textit{now}, it is the only way to minimise the sum of squared errors over the long run. Consequently, it acts aggressively, driving the state to zero in minimal time.
 	\end{itemize}
 	
-	\textbf{Conclusion:} The Terminal Cost $P$ is not just a stability anchor; it is a crucial tuning parameter that restores \textbf{long-term optimality} to short-horizon controllers.
+	\textbf{Conclusion:} The Terminal Cost $P$ is not just a stability anchor; it is a crucial tuning parameter that restores \emph{long-term optimality} to short-horizon controllers.
 \end{examplebox}
 
 % ================================================================
@@ -454,7 +454,7 @@ Consider the MPC cost function:
 \[
 J = \sum_{k=0}^{N-1} \bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) + x_N^\top P\, x_N
 \]
-The terminal cost $x_N^\top P\, x_N$ is supposed to represent the cost of controlling the system from $x_N$ to the origin \textit{after} the horizon ends. This representation is exact when the LQR controller $u = -Kx$ is applied from step $N$ onward \textbf{and no constraints are violated} during that infinite tail.
+The terminal cost $x_N^\top P\, x_N$ is supposed to represent the cost of controlling the system from $x_N$ to the origin \textit{after} the horizon ends. This representation is exact when the LQR controller $u = -Kx$ is applied from step $N$ onward \emph{and no constraints are violated} during that infinite tail.
 
 But nothing in the formulation above prevents $x_N$ from landing in a region where the LQR input $-Kx_N$ would violate the constraint $|u| \le u_{\max}$. If that happens, the terminal cost $P$ is wrong --- it promises a future cost that cannot actually be achieved without breaking the constraints.
 
@@ -462,8 +462,8 @@ This is not only a theoretical concern. When $x_N$ is large and the constraints 
 
 To close this gap, we need two things:
 \begin{enumerate}
-	\item A \textbf{terminal set} $\mathcal{X}_f$ --- a region of the state space where the LQR controller can operate indefinitely without violating any constraint.
-	\item A \textbf{terminal constraint} $x_N \in \mathcal{X}_f$ added to the MPC optimisation, which forces the predicted terminal state to land inside this safe region.
+	\item A \emph{terminal set} $\mathcal{X}_f$ --- a region of the state space where the LQR controller can operate indefinitely without violating any constraint.
+	\item A \emph{terminal constraint} $x_N \in \mathcal{X}_f$ added to the MPC optimisation, which forces the predicted terminal state to land inside this safe region.
 \end{enumerate}
 
 \subsection{Positive Invariant Sets}
@@ -471,7 +471,7 @@ To close this gap, we need two things:
 The terminal set $\mathcal{X}_f$ must have a very specific property: once the state enters $\mathcal{X}_f$, the LQR controller must keep it there forever, while satisfying all constraints at every future step. A set with this property is called \emph{positively invariant}.
 
 \begin{defnbox}{Definition: Positive Invariant Set}
-	A set $\mathcal{X}_f \subseteq \mathbb{R}^n$ is a \textbf{positive invariant set} for the closed-loop system $x_{k+1} = (A - BK)\,x_k$ under the terminal control law $u = -Kx$, subject to constraints $u \in \mathcal{U}$, $x \in \mathcal{X}$, if for every state $x \in \mathcal{X}_f$ the following three conditions hold:
+	A set $\mathcal{X}_f \subseteq \mathbb{R}^n$ is a \emph{positive invariant set} for the closed-loop system $x_{k+1} = (A - BK)\,x_k$ under the terminal control law $u = -Kx$, subject to constraints $u \in \mathcal{U}$, $x \in \mathcal{X}$, if for every state $x \in \mathcal{X}_f$ the following three conditions hold:
 	\begin{enumerate}[noitemsep]
 		\item The input $u = -Kx$ satisfies the input constraints: $-Kx \in \mathcal{U}$.
 		\item The next state satisfies the state constraints: $(A - BK)x \in \mathcal{X}$.
@@ -525,13 +525,13 @@ In fact, the state \textit{contracts} by a factor of $0.41$ at each step inside 
 
 We now modify the MPC formulation from Section~\ref{sec:mpc_formulation} by adding the terminal constraint. The optimisation becomes:
 
-\begin{align}
-	\min_{u} \quad & J = x_N^\top P\, x_N + \sum_{k=0}^{N-1} \bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) \nonumber \\
-	\text{s.t.} \quad & x_{k+1} = Ax_k + Bu_k, \quad k = 0, \ldots, N-1 \nonumber \\
-	& u_{\min} \le u_k \le u_{\max}, \quad k = 0, \ldots, N-1 \nonumber \\
-	& x_{\min} \le x_k \le x_{\max}, \quad k = 1, \ldots, N \nonumber \\
-	& \boxed{x_N \in \mathcal{X}_f} \label{eq:mpc_terminal}
-\end{align}
+\begin{align*}
+	\min_{u} \quad & J = x_N^\top P\, x_N + \sum_{k=0}^{N-1} \bigl(x_k^\top Q\, x_k + u_k^\top R\, u_k\bigr) \\
+	\text{s.t.} \quad & x_{k+1} = Ax_k + Bu_k, \quad k = 0, \ldots, N-1 \\
+	& u_{\min} \le u_k \le u_{\max}, \quad k = 0, \ldots, N-1 \\
+	& x_{\min} \le x_k \le x_{\max}, \quad k = 1, \ldots, N \\
+	& {x_N \in \mathcal{X}_f}
+\end{align*}
 
 The only difference from before is the last line. This extra constraint restricts where the prediction horizon is allowed to end. The QP becomes slightly more constrained, but in return it provides a formal stability guarantee.
 
@@ -539,13 +539,13 @@ For the scalar case, $x_N \in \mathcal{X}_f$ simply means $|x_N| \le 1/K$. For m
 
 \subsection{Recursive Feasibility}
 
-A controller is useless if it can solve the optimisation at time $t$ but not at time $t+1$. We need the guarantee that once the MPC problem is feasible, it \textit{stays} feasible forever. This property is called \textbf{recursive feasibility}.
+A controller is useless if it can solve the optimisation at time $t$ but not at time $t+1$. We need the guarantee that once the MPC problem is feasible, it \textit{stays} feasible forever. This property is called \emph{recursive feasibility}.
 
 \begin{defnbox}{Definition: Recursive Feasibility}
-	The MPC problem is \textbf{recursively feasible} if, whenever a feasible solution exists at time $t$, a feasible solution also exists at time $t+1$ after applying the optimal input $u_0^\star$ to the plant.
+	The MPC problem is \emph{recursively feasible} if, whenever a feasible solution exists at time $t$, a feasible solution also exists at time $t+1$ after applying the optimal input $u_0^\star$ to the plant.
 \end{defnbox}
 
-The proof uses a simple but powerful idea called the \textbf{shifted sequence}.
+The proof uses a simple but powerful idea called the \emph{shifted sequence}.
 
 \textbf{Setup.} Suppose at time $t$, the MPC solver returns the optimal input sequence:
 \[
@@ -590,7 +590,7 @@ Every constraint is met. The candidate $\tilde{u}$ is feasible. The solver is gu
 The stability proof requires $Q \succ 0$ (positive definite). If $Q \succeq 0$ is only positive semi-definite, stability still holds provided $(Q^{1/2}, A)$ is detectable --- i.e.\ no unstable mode of $A$ is invisible to the cost.
 \end{alertbox}
 
-We now show that the closed-loop system is \textbf{asymptotically stable}: the state converges to the origin. The argument uses the optimal cost $J^\star(x_t)$ as a \textbf{Lyapunov function}.
+We now show that the closed-loop system is \emph{asymptotically stable}: the state converges to the origin. The argument uses the optimal cost $J^\star(x_t)$ as a \emph{Lyapunov function}.
 
 A Lyapunov function is any function $V(x)$ that satisfies three conditions:
 \begin{enumerate}[noitemsep]
@@ -686,15 +686,15 @@ The following table summarises the three levels of MPC design, from simplest to 
 \end{tabular}
 \end{center}
 
-For an MSc-level course and most industrial applications, using $Q_N = P$ with a sufficiently long horizon is the standard approach. The rigorous formulation with $\mathcal{X}_f$ is used when formal certification is required (e.g., aerospace, medical devices) or when the horizon $N$ must be kept very short for computational reasons.
+For most practical applications, using $Q_N = P$ with a sufficiently long horizon is the standard approach. The rigorous formulation with $\mathcal{X}_f$ is used when formal certification is required (e.g., aerospace, medical devices) or when the horizon $N$ must be kept very short for computational reasons.
 
 \subsection{Why Terminal Set Size Matters}
 
 The size of $\mathcal{X}_f$ directly controls the set of initial states from which MPC can find a feasible solution. Understanding this trade-off is important for controller design.
 
-\textbf{A small terminal set} means $\mathcal{X}_f$ is a tight region around the origin. The MPC must drive $x_N$ into this small target within $N$ steps, which is harder. The consequence: fewer initial states lead to a feasible problem, and a longer horizon $N$ may be needed to compensate.
+\emph{A small terminal set} means $\mathcal{X}_f$ is a tight region around the origin. The MPC must drive $x_N$ into this small target within $N$ steps, which is harder. The consequence: fewer initial states lead to a feasible problem, and a longer horizon $N$ may be needed to compensate.
 
-\textbf{A large terminal set} means $\mathcal{X}_f$ covers more of the state space. The MPC has an easier target for $x_N$, so feasibility is maintained for a wider range of initial conditions, even with a short horizon.
+\emph{A large terminal set} means $\mathcal{X}_f$ covers more of the state space. The MPC has an easier target for $x_N$, so feasibility is maintained for a wider range of initial conditions, even with a short horizon.
 
 However, there is an upper limit: $\mathcal{X}_f$ cannot exceed the \emph{maximal positive invariant set} for the closed-loop system $(A-BK)$ under the given constraints. Any state outside this maximal set will eventually be driven to a constraint violation by the LQR controller, so it cannot belong to $\mathcal{X}_f$.
 
@@ -733,7 +733,7 @@ For scalar systems, we computed $\mathcal{X}_f$ by hand in the earlier example. 
 
 The iteration is guaranteed to converge in a finite number of steps for stable closed-loop systems with polytopic constraints.
 
-In MATLAB, the \textbf{Multi-Parametric Toolbox 3 (MPT3)}~\cite{Herceg2013} automates this computation. MPT3 is a free toolbox available at \texttt{https://www.mpt3.org}. The following code computes $\mathcal{X}_f$ for a two-state system:
+In MATLAB, the \emph{Multi-Parametric Toolbox 3 (MPT3)}~\cite{Herceg2013} automates this computation. MPT3 is a free toolbox available at \texttt{https://www.mpt3.org}. The following code computes $\mathcal{X}_f$ for a two-state system:
 
 \begin{lstlisting}[language=Matlab, caption={Computing $\mathcal{X}_f$ using MPT3}]
 % System matrices
@@ -797,7 +797,7 @@ This chapter assumed that the full state $x_k$ is available for measurement. In 
 
 Throughout this chapter, we solved the MPC optimisation problem \emph{online}: at every sampling instant, a QP solver computes $u_0^*$ before the next sample arrives. For systems with slow dynamics (sampling periods of seconds or longer), this works well. But consider a power converter switching at 100\,kHz, or a micro-electromechanical device with a 10\,$\mu$s control period. At these speeds, even a fast QP solver may not finish in time.
 
-Explicit MPC takes a different approach: solve the MPC problem \emph{once, offline}, for every possible initial state $x_0$. The result is a \textbf{piecewise affine} (PWA) control law
+Explicit MPC takes a different approach: solve the MPC problem \emph{once, offline}, for every possible initial state $x_0$. The result is a \emph{piecewise affine} (PWA) control law
 \[
 u^*(x_0) = K_i\, x_0 + k_i \quad \text{when } x_0 \in \mathcal{R}_i
 \]
@@ -805,7 +805,7 @@ where $\{\mathcal{R}_1, \mathcal{R}_2, \dots, \mathcal{R}_M\}$ is a partition of
 
 \subsection{Why the Optimal Law Is Piecewise Affine}
 
-The MPC problem from Section~\ref{sec:mpc_formulation} is a QP whose data depend on the initial state $x_0$. The cost is quadratic in the decision variables $u_0, \dots, u_{N-1}$, and all constraints (dynamics, input bounds, state bounds) are linear in both $u$ and $x_0$. This makes MPC a \textbf{parametric QP}: a QP parameterised by $x_0$.
+The MPC problem from Section~\ref{sec:mpc_formulation} is a QP whose data depend on the initial state $x_0$. The cost is quadratic in the decision variables $u_0, \dots, u_{N-1}$, and all constraints (dynamics, input bounds, state bounds) are linear in both $u$ and $x_0$. This makes MPC a \emph{parametric QP}: a QP parameterised by $x_0$.
 
 At any optimal solution, the KKT conditions partition the constraints into two groups:
 \begin{itemize}[nosep]
@@ -815,11 +815,11 @@ At any optimal solution, the KKT conditions partition the constraints into two g
 For a fixed set of active constraints, the KKT system reduces to linear equations in $(u, x_0)$. Solving gives $u^* = K_i x_0 + k_i$, an affine function of $x_0$. This law remains valid as long as $x_0$ does not move far enough to activate a new constraint or deactivate a current one. The set of all such states forms a convex polyhedron $\mathcal{R}_i$, called a \textit{critical region}.
 
 \begin{defnbox}{Explicit MPC Solution~\cite{Bemporad2002}}
-	The optimal control law $u^*(x_0)$ of a linear MPC problem with quadratic cost is a \textbf{continuous piecewise affine} function of $x_0$. The state space is partitioned into $M$ convex polyhedral \emph{critical regions} $\{\mathcal{R}_1, \dots, \mathcal{R}_M\}$, and within each region:
+	The optimal control law $u^*(x_0)$ of a linear MPC problem with quadratic cost is a \emph{continuous piecewise affine} function of $x_0$. The state space is partitioned into $M$ convex polyhedral \emph{critical regions} $\{\mathcal{R}_1, \dots, \mathcal{R}_M\}$, and within each region:
 	\[
 	u^*(x_0) = K_i\, x_0 + k_i, \qquad x_0 \in \mathcal{R}_i.
 	\]
-	The gains and regions $\{(K_i, k_i, \mathcal{R}_i)\}_{i=1}^M$ are computed offline by solving a \textbf{multi-parametric QP (mpQP)}.
+	The gains and regions $\{(K_i, k_i, \mathcal{R}_i)\}_{i=1}^M$ are computed offline by solving a \emph{multi-parametric QP (mpQP)}.
 \end{defnbox}
 
 Different active-set combinations produce different affine pieces. In one region the input constraint may be active; in an adjacent region, a state constraint takes over. The boundaries between regions are the hyperplanes where these transitions occur.
@@ -1031,7 +1031,7 @@ J_{\text{track}} = \sum_{k=0}^{N-1} \bigl(\delta x_k^\top Q\, \delta x_k + \delt
 	The offset-free MPC of Chapter~\ref{chap:output_fb_mpc} tracks a \emph{constant} setpoint by augmenting the model with a disturbance estimator and a target calculator. Here we address a fundamentally different problem: the reference changes at every time step, the full reference trajectory is assumed known over the prediction horizon, and no disturbance estimation is needed.
 \end{notebox}
 
-For a \textbf{linear time-invariant} system $x_{k+1} = Ax_k + Bu_k$ whose reference satisfies the same dynamics ($x^r_{k+1} = Ax^r_k + Bu^r_k$), subtracting yields:
+For a \emph{linear time-invariant} system $x_{k+1} = Ax_k + Bu_k$ whose reference satisfies the same dynamics ($x^r_{k+1} = Ax^r_k + Bu^r_k$), subtracting yields:
 \[
 \delta x_{k+1} = A\,\delta x_k + B\,\delta u_k.
 \]
@@ -1189,6 +1189,18 @@ The position errors (top-right subplot) show a transient phase during which the 
 		\item Apply $u_t = u^r_t + \delta u_0^*$ to the plant. Shift the horizon and repeat.
 	\end{enumerate}
 \end{summarybox}
+
+\section*{Chapter Summary}
+\begin{itemize}
+    \item Constrained MPC formulates the control problem as a finite-horizon optimisation with explicit inequality constraints on states and inputs.
+    \item The MPC optimisation is cast as a quadratic program (QP) by substituting the predicted state trajectory in terms of the initial state and the input sequence.
+    \item YALMIP provides a convenient MATLAB interface for defining decision variables, constraints, and objectives, and dispatching the resulting QP to a solver.
+    \item A terminal cost term, chosen as the solution to the discrete algebraic Riccati equation (DARE), approximates the infinite-horizon cost beyond the prediction window.
+    \item A terminal constraint set ensures that the state at the end of the horizon lies in a controlled-invariant region, guaranteeing recursive feasibility.
+    \item Closed-loop stability is established via a Lyapunov argument showing that the optimal cost decreases at each time step under the receding-horizon policy.
+    \item Explicit MPC pre-computes the optimal control law offline as a piecewise affine function of the state, enabling real-time implementation without online QP solves.
+    \item Reference tracking MPC reformulates the problem in terms of deviation variables around a target steady state, allowing the controller to follow time-varying setpoints.
+\end{itemize}
 
 \section*{Exercises}
 \begin{enumerate}

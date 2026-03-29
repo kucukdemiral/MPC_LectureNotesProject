@@ -6,11 +6,11 @@
 \label{chap:controllability}
 
 
-Now that we have established the state-space modelling framework (Chapter~\ref{chap:statespace}), we turn to two structural questions that determine whether a control or estimation design is even possible.
+With the state-space modelling framework from Chapter~\ref{chap:statespace} in hand, we address two structural questions that determine whether a control or estimation design is even possible.
 
-In previous chapters, we focused on the machinery of optimisation—how to select the \textit{best} input to minimise a cost function. However, before asking "what is the optimal trajectory?", we must answer a more fundamental question: "does a valid trajectory exist?"
+Earlier chapters developed the tools of optimisation and state-space modelling. Before asking ``what is the optimal trajectory?'', we must answer a more basic question: ``does a valid trajectory exist?''
 
-This chapter introduces the twin structural properties of \textbf{controllability} and \textbf{observability}. These concepts define the physical limitations of what a control system can achieve, regardless of the sophistication of the algorithm used.
+This chapter introduces the twin structural properties of \emph{controllability} and \emph{observability}. These concepts define the physical limitations of what a control system can achieve, regardless of the sophistication of the algorithm used.
 
 \begin{itemize}
 	\item \textbf{Controllability} answers the question of \textit{actuation}: Is it possible to steer the system from its current state to any desired target state using the available inputs? If a system is unreachable, no amount of mathematical optimisation can force it to the target.
@@ -55,16 +55,16 @@ Does a solution $\mathcal{U}$ exist for any desired vector ${b} = x_N - A^N x_0$
 \end{alertbox}
 For a solution to exist for \emph{any} target state in the $n$-dimensional state space, the matrix $\mathcal{C}_N$ must span $\mathbb{R}^n$. This requires $\mathcal{C}_N$ to have full row rank. 
 
-While this matrix grows with the horizon $N$, the \textbf{Cayley-Hamilton Theorem} tells us that any matrix power $A^k$ for $k \ge n$ can be written as a linear combination of lower powers ($I, \dots, A^{n-1}$). Consequently, adding columns beyond $A^{n-1}B$ provides no new linearly independent directions.
+While this matrix grows with the horizon $N$, the \emph{Cayley-Hamilton Theorem} tells us that any matrix power $A^k$ for $k \ge n$ can be written as a linear combination of lower powers ($I, \dots, A^{n-1}$). Consequently, adding columns beyond $A^{n-1}B$ provides no new linearly independent directions.
 The Cayley-Hamilton Theorem states that every square matrix satisfies its own characteristic equation; as a consequence, $A^n$ (and all higher powers) can be expressed as a linear combination of $I, A, \dots, A^{n-1}$.
-We can therefore define the standard \textbf{Controllability Matrix} $\mathcal{C}$ using only $n$ blocks.
+We can therefore define the standard \emph{Controllability Matrix} $\mathcal{C}$ using only $n$ blocks.
 
 \begin{equation*}
 	\mathcal{C} = \begin{bmatrix} B & AB & A^2 B & \cdots & A^{n-1} B \end{bmatrix}
 \end{equation*}
 
 \begin{alertbox}{Theorem: The Kalman Rank Condition}
-	Consider an LTI system with state dimension $n$. The system pair $(A, B)$ is controllable if and only if the \textbf{controllability matrix} $\mathcal{C}$ has full rank:
+	Consider an LTI system with state dimension $n$. The system pair $(A, B)$ is controllable if and only if the \emph{controllability matrix} $\mathcal{C}$ has full rank:
 	\begin{equation*}
 		\text{rank}(\mathcal{C}) = n
 	\end{equation*}
@@ -79,10 +79,10 @@ We can therefore define the standard \textbf{Controllability Matrix} $\mathcal{C
 	\centering
 	\begin{tikzpicture}[auto, >=latex', thick]
 		% Define styles
-		\tikzstyle{block} = [draw, rectangle, fill=gray!20, minimum height=3em, minimum width=6em, align=center]
-		\tikzstyle{dashedblock} = [draw, dashed, rectangle, fill=red!8, minimum height=3em, minimum width=6em, align=center]
-		\tikzstyle{line} = [draw, ->]
-		\tikzstyle{bigbox} = [draw, dashed, rounded corners, inner sep=10pt]
+		\tikzset{block/.style={draw, rectangle, fill=gray!20, minimum height=3em, minimum width=6em, align=center}}
+		\tikzset{dashedblock/.style={draw, dashed, rectangle, fill=red!8, minimum height=3em, minimum width=6em, align=center}}
+		\tikzset{line/.style={draw, ->}}
+		\tikzset{bigbox/.style={draw, dashed, rounded corners, inner sep=10pt}}
 
 		% Input
 		\node [coordinate] (input) at (-1.5, 0) {};
@@ -113,9 +113,9 @@ We can therefore define the standard \textbf{Controllability Matrix} $\mathcal{C
 		\draw [line, dashed, gray] (uncontrollable) -| (output_map);
 
 		% Crossed-out arrow to show u does NOT reach uncontrollable subspace
-		\draw [line, dashed, red!70!black] (0.5, 0) -- (0.5, -3) -- (controllable |- uncontrollable.west);
-		\node [red!70!black, font=\Large\bfseries] at (0.5, -1.5) {$\times$};
-		\node [red!70!black, font=\small, right] at (0.7, -1.5) {No input authority};
+		\draw [line, dashed, red!70!black] (-0.3, -0.3) -- (-0.3, -3) -- (controllable |- uncontrollable.west);
+		\node [red!70!black, font=\Large\bfseries] at (-0.3, -1.5) {$\times$};
+		\node [red!70!black, font=\small, left] at (-0.55, -1.5) {No input authority};
 
 		% Annotation
 		\node [font=\footnotesize, text width=5cm, align=center] at (3, -5.2) {The Kalman decomposition separates the state space\\into controllable and uncontrollable parts.\\Only $x_c$ can be steered by the input $u$.};
@@ -157,20 +157,20 @@ Since the rank of the controllability matrix (2) equals the number of states (2)
 
 \section{Observability}
 
-While controllability deals with the active problem of steering the state $x$ using the input $u$, \textbf{observability} addresses the passive inverse problem: can we reconstruct the internal state $x(t)$ solely by monitoring the system's input $u(t)$ and output $y(t)$?
+While controllability deals with the active problem of steering the state $x$ using the input $u$, \emph{observability} addresses the passive inverse problem: can we reconstruct the internal state $x(t)$ solely by monitoring the system's input $u(t)$ and output $y(t)$?
 
 This concept is fundamental for practical MPC implementation. Most advanced control strategies (including MPC and LQR) are \textit{state-feedback} controllers, meaning they calculate the optimal input $u = -Kx$ based on the full state vector. However, in reality, we rarely measure every state variable directly due to sensor costs or physical impossibility. Instead, we measure a subset $y = Cx$ and use a mathematical algorithm known as a \textit{State Observer} (e.g., a Kalman Filter) to estimate the missing variables. Observability is the mathematical guarantee that this estimation is possible.
 
 \begin{defnbox}{Observability}
-	A linear system is defined as \textbf{observable} if the initial state $x(t_0)$ can be uniquely determined from the knowledge of the system input $u(t)$ and output $y(t)$ over a finite time interval $t_0 \leq t \leq t_1$. 
+	A linear system is defined as \emph{observable} if the initial state $x(t_0)$ can be uniquely determined from the knowledge of the system input $u(t)$ and output $y(t)$ over a finite time interval $t_0 \leq t \leq t_1$. 
 	
-	If a system is \textbf{unobservable}, there exists at least one "hidden" mode inside the system that does not affect the output $y(t)$. Consequently, the controller acts "blindly" with respect to this mode, which can lead to undetected instability.
+	If a system is \emph{unobservable}, there exists at least one "hidden" mode inside the system that does not affect the output $y(t)$. Consequently, the controller acts "blindly" with respect to this mode, which can lead to undetected instability.
 \end{defnbox}
 
 \subsection{The Observability Matrix}
 For an LTI system defined by matrices $A$ (dynamics) and $C$ (measurement), observability is a structural property of the pair $(A, C)$. It determines whether the information from the internal states propagates to the output.
 
-To test for this property, we construct the \textbf{Observability Matrix}, denoted by $\mathcal{O}$:
+To test for this property, we construct the \emph{Observability Matrix}, denoted by $\mathcal{O}$:
 \begin{equation*}
 	\mathcal{O} = 
 	\begin{bmatrix}
@@ -184,7 +184,7 @@ To test for this property, we construct the \textbf{Observability Matrix}, denot
 Note that $\mathcal{O}$ is a matrix of dimension $(n \cdot p) \times n$, where $n$ is the number of states and $p$ is the number of outputs.
 
 \begin{notebox}{Kalman Rank Condition for Observability}
-	An LTI system is fully observable if and only if the observability matrix has \textbf{full column rank}:
+	An LTI system is fully observable if and only if the observability matrix has \emph{full column rank}:
 	\begin{equation*}
 		\text{rank}(\mathcal{O}) = n
 	\end{equation*}
@@ -324,12 +324,12 @@ We can stack these individual equations into a single large matrix equation $Y =
 Here:
 \begin{itemize}
 	\item ${Y}$ is the vector of collected measurements (known).
-	\item $\mathcal{O}$ is the \textbf{Observability Matrix} (known).
+	\item $\mathcal{O}$ is the \emph{Observability Matrix} (known).
 	\item $x_0$ is the state vector we wish to find (unknown).
 \end{itemize}
 
 \subsubsection*{Step 4: The Invertibility Condition}
-This is a standard linear algebra problem of the form $Ax = b$. We have $n$ unknowns (the elements of $x_0$). To find a \textbf{unique} solution for $x_0$, the matrix $\mathcal{O}$ must provide enough independent equations to constrain the solution fully.
+This is a standard linear algebra problem of the form $Ax = b$. We have $n$ unknowns (the elements of $x_0$). To find a \emph{unique} solution for $x_0$, the matrix $\mathcal{O}$ must provide enough independent equations to constrain the solution fully.
 
 Mathematically, this requires that the mapping be invertible (specifically, left-invertible). This is only possible if the columns of $\mathcal{O}$ are linearly independent.
 
@@ -342,7 +342,7 @@ Mathematically, this requires that the mapping be invertible (specifically, left
 	\[ x_0 = (\mathcal{O}^\top \mathcal{O})^{-1} \mathcal{O}^\top {Y} \]
 \end{summarybox}
 
-\textit{Note:} One might ask, "Why stop at $n-1$?" According to the \textbf{Cayley-Hamilton Theorem}, any matrix power $A^k$ for $k \ge n$ can be written as a linear combination of lower powers ($I, A, \dots, A^{n-1}$). Therefore, taking more measurements beyond $k=n-1$ adds rows to $\mathcal{O}$ that are linearly dependent on previous rows, providing no new information for determining the rank.
+\textit{Note:} One might ask, "Why stop at $n-1$?" According to the \emph{Cayley-Hamilton Theorem}, any matrix power $A^k$ for $k \ge n$ can be written as a linear combination of lower powers ($I, A, \dots, A^{n-1}$). Therefore, taking more measurements beyond $k=n-1$ adds rows to $\mathcal{O}$ that are linearly dependent on previous rows, providing no new information for determining the rank.
 
 \subsection{Observability in MATLAB}
 
@@ -376,12 +376,30 @@ To demonstrate the physical meaning of observability, we analyse the double inte
 In Case 1, the matrix $\mathcal{O}$ has rank 2, meaning the rows are linearly independent; information about both states is present in the output history. In Case 2, the matrix has rank 1 (identical rows). The "position" mode is unobservable. If we only measure speed, the robot's absolute position is mathematically impossible to reconstruct.
 
 \begin{defnbox}{Stabilisability and Detectability}
-A pair $(A, B)$ is \textbf{stabilisable} if every uncontrollable mode of $A$ is stable (i.e.\ has eigenvalue magnitude less than 1 in discrete time, or negative real part in continuous time). Equivalently, $(A, B)$ is stabilisable if there exists a feedback gain $K$ such that $A - BK$ is Schur stable.
+A pair $(A, B)$ is \emph{stabilisable} if every uncontrollable mode of $A$ is stable (i.e.\ has eigenvalue magnitude less than 1 in discrete time, or negative real part in continuous time). Equivalently, $(A, B)$ is stabilisable if there exists a feedback gain $K$ such that $A - BK$ is Schur stable.
 
-A pair $(A, C)$ is \textbf{detectable} if every unobservable mode of $A$ is stable. Equivalently, $(A, C)$ is detectable if there exists an observer gain $L$ such that $A - LC$ is Schur stable.
+A pair $(A, C)$ is \emph{detectable} if every unobservable mode of $A$ is stable. Equivalently, $(A, C)$ is detectable if there exists an observer gain $L$ such that $A - LC$ is Schur stable.
 \end{defnbox}
 
 Stabilisability is required for the existence of a stabilising solution to the discrete algebraic Riccati equation (DARE), which provides the LQR gain (Chapter~5) and the terminal cost in MPC (Chapter~7). Detectability of $(A, C)$ is required for the convergence of the Kalman filter (Chapter~6). These weaker conditions replace full controllability and observability in most practical design procedures.
+
+\section{Chapter Summary}
+
+This chapter established the structural properties of linear systems that determine whether MPC can steer and observe the plant. The key topics covered are:
+
+\begin{itemize}
+	\item \textbf{Controllability:} A system $(A, B)$ is controllable if the state can be driven from any initial condition to any target in finite time. The Kalman rank condition ($\operatorname{rank}[\,B\;\; AB\;\; \cdots\;\; A^{n-1}B\,] = n$) provides a direct algebraic test.
+
+	\item \textbf{PBH Test:} The Popov--Belevitch--Hautus eigenvector test offers an alternative: $(A, B)$ is controllable if and only if $\operatorname{rank}[\,\lambda I - A\;\; B\,] = n$ for every eigenvalue $\lambda$ of $A$. This test reveals which modes are uncontrollable.
+
+	\item \textbf{Observability:} The dual property to controllability, observability ensures that the full state can be reconstructed from output measurements. The observability matrix $\mathcal{O}$ must have full column rank.
+
+	\item \textbf{Stabilisability and Detectability:} These are the relaxed versions of controllability and observability, requiring only that the \emph{unstable} modes be controllable or observable. They are the minimal conditions needed for MPC feasibility and observer convergence.
+
+	\item \textbf{Kalman Decomposition:} A state-space transformation decomposes the system into controllable/uncontrollable and observable/unobservable subsystems, providing structural insight into which parts of the dynamics can be influenced and measured.
+
+	\item \textbf{Implications for MPC:} Stabilisability of $(A, B)$ is necessary for the existence of a stabilising MPC law (via the DARE solution), while detectability of $(A, C)$ is required for state estimation. Lack of these properties leads to infeasibility or unbounded costs.
+\end{itemize}
 
 \section*{Exercises}
 
@@ -409,7 +427,7 @@ C = \begin{bmatrix} 1 & 0 \end{bmatrix}.
 	\item Suppose instead $C'' = \begin{bmatrix} 1 & 1 \end{bmatrix}$. Determine whether the system $(A,\,C'')$ is observable.
 \end{enumerate}
 
-\item The \textbf{Popov--Belevitch--Hautus (PBH) test} provides an eigenvalue-based criterion for controllability: the pair $(A,\,B)$ is controllable if and only if
+\item The \emph{Popov--Belevitch--Hautus (PBH) test} provides an eigenvalue-based criterion for controllability: the pair $(A,\,B)$ is controllable if and only if
 \[
 \text{rank}\!\begin{bmatrix} \lambda I - A & B \end{bmatrix} = n \quad \text{for every eigenvalue } \lambda \text{ of } A.
 \]

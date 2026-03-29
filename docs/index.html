@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Predictive Control: From Foundations to Advanced Topics</title>
+  <style>
+    :root {
+      --primary: #1a3a5c;
+      --accent: #2980b9;
+      --bg: #fafbfc;
+      --card-bg: #ffffff;
+      --text: #333;
+      --muted: #666;
+      --border: #e1e4e8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #2c5f8a 100%);
+      color: white;
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .hero .subtitle {
+      font-size: 1.4rem;
+      font-weight: 300;
+      opacity: 0.9;
+      margin-bottom: 1rem;
+    }
+    .hero .author {
+      font-size: 1.1rem;
+      opacity: 0.85;
+      margin-bottom: 1.5rem;
+    }
+    .hero .badges {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: transform 0.15s;
+    }
+    .badge:hover { transform: translateY(-2px); }
+    .badge-pdf { background: #e74c3c; color: white; }
+    .badge-github { background: #24292e; color: white; }
+    .badge-zenodo { background: #1d6aac; color: white; }
+    .badge-license { background: #27ae60; color: white; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .about {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .about h2 { color: var(--primary); margin-bottom: 1rem; font-size: 1.5rem; }
+    .about p { margin-bottom: 1rem; }
+    .about ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+    .about li { margin-bottom: 0.3rem; }
+
+    .toc {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .toc h2 { color: var(--primary); margin-bottom: 1rem; font-size: 1.5rem; }
+    .toc-section { margin-bottom: 1.5rem; }
+    .toc-section h3 {
+      font-size: 1rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 2px solid var(--border);
+    }
+    .chapter-list { list-style: none; }
+    .chapter-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: baseline;
+    }
+    .chapter-list li:last-child { border-bottom: none; }
+    .ch-num {
+      font-weight: 600;
+      color: var(--primary);
+      min-width: 2.5rem;
+    }
+    .ch-title { flex: 1; }
+    .ch-star {
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-left: 0.3rem;
+    }
+
+    .figures {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .figures h2 { color: var(--primary); margin-bottom: 1rem; font-size: 1.5rem; }
+    .fig-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .fig-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .fig-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .fig-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      background: #f8f8f8;
+      padding: 0.5rem;
+    }
+    .fig-card .fig-caption {
+      padding: 0.6rem 0.8rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    .software {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .software h2 { color: var(--primary); margin-bottom: 1rem; font-size: 1.5rem; }
+    .sw-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem;
+    }
+    .sw-item {
+      padding: 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-align: center;
+    }
+    .sw-item strong { display: block; margin-bottom: 0.2rem; color: var(--primary); }
+    .sw-item a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    .sw-item a:hover { text-decoration: underline; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Model Predictive Control</h1>
+  <div class="subtitle">From Foundations to Advanced Topics</div>
+  <div class="author">Ibrahim Kucukdemiral</div>
+  <div class="badges">
+    <a class="badge badge-github" href="https://github.com/kucukdemiral/MPC_LectureNotesProject">GitHub Repository</a>
+    <a class="badge badge-zenodo" href="#">Zenodo (coming soon)</a>
+    <a class="badge badge-license" href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="about">
+    <h2>About This Book</h2>
+    <p>
+      This open-access book provides a comprehensive, practical introduction to Model Predictive Control (MPC).
+      Starting from the mathematical foundations of optimisation, state-space modelling, and classical optimal control,
+      it builds towards the formulation, analysis, and implementation of constrained MPC for linear, robust, nonlinear,
+      and learning-based systems.
+    </p>
+    <p>
+      Every chapter includes worked examples, MATLAB code, and exercises.
+      The book is suitable as a companion to a taught graduate course or as a self-contained resource for independent study.
+    </p>
+    <p><strong>Key features:</strong></p>
+    <ul>
+      <li>Complete MATLAB/YALMIP implementations for every MPC formulation</li>
+      <li>Extensive TikZ figures and geometric illustrations</li>
+      <li>Starred sections covering advanced topics (stability proofs, tube MPC, NMPC, learning-based MPC)</li>
+      <li>Supplementary appendices on linear algebra and probability theory</li>
+      <li>CasADi-based nonlinear MPC with rocket landing and pendulum swing-up examples</li>
+    </ul>
+  </div>
+
+  <div class="toc">
+    <h2>Table of Contents</h2>
+
+    <div class="toc-section">
+      <h3>Core Chapters</h3>
+      <ul class="chapter-list">
+        <li><span class="ch-num">Ch 1</span> <span class="ch-title">Introduction to MPC</span></li>
+        <li><span class="ch-num">Ch 2</span> <span class="ch-title">Optimisation: The Engine of MPC</span></li>
+        <li><span class="ch-num">Ch 3</span> <span class="ch-title">State-Space Models and Discretisation</span></li>
+        <li><span class="ch-num">Ch 4</span> <span class="ch-title">Controllability and Observability</span></li>
+        <li><span class="ch-num">Ch 5</span> <span class="ch-title">Linear Quadratic Regulator (LQR)</span></li>
+        <li><span class="ch-num">Ch 6</span> <span class="ch-title">The Kalman Filter</span></li>
+        <li><span class="ch-num">Ch 7</span> <span class="ch-title">Linear Model Predictive Control</span></li>
+        <li><span class="ch-num">Ch 8</span> <span class="ch-title">Output-Feedback and Offset-Free MPC</span></li>
+      </ul>
+    </div>
+
+    <div class="toc-section">
+      <h3>Supplementary Chapters <span class="ch-star">(*)</span></h3>
+      <ul class="chapter-list">
+        <li><span class="ch-num">Ch 9</span> <span class="ch-title">MPC Implementation in Simulink<span class="ch-star"> (*)</span></span></li>
+        <li><span class="ch-num">Ch 10</span> <span class="ch-title">Robust and Tube MPC<span class="ch-star"> (*)</span></span></li>
+        <li><span class="ch-num">Ch 11</span> <span class="ch-title">Nonlinear Model Predictive Control<span class="ch-star"> (*)</span></span></li>
+        <li><span class="ch-num">Ch 12</span> <span class="ch-title">MPC with Learning<span class="ch-star"> (*)</span></span></li>
+        <li><span class="ch-num">Ch 13</span> <span class="ch-title">Conclusion and Further Topics<span class="ch-star"> (*)</span></span></li>
+      </ul>
+    </div>
+
+    <div class="toc-section">
+      <h3>Appendices</h3>
+      <ul class="chapter-list">
+        <li><span class="ch-num">A</span> <span class="ch-title">Linear Algebra Review</span></li>
+        <li><span class="ch-num">B</span> <span class="ch-title">Probability and Random Variables</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="figures">
+    <h2>Selected Figures</h2>
+    <div class="fig-grid">
+      <div class="fig-card">
+        <img src="figures/Simple_MPC.png" alt="MPC Simulation">
+        <div class="fig-caption">Linear MPC closed-loop simulation</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/Effect_of_N.png" alt="Effect of Horizon">
+        <div class="fig-caption">Effect of prediction horizon N</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/Kalman_Performance.png" alt="Kalman Filter">
+        <div class="fig-caption">Kalman filter state estimation</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/Offsetfree_MPC.png" alt="Offset-Free MPC">
+        <div class="fig-caption">Offset-free MPC tracking</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_explicit_regions_2d.png" alt="Explicit MPC">
+        <div class="fig-caption">Explicit MPC polyhedral regions</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/tube_mpc_scalar.png" alt="Tube MPC">
+        <div class="fig-caption">Tube MPC: nominal vs perturbed trajectories</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_nmpc_rocket_traj.png" alt="Rocket Landing">
+        <div class="fig-caption">NMPC powered rocket landing</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_nmpc_pendulum_swingup.png" alt="Pendulum Swing-Up">
+        <div class="fig-caption">NMPC pendulum swing-up</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_gp_regression.png" alt="GP Regression">
+        <div class="fig-caption">Gaussian Process regression</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_gpmpc_simulation.png" alt="GP-MPC">
+        <div class="fig-caption">GP-MPC closed-loop simulation</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_koopman_mpc.png" alt="Koopman MPC">
+        <div class="fig-caption">Koopman MPC prediction</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_deepc_simulation.png" alt="DeePC">
+        <div class="fig-caption">Data-driven predictive control (DeePC)</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_nnmpc_racing_results.png" alt="NN-MPC Racing">
+        <div class="fig-caption">NN-MPC autonomous racing</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/Quadrotor_MPC.png" alt="Quadrotor MPC">
+        <div class="fig-caption">Quadrotor trajectory tracking with MPC</div>
+      </div>
+      <div class="fig-card">
+        <img src="figures/fig_scvx_convergence.png" alt="SCvx Convergence">
+        <div class="fig-caption">Sequential convexification convergence</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="software">
+    <h2>Software Requirements</h2>
+    <div class="sw-grid">
+      <div class="sw-item">
+        <strong>MATLAB</strong>
+        R2019b or later
+      </div>
+      <div class="sw-item">
+        <strong>YALMIP</strong>
+        <a href="https://yalmip.github.io">yalmip.github.io</a>
+      </div>
+      <div class="sw-item">
+        <strong>MPT3</strong>
+        <a href="https://www.mpt3.org">mpt3.org</a>
+      </div>
+      <div class="sw-item">
+        <strong>CasADi</strong>
+        <a href="https://web.casadi.org">web.casadi.org</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  &copy; 2026 Ibrahim Kucukdemiral &middot;
+  Licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a> &middot;
+  <a href="https://github.com/kucukdemiral/MPC_LectureNotesProject">View on GitHub</a>
+</footer>
+
+</body>
+</html>

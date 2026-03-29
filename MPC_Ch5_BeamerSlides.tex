@@ -1,6 +1,6 @@
 % !TeX program = pdflatex
 % Beamer slides derived from Chapter 5 (LQR Design via Quadratic Programming)
-% Figures are referenced with the same relative paths as the lecture notes.
+% Figures are referenced with the same relative paths as the textbook.
 
 \documentclass[aspectratio=169,11pt]{beamer}
 
@@ -18,7 +18,7 @@
 \usepackage{listings}
 \usepackage{microtype}
 
-% Keep figure addresses compatible with the notes (slides assumed to live next to them).
+% Keep figure addresses compatible with the book (slides assumed to live next to them).
 \graphicspath{{./}{./Figures/}}
 \DeclareGraphicsExtensions{.pdf,.png,.jpg,.jpeg}
 
@@ -35,7 +35,7 @@
   \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
     \IfFileExists{#2.pdf}{\includegraphics[#1]{#2.pdf}}{%
       \IfFileExists{#2.png}{\includegraphics[#1]{#2.png}}{%
-        \fbox{\parbox[c][0.26\textheight][c]{0.92\linewidth}{\centering\small Figure file not found at\\\texttt{#2}\\(Place the slides next to the notes so the \texttt{Figures/} folder is available.)}}%
+        \fbox{\parbox[c][0.26\textheight][c]{0.92\linewidth}{\centering\small Figure file not found at\\\texttt{#2}\\(Place the slides next to the book so the \texttt{Figures/} folder is available.)}}%
       }%
     }%
   }%
@@ -49,7 +49,7 @@
 \setbeamercolor{block title example}{fg=white,bg=blue!70!black}
 \setbeamercolor{block body example}{bg=blue!4,fg=black}
 
-\title[LQR via QP]{LQR Design via Quadratic Programming\\\small (Chapter 5 in the MPC lecture notes)}
+\title[LQR via QP]{LQR Design via Quadratic Programming\\\small (Chapter 5 in the MPC textbook)}
 \author{\tiny { İbrahim Küçükdemiral}}
 \date{\small March 2026}
 
@@ -501,7 +501,7 @@ In the finite-horizon solution, the controller ``plans'' to bring both states to
 \begin{figure}
   \centering
   \includegraphicssafe[width=0.95\linewidth]{Figures/Finite\_LQR.pdf}
-  \caption{Finite-horizon LQR for the double integrator (figure address preserved from the notes).}
+  \caption{Finite-horizon LQR for the double integrator (figure address preserved from the book).}
 \end{figure}
 \end{frame}
 
@@ -569,7 +569,7 @@ The influence of the chosen terminal cost $Q_N$ fades as we move away from the e
 \begin{figure}
   \centering
   \includegraphicssafe[width=0.48\linewidth]{Figures/Riccati Convergence}
-  \caption{Convergence of the Riccati recursion (figure address preserved from the notes).}
+  \caption{Convergence of the Riccati recursion (figure address preserved from the book).}
 \end{figure}
 \end{frame}
 
@@ -671,7 +671,7 @@ In the infinite-horizon case, a constant gain $K$ is used at every time step. Th
 \begin{figure}
   \centering
   \includegraphicssafe[width=0.95\linewidth]{Figures/InFinite\_LQR.pdf}
-  \caption{Infinite-horizon LQR for the double integrator (figure address preserved from the notes).}
+  \caption{Infinite-horizon LQR for the double integrator (figure address preserved from the book).}
 \end{figure}
 \end{frame}
 
@@ -804,7 +804,7 @@ Compute Jacobians to obtain a continuous-time linear model $\dot{x}=A_c x + B_c 
 \end{block}
 \end{frame}
 
-\begin{frame}{MagLev schematic (from the notes)}
+\begin{frame}{MagLev schematic (from the book)}
 \begin{figure}
 \centering
 \begin{tikzpicture}[>=Latex, thick, scale=0.95, font=\small\sffamily]
@@ -855,7 +855,7 @@ The bottom plot shows the control current settling to a \emph{non-zero} steady v
 \begin{figure}
   \centering
   \includegraphicssafe[width=0.78\linewidth]{Figures/Maglev.pdf}
-  \caption{MagLev setpoint tracking (figure address preserved from the notes).}
+  \caption{MagLev setpoint tracking (figure address preserved from the book).}
 \end{figure}
 \end{frame}
 

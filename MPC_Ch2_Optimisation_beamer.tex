@@ -511,8 +511,8 @@ Most numerical solvers are written for \textbf{minimisation}.
   \begin{scope}
     \draw[->] (-0.5,0) -- (3.5,0) node[right] {$x$};
     \draw[->] (0,-1.5) -- (0,1.5);
-    \draw[thick, green!60!black] plot[domain=0:3, samples=60] (\x, {sin(\x*100)});
-    \node[green!60!black] at (1.7, 1.5) {Maximise $f(x)$};
+    \draw[thick, teal] plot[domain=0:3, samples=60] (\x, {sin(\x*100)});
+    \node[teal] at (1.7, 1.5) {Maximise $f(x)$};
     \draw[dashed] (0.85, 0) -- (0.85, 1);
     \draw (0.85, 0.1) -- (0.85, -0.1) node[below] {$x^\star$};
     \fill[black] (0.85, 1) circle (3pt);
@@ -756,7 +756,7 @@ $f$ is concave if $-f$ is convex (inequality reverses).
   \draw[red, line width=1.2pt] (\zOne, \yOne) -- (\zTwo, \yTwo);
 
   \filldraw (\zOne, \yOne) circle (1.5pt) node[above left, text=blue] {$f(z_1)$};
-  \filldraw (\zTwo, \yTwo) circle (1.5pt) node[above left, text=green!50!black] {$f(z_2)$};
+  \filldraw (\zTwo, \yTwo) circle (1.5pt) node[above left, text=teal] {$f(z_2)$};
   \filldraw (\zMix, \yCurve) circle (1.5pt);
   \filldraw (\zMix, \yLine) circle (1.5pt);
 
@@ -977,9 +977,9 @@ x_star = value(x)   % Expected: (1, 2)
   \fill[gray, opacity=0.3] (axis cs:0, 2.5) -- (axis cs:0, 5) -- (axis cs:1.666, 1.666) -- cycle;
 
   \addplot[domain=-0.5:5, color=red, thick] {2.5 - 0.5*x};
-  \addplot[domain=-0.5:3, color=green!50!black, thick] {5 - 2*x};
+  \addplot[domain=-0.5:3, color=teal, thick] {5 - 2*x};
 
-  \fill[green, draw=black, thick] (axis cs:1, 2) circle (3pt);
+  \fill[teal, draw=black, thick] (axis cs:1, 2) circle (3pt);
   \node[anchor=north east] at (axis cs:1, 2) {{\tiny \textbf{optimal} $(1,2)$}};
 \end{axis}
 \end{tikzpicture}

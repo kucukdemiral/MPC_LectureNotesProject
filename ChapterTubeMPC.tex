@@ -3,12 +3,12 @@
 
 \begin{quote}
 	\textit{``Standard MPC tells you the best thing to do if the world is perfect. Tube MPC tells you what to do when it isn't.''} \\
-	\hfill --- paraphrasing \textbf{David Q.\ Mayne}
+	\hfill --- paraphrasing \emph{David Q.\ Mayne}
 \end{quote}
 
 Every MPC formulation we have seen so far relies on a perfect model: $x_{k+1} = Ax_k + Bu_k$. The controller solves an optimisation, applies the first input, and re-solves at the next step. This works well in practice --- \emph{provided the model is accurate}. In practice, however, systems are always subject to disturbances: sensor noise, wind gusts, friction that the model ignores, or small inaccuracies in the $A$ and $B$ matrices themselves. Even a tiny modelling error, accumulated over many steps, can push the real state across a constraint boundary that the controller thought was safe.
 
-This chapter addresses the question: \textbf{how do we guarantee constraint satisfaction when the model is not perfect?} The answer is \emph{robust MPC}, and the most practical and widely-used form is called \textbf{Tube MPC}, introduced by Langson et al.~\cite{Langson2004} and further developed by Mayne et al.~\cite{Mayne2005}. The central idea is straightforward: instead of planning a single trajectory, we plan a ``tube'' of trajectories. As long as the disturbance is bounded, the real trajectory stays inside the tube, and the tube is designed so that constraints are never violated.
+This chapter addresses the question: \emph{how do we guarantee constraint satisfaction when the model is not perfect?} The answer is \emph{robust MPC}, and the most practical and widely-used form is called \emph{Tube MPC}, introduced by Langson et al.~\cite{Langson2004} and further developed by Mayne et al.~\cite{Mayne2005}. The central idea is straightforward: instead of planning a single trajectory, we plan a ``tube'' of trajectories. As long as the disturbance is bounded, the real trajectory stays inside the tube, and the tube is designed so that constraints are never violated.
 
 \section{The Problem: Disturbances and Constraint Violations}
 \label{sec:tube_problem}
@@ -64,17 +64,17 @@ Min--max MPC is therefore rarely used in practice. It is included here for compl
 
 Tube MPC avoids the computational explosion by separating the problem into two parts:
 \begin{enumerate}
-	\item A \textbf{nominal trajectory} $z_k$ that is planned as if there were no disturbance. This is a standard MPC problem.
-	\item A \textbf{feedback controller} $-K(x_k - z_k)$ that keeps the real state $x_k$ close to the nominal trajectory $z_k$, despite the disturbance.
+	\item A \emph{nominal trajectory} $z_k$ that is planned as if there were no disturbance. This is a standard MPC problem.
+	\item A \emph{feedback controller} $-K(x_k - z_k)$ that keeps the real state $x_k$ close to the nominal trajectory $z_k$, despite the disturbance.
 \end{enumerate}
 
 \begin{notebox}{Notation: $z_k$ in This Chapter}
-	Throughout this chapter, $z_k$ denotes the \textbf{nominal state} (the disturbance-free planned trajectory). This is unrelated to the augmented state vector $z_k = [x_k^\top\;\; d_k^\top]^\top$ used in the offset-free MPC formulation of Chapter~\ref{chap:output_fb_mpc}. The two uses of $z_k$ never appear in the same context.
+	Throughout this chapter, $z_k$ denotes the \emph{nominal state} (the disturbance-free planned trajectory). This is unrelated to the augmented state vector $z_k = [x_k^\top\;\; d_k^\top]^\top$ used in the offset-free MPC formulation of Chapter~\ref{chap:output_fb_mpc}. The two uses of $z_k$ never appear in the same context.
 \end{notebox}
 
 The deviation $e_k = x_k - z_k$ between the real and nominal state is bounded because $K$ is stabilising and the disturbance is bounded. The set of all possible deviations forms a ``tube'' around the nominal trajectory. By tightening the constraints on the nominal trajectory (shrinking them inward by the tube width), we guarantee that the real trajectory satisfies the original constraints.
 
-This is the essence of Tube MPC: \textbf{plan the nominal path conservatively, and let a feedback controller handle the disturbances.}
+This is the essence of Tube MPC: \emph{plan the nominal path conservatively, and let a feedback controller handle the disturbances.}
 
 \section{Set Operations: Minkowski Sum and Pontryagin Difference}
 
@@ -159,8 +159,8 @@ The control input is split into two parts:
 \end{equation}
 where:
 \begin{itemize}[noitemsep]
-	\item $v_k$ is the \textbf{nominal input}, computed by the MPC optimiser. It steers the nominal trajectory $z_k$ toward the origin.
-	\item $K$ is a \textbf{fixed feedback gain} (typically the LQR gain from \texttt{dlqr}, so $K > 0$ and $u = -Kx$ stabilises the system). It keeps the real state close to the nominal state by rejecting disturbances.
+	\item $v_k$ is the \emph{nominal input}, computed by the MPC optimiser. It steers the nominal trajectory $z_k$ toward the origin.
+	\item $K$ is a \emph{fixed feedback gain} (typically the LQR gain from \texttt{dlqr}, chosen so that $A - BK$ is Schur stable). It keeps the real state close to the nominal state by rejecting disturbances.
 \end{itemize}
 
 \subsection{Step 2: Derive the Error Dynamics}
@@ -173,9 +173,9 @@ Substituting~\eqref{eq:tube_control_law} into the real dynamics~\eqref{eq:uncert
 \end{align*}
 
 Subtracting:
-\begin{equation} \label{eq:error_dynamics}
-	\boxed{e_{k+1} = (A - BK)\,e_k + w_k}
-\end{equation}
+\begin{equation*}
+	{e_{k+1} = (A - BK)\,e_k + w_k}
+\end{equation*}
 
 This is the key result. The error dynamics are \emph{autonomous}: they do not depend on $v_k$ at all. The nominal input cancels out. The error evolves purely under the closed-loop matrix $A_{cl} = A - BK$ and the disturbance $w_k$.
 
@@ -191,7 +191,7 @@ Since $K$ is chosen so that $A_{cl}$ is Schur stable (all eigenvalues inside the
 	Once the error enters $\mathcal{E}$, it stays in $\mathcal{E}$ forever, no matter what disturbances occur.
 \end{defnbox}
 
-The smallest such set is the \textbf{minimal RPI (mRPI) set}, denoted $\mathcal{E}_\infty$~\cite{Rakovic2005}. It can be characterised explicitly:
+The smallest such set is the \emph{minimal RPI (mRPI) set}, denoted $\mathcal{E}_\infty$~\cite{Rakovic2005}. It can be characterised explicitly:
 \begin{equation} \label{eq:mrpi}
 	\mathcal{E}_\infty = \bigoplus_{i=0}^{\infty} A_{cl}^i\, \mathcal{W} \;=\; \mathcal{W} \oplus A_{cl}\mathcal{W} \oplus A_{cl}^2\mathcal{W} \oplus \cdots
 \end{equation}
@@ -322,7 +322,7 @@ The complete Tube MPC controller has the following structure:
 	\begin{tikzpicture}[
 		block/.style={rectangle, rounded corners=4pt, draw=blue!60!black, fill=blue!8,
 			text width=3.2cm, minimum height=1.2cm, align=center, font=\small\bfseries\sffamily},
-		greenblock/.style={block, draw=green!50!black, fill=green!8},
+		greenblock/.style={block, draw=teal, fill=teal!8},
 		orangeblock/.style={block, draw=orange!60!black, fill=orange!8},
 		arrow/.style={-Stealth, thick, draw=blue!60!black},
 		]
@@ -687,7 +687,7 @@ Figure~\ref{fig:tube_concept} illustrates the key concept. The nominal trajector
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.85\linewidth]{Figures/tube_mpc_concept.pdf}
+	\includegraphics[width=0.85\linewidth, trim=0 0 0 22, clip]{Figures/tube_mpc_concept.pdf}
 	\caption{The tube concept in state space. Grey ellipses represent the cross-section $\mathcal{E}$ of the tube at each time step. The nominal trajectory (red) stays within the tightened constraints (orange), ensuring the actual trajectory (blue) stays within the original constraints (green dashed).}
 	\label{fig:tube_concept}
 \end{figure}

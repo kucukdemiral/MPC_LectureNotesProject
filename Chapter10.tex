@@ -3,12 +3,12 @@
 
 The course progressed from the \emph{Linear Quadratic Regulator (LQR)} through \emph{Model Predictive Control (MPC)} with explicit constraint handling, to \emph{State Estimation} and \emph{Disturbance Modelling} for offset-free tracking in the presence of noise and uncertainty.
 
-The structure presented here---\textbf{MPC + Estimator + Target Calculator}---is the standard architecture for linear MPC in process control. We omitted several advanced topics; this chapter provides pointers for further study.
+The structure presented here---\emph{MPC + Estimator + Target Calculator}---is the standard architecture for linear MPC in process control. We omitted several advanced topics; this chapter provides pointers for further study.
 
 \section{Rigorous Stability Analysis}
 In the basic MPC formulation without a terminal set constraint, the \emph{Terminal Cost} ($x_N^\top P x_N$) encourages stability but does not mathematically \textit{guarantee} it for constrained systems. (Chapter~\ref{chap:linear_mpc}, Section~\ref{sec:mpc_stability_theory} provides the rigorous proof when the terminal set \emph{is} included.)
 
-Rigorous MPC theory relies on Lyapunov analysis. To prove stability, one must often include a \textbf{Terminal Set Constraint} ($x_N \in \mathcal{X}_f$) in the optimisation. This forces the state to land in a \emph{safe haven} (a Positive Invariant Set, meaning that once the trajectory enters the terminal set, it remains inside) at the end of the horizon, ensuring recursive feasibility.
+Rigorous MPC theory relies on Lyapunov analysis. To prove stability, one must often include a \emph{Terminal Set Constraint} ($x_N \in \mathcal{X}_f$) in the optimisation. This forces the state to land in a \emph{safe haven} (a Positive Invariant Set, meaning that once the trajectory enters the terminal set, it remains inside) at the end of the horizon, ensuring recursive feasibility.
 
 The fundamental reference for this topic is Mayne et al.~\cite{Mayne2000}.
 

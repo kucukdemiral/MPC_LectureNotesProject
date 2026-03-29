@@ -36,7 +36,7 @@ At each sampling instant $t$, NMPC solves the following optimal control problem 
 	where $\ell(\cdot)$ is the stage cost, $V_f(\cdot)$ the terminal cost, $f(\cdot)$ the nonlinear discrete-time dynamics, $h(\cdot)$ encodes state and input constraints, and $\mathcal{X}_f$ is the terminal set.
 \end{defnbox}
 
-When $f$ is linear and $\ell$, $V_f$ are quadratic, this reduces to the QP of Chapter~\ref{chap:linear_mpc}. For general $f$, the equality constraints $x_{k+1} = f(x_k, u_k)$ make the feasible set non-convex, and the problem becomes a \textbf{nonlinear programme (NLP)}.
+When $f$ is linear and $\ell$, $V_f$ are quadratic, this reduces to the QP of Chapter~\ref{chap:linear_mpc}. For general $f$, the equality constraints $x_{k+1} = f(x_k, u_k)$ make the feasible set non-convex, and the problem becomes a \emph{nonlinear programme (NLP)}.
 
 Two consequences follow:
 \begin{itemize}[nosep]
@@ -105,7 +105,7 @@ Collocation produces an implicit integration scheme, making it well-suited for s
 
 \subsection{CasADi and IPOPT}
 
-\textbf{CasADi}~\cite{Andersson2019} is an open-source framework for algorithmic differentiation (AD) and numerical optimisation. It provides a symbolic interface for defining nonlinear functions and automatically generates the exact Jacobians and Hessians required by NLP solvers. CasADi interfaces with \textbf{IPOPT} (Interior Point OPTimiser), a primal-dual interior-point solver for large-scale NLPs.
+\emph{CasADi}~\cite{Andersson2019} is an open-source framework for algorithmic differentiation (AD) and numerical optimisation. It provides a symbolic interface for defining nonlinear functions and automatically generates the exact Jacobians and Hessians required by NLP solvers. CasADi interfaces with \emph{IPOPT} (Interior Point OPTimiser), a primal-dual interior-point solver for large-scale NLPs.
 
 The workflow in MATLAB is:
 \begin{enumerate}[nosep]
@@ -208,8 +208,8 @@ Figure~\ref{fig:nmpc_pendulum} shows the result. The controller swings the pendu
 	\label{fig:nmpc_pendulum}
 \end{figure}
 
-\begin{notebox}{Alternative: fmincon for Students Without CasADi}
-	The same problem can be solved using MATLAB's \texttt{fmincon} with direct multiple shooting. Pack the decision variables as $z = [u_0, \dots, u_{N-1}, \theta_1, \omega_1, \dots, \theta_N, \omega_N]$, implement the RK4 dynamics as nonlinear equality constraints, and use the \texttt{'interior-point'} algorithm. CasADi is preferred because it provides exact derivatives automatically, whereas \texttt{fmincon} relies on finite differences (slower, less accurate). The figure-generation script \texttt{gen\_figures\_nmpc.m} accompanying these notes uses \texttt{fmincon} so that no additional toolbox installation is required.
+\begin{notebox}{Alternative: fmincon for Readers Without CasADi}
+	The same problem can be solved using MATLAB's \texttt{fmincon} with direct multiple shooting. Pack the decision variables as $z = [u_0, \dots, u_{N-1}, \theta_1, \omega_1, \dots, \theta_N, \omega_N]$, implement the RK4 dynamics as nonlinear equality constraints, and use the \texttt{'interior-point'} algorithm. CasADi is preferred because it provides exact derivatives automatically, whereas \texttt{fmincon} relies on finite differences (slower, less accurate). The figure-generation script \texttt{gen\_figures\_nmpc.m} accompanying this book uses \texttt{fmincon} so that no additional toolbox installation is required.
 \end{notebox}
 
 
@@ -227,7 +227,7 @@ The key observation: at a given trajectory estimate $(\bar{x}, \bar{u})$, the no
 
 In Section~\ref{sec:tracking_mpc}, we linearised the robot dynamics around the \emph{reference trajectory} and solved a single QP per MPC step. This works when the actual state stays close to the reference. But what if the reference is unavailable, or the deviation is large?
 
-\textbf{Successive convexification} (SCvx) generalises this idea: linearise around the \emph{current best trajectory estimate}, solve the QP, update the estimate, and iterate until convergence. The reference trajectory is replaced by the previous iteration's solution.
+\emph{Successive convexification} (SCvx) generalises this idea: linearise around the \emph{current best trajectory estimate}, solve the QP, update the estimate, and iterate until convergence. The reference trajectory is replaced by the previous iteration's solution.
 
 \subsection{Successive Convexification (SCvx)}
 \label{sec:scvx}
@@ -238,7 +238,7 @@ Given a trajectory estimate $(\bar{x}_0, \bar{u}_0, \dots, \bar{x}_N, \bar{u}_{N
 	B_k &= \left.\frac{\partial f}{\partial u}\right|_{\bar{x}_k, \bar{u}_k}, &
 	c_k &= f(\bar{x}_k, \bar{u}_k) - A_k\,\bar{x}_k - B_k\,\bar{u}_k.
 \end{align*}
-The \textbf{affine approximation} of the dynamics is:
+The \emph{affine approximation} of the dynamics is:
 \[
 x_{k+1} \approx A_k\, x_k + B_k\, u_k + c_k.
 \]
@@ -304,7 +304,7 @@ Each subproblem is a QP (if $\ell$ is quadratic and constraints are linear/quadr
 \subsection{GUSTO: Penalised Trust Regions}
 \label{sec:gusto}
 
-\textbf{GuSTO} (Guaranteed Sequential Trajectory Optimisation)~\cite{Bonalli2019} replaces the hard trust-region constraint with a soft penalty. At iteration $i$, solve:
+\emph{GuSTO} (Guaranteed Sequential Trajectory Optimisation)~\cite{Bonalli2019} replaces the hard trust-region constraint with a soft penalty. At iteration $i$, solve:
 \[
 \min_{x, u, \nu} \;\; \sum_{k=0}^{N-1}\bigl[\ell(x_k, u_k) + w_\nu \|\nu_k\|_1\bigr] + V_f(x_N) + \frac{\lambda^{(i)}}{2}\sum_{k=0}^{N}\|x_k - \bar{x}_k^{(i)}\|^2
 \]
@@ -582,7 +582,7 @@ The \emph{Real-Time Iteration} scheme~\cite{Diehl2005} exploits the fact that co
 	\item \textbf{Feedback phase} (at the sampling instant): update the initial state $x_0 = x(t)$, solve the QP, and apply $u_0^*$.
 \end{enumerate}
 
-The feedback phase involves only a QP solve---typically microseconds to milliseconds for structured solvers. Over successive time steps, the single-iteration updates accumulate into full NLP convergence, provided the system evolves continuously. RTI is the workhorse of real-time NMPC and is implemented in the \textbf{acados} framework~\cite{Verschueren2022}.
+The feedback phase involves only a QP solve---typically microseconds to milliseconds for structured solvers. Over successive time steps, the single-iteration updates accumulate into full NLP convergence, provided the system evolves continuously. RTI is the workhorse of real-time NMPC and is implemented in the \emph{acados} framework~\cite{Verschueren2022}.
 
 \begin{notebox}{RTI and Successive Linearisation}
 	RTI is closely related to the successive linearisation of Section~\ref{sec:tracking_mpc}: both perform one linearisation and one QP solve per time step. The difference is that RTI linearises around the \emph{shifted previous solution} (which tracks the actual trajectory), whereas successive linearisation in Section~\ref{sec:tracking_mpc} uses the \emph{known reference trajectory}. RTI is more general---it does not require a reference.

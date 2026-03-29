@@ -3,7 +3,7 @@
 
 In the previous chapter on LQR design, we assumed that the full state vector $x_k$ was available for feedback. In practice, this is rarely the case. We typically have access only to a limited set of noisy measurements $y_k$. To implement modern control strategies like LQR or MPC, we must therefore reconstruct the internal state of the system from these imperfect observations.
 
-While the concept of \emph{Observability} tells us \textit{if} the state can be reconstructed mathematically, it does not tell us \textit{how} to do so robustly in the presence of uncertainty. This chapter derives the optimal solution to the state estimation problem: the \textbf{Kalman Filter}~\cite{Kalman1960}.
+While the concept of \emph{Observability} tells us \textit{if} the state can be reconstructed mathematically, it does not tell us \textit{how} to do so robustly in the presence of uncertainty. This chapter derives the optimal solution to the state estimation problem: the \emph{Kalman Filter}~\cite{Kalman1960}.
 
 This chapter is structured as follows:
 \begin{itemize}
@@ -24,21 +24,21 @@ Before deriving the filter, we briefly review the essential concepts of probabil
 
 \subsection{Random Variables and Expectation}
 
-In many practical control scenarios, we cannot know the state of a system with absolute certainty due to sensor noise, model mismatch, or unknown disturbances. Consequently, we model the state not as a deterministic scalar or vector, but as a \textbf{random vector} $x \in \mathbb{R}^n$. This means $x$ does not hold a single fixed value, but is described by a probability distribution function (PDF), denoted as $p(x)$.
+In many practical control scenarios, we cannot know the state of a system with absolute certainty due to sensor noise, model mismatch, or unknown disturbances. Consequently, we model the state not as a deterministic scalar or vector, but as a \emph{random vector} $x \in \mathbb{R}^n$. This means $x$ does not hold a single fixed value, but is described by a probability distribution function (PDF), denoted as $p(x)$.
 
-The most fundamental statistical property of a random variable is the \textbf{Mean} (or Expected Value). Intuitively, this represents the ``centre of gravity'' of the probability distribution, or the average value one would observe if the experiment were repeated an infinite number of times. Mathematically, it is the first moment of the distribution:
+The most fundamental statistical property of a random variable is the \emph{Mean} (or Expected Value). Intuitively, this represents the ``centre of gravity'' of the probability distribution, or the average value one would observe if the experiment were repeated an infinite number of times. Mathematically, it is the first moment of the distribution:
 \begin{equation*}
 	\mu = \mathbb{E}[x] = \int_{-\infty}^{\infty} x \, p(x) \, dx
 \end{equation*}
 Note that for a vector $x$, this integral is applied element-wise to each component.
 
-A crucial property of the expectation operator $\mathbb{E}[\cdot]$ is that it is \textbf{linear}. If we apply a deterministic linear transformation to a random variable—such as multiplying it by a constant matrix $A$ or shifting it by a constant vector $b$—the mean transforms in exactly the same manner:
+A crucial property of the expectation operator $\mathbb{E}[\cdot]$ is that it is \emph{linear}. If we apply a deterministic linear transformation to a random variable—such as multiplying it by a constant matrix $A$ or shifting it by a constant vector $b$—the mean transforms in exactly the same manner:
 \begin{equation*}
 	\mathbb{E}[A x + b] = A \mathbb{E}[x] + b
 \end{equation*}
 This property is of extreme importance in linear system theory. It implies that for a linear dynamical system (e.g., $x_{k+1} = A x_k + B u_k$), the \emph{average} behaviour of the system can be predicted simply by propagating the mean state through the deterministic system matrices, separating the deterministic dynamics from the stochastic noise.
 \subsection{The Covariance Matrix}
-While the mean tells us where the state is \textit{likely} to be, it tells us nothing about how confident we are in that estimate. This uncertainty is quantified by the \textbf{Covariance Matrix}, typically denoted as $P$ (or $\Sigma$).
+While the mean tells us where the state is \textit{likely} to be, it tells us nothing about how confident we are in that estimate. This uncertainty is quantified by the \emph{Covariance Matrix}, typically denoted as $P$ (or $\Sigma$).
 
 For a random vector $x$ with mean $\mu$, the covariance is defined as the expected value of the squared error:
 \begin{equation*}
@@ -53,21 +53,21 @@ If $x$ has dimension $n \times 1$, then $P$ is an $n \times n$ matrix with speci
 \end{itemize}
 
 \subsection{The Gaussian Distribution}
-In linear estimation theory, we predominantly assume that noise and states follow a \textbf{Gaussian} (or Normal) distribution (see Appendix~\ref{app:prob} for a detailed treatment of probability distributions). A Gaussian random vector is completely defined by its mean $\mu$ and covariance $P$. We write this as:
+In linear estimation theory, we predominantly assume that noise and states follow a \emph{Gaussian} (or Normal) distribution (see Appendix~\ref{app:prob} for a detailed treatment of probability distributions). A Gaussian random vector is completely defined by its mean $\mu$ and covariance $P$. We write this as:
 \begin{equation*}
 	x \sim \mathcal{N}(\mu, P)
 \end{equation*}
 The Gaussian assumption is powerful because linear transformations of Gaussian variables remain Gaussian. This property allows the Kalman Filter to define the state entirely using just two parameters: the estimate vector $\hat{x}$ (the mean) and the error covariance matrix $P$.
 
 \subsection{White Noise}
-In system modelling, we often represent disturbances as \textbf{White Noise}. A discrete-time stochastic process $w_k$ is called white noise if it is uncorrelated in time:
+In system modelling, we often represent disturbances as \emph{White Noise}. A discrete-time stochastic process $w_k$ is called white noise if it is uncorrelated in time:
 \begin{equation*}
 	\begin{aligned}
 		\mathbb{E}[w_k] &= 0 \\
 		\mathbb{E}[w_k w_j^\top] &= \begin{cases} W_k & \text{if } k = j \\ 0 & \text{if } k \neq j \end{cases}
 	\end{aligned}
 \end{equation*}
-Here, $W_k$ is the \textbf{Process Noise Covariance}. Similarly, for sensors, we define measurement noise $v_k$ with \textbf{Measurement Noise Covariance} $V_k$.
+Here, $W_k$ is the \emph{Process Noise Covariance}. Similarly, for sensors, we define measurement noise $v_k$ with \emph{Measurement Noise Covariance} $V_k$.
 
 \begin{summarybox}{Key Property: Linear Propagation of Uncertainty}
 	The foundation of the Kalman Filter \emph{Predict} step relies on how Gaussian distributions transform through linear systems.
@@ -118,22 +118,22 @@ where $\delta_{kj}$ is the Kronecker delta (1 if $k=j$, 0 otherwise). This term 
 \subsection{The Estimation Objective}
 Our goal is to construct an estimate of the state, denoted as $\hat{x}_k$, using the history of measurements available up to time $k$.
 
-We define the \textbf{estimation error} as:
+We define the \emph{estimation error} as:
 \begin{equation*}
 	e_k \triangleq x_k - \hat{x}_k
 \end{equation*}
 
-The problem is to find the recursive algorithm that computes $\hat{x}_k$ such that the expected value of the squared error norm (the \textbf{Mean Squared Error}) is minimised at every time step:
+The problem is to find the recursive algorithm that computes $\hat{x}_k$ such that the expected value of the squared error norm (the \emph{Mean Squared Error}) is minimised at every time step:
 \begin{equation*}
 	\min_{\hat{x}_k} J_k = \mathbb{E} \left[ \| e_k \|^2 \right] = \mathbb{E} \left[ (x_k - \hat{x}_k)^\top (x_k - \hat{x}_k) \right]
 \end{equation*}
 
-An estimator that satisfies this condition is known as the \textbf{Minimum Variance Unbiased Estimator (MVUE)}. Under the Gaussian assumptions listed above, the Kalman Filter is the unique solution to this problem.
+An estimator that satisfies this condition is known as the \emph{Minimum Variance Unbiased Estimator (MVUE)}. Under the Gaussian assumptions listed above, the Kalman Filter is the unique solution to this problem.
 
 
 \section{Derivation of the Kalman Filter}
 
-To derive the optimal filter, we postulate a recursive linear estimator structure that operates in two distinct phases at each time step: a \textbf{Prediction} phase (based on the system model) and a \textbf{Correction} phase (based on the new measurement).
+To derive the optimal filter, we postulate a recursive linear estimator structure that operates in two distinct phases at each time step: a \emph{Prediction} phase (based on the system model) and a \emph{Correction} phase (based on the new measurement).
 
 \subsection{The Estimator Structure}
 
@@ -154,13 +154,13 @@ The observer dynamics are defined as follows:
 	\end{equation}
 	
 	\item \textbf{Correction (Measurement Update):}  
-	The prediction is corrected using the difference between the actual measurement and the predicted measurement. This difference is called the \textbf{Innovation} ($\tilde{y}_k$):
+	The prediction is corrected using the difference between the actual measurement and the predicted measurement. This difference is called the \emph{Innovation} ($\tilde{y}_k$):
 	\begin{equation} \label{eq:obs_correct}
 		\hat{x}_k = \hat{x}_k^- + L_k \underbrace{(y_k - C \hat{x}_k^-)}_{\tilde{y}_k}.
 	\end{equation}
 \end{enumerate}
 
-Here, $L_k$ is the \textbf{Kalman gain}. Our objective is to determine $L_k$ such that the mean squared estimation error is minimised.
+Here, $L_k$ is the \emph{Kalman gain}. Our objective is to determine $L_k$ such that the mean squared estimation error is minimised.
 
 \paragraph{Step 1: Prediction Error Statistics}
 
@@ -186,9 +186,9 @@ Expanding the quadratic term yields four components:
 	&= A \underbrace{\mathbb{E}[e_{k-1} e_{k-1}^\top]}_{P_{k-1}} A^\top + A \underbrace{\mathbb{E}[e_{k-1} w_{k-1}^\top]}_{0} + \underbrace{\mathbb{E}[w_{k-1} e_{k-1}^\top]}_{0} A^\top + \underbrace{\mathbb{E}[w_{k-1} w_{k-1}^\top]}_{W}.
 \end{align*}
 The cross-terms $\mathbb{E}[e_{k-1} w_{k-1}^\top]$ vanish because the white process noise $w_{k-1}$ is uncorrelated with the error accumulated in previous time steps. Thus, the equation simplifies to:
-\begin{equation} \label{eq:cov_predict}
+\begin{equation*}
 	P_k^- = A P_{k-1} A^\top + W.
-\end{equation}
+\end{equation*}
 
 \paragraph{Step 2: Correction Error Statistics}
 
@@ -222,7 +222,7 @@ We now analyse the expectation of each term:
 	\item \textbf{Terms 2 \& 3:} The measurement noise $v_k$ is uncorrelated with the \textit{a priori} estimation error $e_k^-$ (which depends only on past history). Therefore, $\mathbb{E}[e_k^- v_k^\top] = 0$, and these cross-terms vanish.
 	\item \textbf{Term 4:} Since $\mathbb{E}[v_k v_k^\top] = V$, this becomes $L_k V L_k^\top$.
 \end{itemize}
-Combining these results yields the \textbf{Joseph form} covariance update:
+Combining these results yields the \emph{Joseph form} covariance update:
 \begin{equation} \label{eq:cov_update_long}
 	P_k = (I - L_k C) P_k^- (I - L_k C)^\top + L_k V L_k^\top.
 \end{equation}
@@ -265,13 +265,13 @@ Rearranging the equation yields:
 \begin{equation*}
 	L_k (C P_k^- C^\top + V) = P_k^- C^\top
 \end{equation*}
-The term in the parentheses represents the uncertainty of the measurement prediction. We define this as the \textbf{Innovation Covariance}, $S_k$:
+The term in the parentheses represents the uncertainty of the measurement prediction. We define this as the \emph{Innovation Covariance}, $S_k$:
 \begin{equation*}
 	S_k \triangleq C P_k^- C^\top + V
 \end{equation*}
 Multiplying from the right by $S_k^{-1}$ gives the explicit solution for the optimal Kalman gain:
 \begin{equation} \label{eq:opt_gain}
-	\boxed{ L_k = P_k^- C^\top S_k^{-1} }
+	{ L_k = P_k^- C^\top S_k^{-1} }
 \end{equation}
 
 \paragraph{e) Simplifying the Covariance Update:}
@@ -289,7 +289,7 @@ We substitute this back into the expanded covariance equation:
 \end{align*}
 Factoring out $P_k^-$ from the right yields the canonical covariance update equation:
 \begin{equation*}
-	\boxed{ P_k = (I - L_k C) P_k^- }
+	{ P_k = (I - L_k C) P_k^- }
 \end{equation*}
 \textit{Note:} While this simple form is mathematically correct for the optimal gain, numerical implementations often use the longer \emph{Joseph form} (Eq. \ref{eq:cov_update_long}) because it guarantees the resulting matrix remains symmetric and positive definite even in the presence of floating-point rounding errors.
 
@@ -318,18 +318,18 @@ Factoring out $P_k^-$ from the right yields the canonical covariance update equa
 
 In the recursive derivation above, the estimation error covariance $P_k$ and the Kalman gain $L_k$ are re-calculated at every time step. This is computationally expensive.
 
-However, for \textbf{Linear Time-Invariant (LTI)} systems—where $A, B, C, W, V$ are constant—the covariance matrix $P_k^-$ converges to a constant steady-state matrix $P_{\infty}$ as $k \to \infty$, provided certain structural properties are met.
+However, for \emph{Linear Time-Invariant (LTI)} systems—where $A, B, C, W, V$ are constant—the covariance matrix $P_k^-$ converges to a constant steady-state matrix $P_{\infty}$ as $k \to \infty$, provided certain structural properties are met.
 
 \subsection{Convergence Conditions}
 \label{sec:kalman_convergence}
 Convergence is guaranteed if the system satisfies two conditions related to observability and controllability:
 \begin{enumerate}
-	\item The pair $(A, C)$ must be \textbf{Detectable}. This ensures that any unstable mode in the system is visible at the output $y$, allowing the filter to correct it.
-	\item The pair $(A, W^{1/2})$ must be \textbf{Stabilisable}. Here, $W^{1/2}$ is the matrix square root of the process noise covariance ($W = W^{1/2}(W^{1/2})^\top$). Intuitively, this condition requires that the process noise "excites" all unstable modes of the system. If an unstable mode is not excited by noise and cannot be seen by sensors, its estimation error variance will grow unbounded.
+	\item The pair $(A, C)$ must be \emph{Detectable}. This ensures that any unstable mode in the system is visible at the output $y$, allowing the filter to correct it.
+	\item The pair $(A, W^{1/2})$ must be \emph{Stabilisable}. Here, $W^{1/2}$ is the matrix square root of the process noise covariance ($W = W^{1/2}(W^{1/2})^\top$). Intuitively, this condition requires that the process noise "excites" all unstable modes of the system. If an unstable mode is not excited by noise and cannot be seen by sensors, its estimation error variance will grow unbounded.
 \end{enumerate}
 
 \subsection{The Discrete Algebraic Riccati Equation (DARE)}
-When these conditions are met, the \textit{a priori} covariance $P_{\infty}$ satisfies the \textbf{Discrete Algebraic Riccati Equation}:
+When these conditions are met, the \textit{a priori} covariance $P_{\infty}$ satisfies the \emph{Discrete Algebraic Riccati Equation}:
 \begin{equation*}
 	P_\infty = A P_\infty A^\top + W 
 	- A P_\infty C^\top (C P_\infty C^\top + V)^{-1} C P_\infty A^\top.
@@ -362,11 +362,11 @@ We can substitute the correction step into the prediction step to create a singl
 
 \section{Duality between Estimation and Control}
 
-A remarkable result in linear systems theory is the mathematical symmetry, or \textbf{duality}, between the optimal control problem (LQR) and the optimal estimation problem (Kalman Filter).
+A remarkable result in linear systems theory is the mathematical symmetry, or \emph{duality}, between the optimal control problem (LQR) and the optimal estimation problem (Kalman Filter).
 
 In the LQR problem, we propagate a cost matrix $P$ \textit{backwards} in time (from the future horizon to the present) to minimise a weighted sum of states and inputs. In the Kalman Filter, we propagate an error covariance matrix $P$ \textit{forwards} in time (from the initial condition to the present) to minimise the mean squared estimation error.
 
-Despite the difference in the direction of time, the recursive equations governing these two matrices are identical under a specific substitution of variables. This means that the \textbf{same numerical algorithms} (such as the Riccati solver) used to design a controller can be used to design an observer.
+Despite the difference in the direction of time, the recursive equations governing these two matrices are identical under a specific substitution of variables. This means that the \emph{same numerical algorithms} (such as the Riccati solver) used to design a controller can be used to design an observer.
 
 \begin{table}[h]
 	\centering
@@ -408,7 +408,7 @@ This indicates that if the pair $(A, C)$ is detectable and $(A, W^{1/2})$ is sta
 
 \section{Practical Tuning: Selecting $W$ and $V$}
 
-While the system matrices ($A, B, C$) obey physical laws, the noise covariance matrices often serve as tuning parameters that dictate the filter's \textbf{behaviour}.
+While the system matrices ($A, B, C$) obey physical laws, the noise covariance matrices often serve as tuning parameters that dictate the filter's \emph{behaviour}.
 
 \subsection{Measurement Noise ($V$)}
 This matrix represents sensor precision and is straightforward to determine. It is typically diagonal (assuming uncorrelated sensors) and obtained via:
@@ -418,7 +418,7 @@ This matrix represents sensor precision and is straightforward to determine. It 
 \end{itemize}
 
 \subsection{Process Noise ($W$) }
-The matrix $W$ is more abstract. It lumps together physical disturbances (e.g., wind gusts) and \textbf{modelling errors} (e.g., linearisation inaccuracies). Since these are difficult to quantify, $W$ is treated as a tuning handle to adjust the trade-off between the model and the measurements:
+The matrix $W$ is more abstract. It lumps together physical disturbances (e.g., wind gusts) and \emph{modelling errors} (e.g., linearisation inaccuracies). Since these are difficult to quantify, $W$ is treated as a tuning handle to adjust the trade-off between the model and the measurements:
 
 \begin{itemize}
 	\item \textbf{High $W$ (Trust the Sensor):} The filter assumes the model is poor. The Kalman gain $L$ increases. Result: Fast transient response, but the estimate will be noisy.
@@ -429,10 +429,10 @@ The matrix $W$ is more abstract. It lumps together physical disturbances (e.g., 
 
 \begin{examplebox}{MATLAB: Kalman Filter Implementation (LQG Control)}
 	\textbf{The Problem:}
-	Consider the double integrator system (representing a simple mass). Our objective is to stabilise the system using full-state feedback ($u_k = -K x_k$). However, we face a practical constraint: we can only measure the \textbf{position}, and that measurement is corrupted by noise. We cannot measure the velocity directly.
+	Consider the double integrator system (representing a simple mass). Our objective is to stabilise the system using full-state feedback ($u_k = -K x_k$). However, we face a practical constraint: we can only measure the \emph{position}, and that measurement is corrupted by noise. We cannot measure the velocity directly.
 	
 	\textbf{The Solution:}
-	We design a \textbf{Linear Quadratic Gaussian (LQG)} controller. This consists of two parts:
+	We design a \emph{Linear Quadratic Gaussian (LQG)} controller. This consists of two parts:
 	\begin{enumerate}
 		\item An \textbf{LQR Controller} ($K$) designed for the ideal system to regulate state to zero.
 		\item A \textbf{Steady-State Kalman Filter} ($L$) to reconstruct the velocity from the noisy position data.
@@ -522,6 +522,18 @@ The matrix $W$ is more abstract. It lumps together physical disturbances (e.g., 
 	\textbf{(c)} Statistical Consistency: The velocity estimation error (blue) remains bounded within the $\pm 3\sigma$ confidence intervals (red dashed lines) derived from the steady-state covariance $P_\infty$. The large error at $t < 4$s is due to the incorrect initial guess ($x_{est}=0$ vs $x_{true}=0.5$), which the filter quickly corrects.}
 	\label{fig:kalman_results}
 \end{figure}
+
+\section*{Chapter Summary}
+\begin{itemize}
+    \item The state estimation problem seeks to reconstruct unmeasured or noisy states from available output measurements and a known system model.
+    \item The Kalman filter operates in two recursive steps: a \emph{prediction} step that propagates the state and covariance forward, and an \emph{update} step that corrects them using new measurements.
+    \item The Kalman gain is derived by minimising the trace of the posterior error covariance, yielding an optimal linear estimator for Gaussian noise.
+    \item Covariance propagation equations track the uncertainty of the state estimate through both the prediction and update phases.
+    \item The steady-state Kalman filter replaces the time-varying gain with a constant gain obtained by solving the discrete algebraic Riccati equation, reducing online computation.
+    \item A formal duality exists between the Kalman filter and the LQR problem: the estimator Riccati equation mirrors the controller Riccati equation with transposed system matrices and swapped noise/cost weighting.
+    \item The Linear-Quadratic-Gaussian (LQG) controller combines LQR state feedback with a Kalman filter via the separation principle, enabling optimal output-feedback control.
+    \item Tuning the Kalman filter involves adjusting the process noise covariance $Q$ and measurement noise covariance $R$ to balance responsiveness against sensitivity to noise.
+\end{itemize}
 
 \section*{Exercises}
 

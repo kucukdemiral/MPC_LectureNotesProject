@@ -24,13 +24,13 @@ In this chapter, we step away from system dynamics for a moment to focus purely 
 
 In a general sense, the Oxford Dictionary defines optimisation as:
 \begin{itemize}
-	\item ``The action of making the \textbf{best} or \textbf{most effective} use of a situation or resource.''
+	\item ``The action of making the \emph{best} or \emph{most effective} use of a situation or resource.''
 \end{itemize}
 
 In engineering, we translate this concept into a precise mathematical framework. We are not just ``trying to do our best''; we are systematically searching for a specific numerical value that satisfies a mathematical criterion.
 
 \begin{defnbox}{Mathematical Definition of Optimisation}
-	A numerical approach for seeking a \textbf{best} decision or action from a \textbf{set of alternatives}.
+	A numerical approach for seeking a \emph{best} decision or action from a \emph{set of alternatives}.
 \end{defnbox}
 
 \section{The Anatomy of an Optimisation Problem}
@@ -54,7 +54,7 @@ To translate a real-world engineering problem into the mathematical form describ
 	\item \textbf{Constraints:} The rules that must be obeyed. These define the \textit{feasible set} (denoted as $S$). Constraints distinguish practical engineering from pure mathematics by strictly enforcing physical limits (e.g., maximum voltage, tank capacity) or safety bounds (e.g., obstacle avoidance).
 \end{enumerate}
 
-Mathematically, we often denote the decision variables as $z$ to distinguish them from the system state $x$ used in control theory. The standard optimisation form is written as:
+Mathematically, we denote the decision variables as $x$ (and occasionally $z$ when we need to distinguish them from the system state). The standard optimisation form is written as:
 
 \begin{equation}
 	\begin{aligned}
@@ -75,7 +75,7 @@ Mathematically, we often denote the decision variables as $z$ to distinguish the
 
 To make the abstract definitions of decision variables, objective functions, and constraints concrete, let us consider two distinct optimisation problems.
 
-The process of translating a physical or data-driven problem into a mathematical optimisation format is known as \textbf{modelling}. This step is often more challenging than the solution itself. In both examples below, we follow a systematic three-step approach:
+The process of translating a physical or data-driven problem into a mathematical optimisation format is known as \emph{modelling}. This step is often more challenging than the solution itself. In both examples below, we follow a systematic three-step approach:
 \begin{enumerate}
 	\item \textbf{Identify the Decision Variables:} What are the \emph{knobs} we can turn?
 	\item \textbf{Formulate the Objective:} What is the single metric that defines \emph{best}?
@@ -188,7 +188,7 @@ The first example (Box Volume) illustrates a geometric design problem where \emp
 	
 	\solution
 	
-	Note that in this specific problem, the $x$ values are \textbf{constants} (data we measured), not decision variables.
+	Note that in this specific problem, the $x$ values are \emph{constants} (data we measured), not decision variables.
 	
 	\begin{enumerate}
 		\item \textbf{Decision Variables:}  The parameters of the line: the slope vector $a \in \mathbb{R}^n$ and the intercept $b \in \mathbb{R}$.
@@ -352,14 +352,14 @@ If the intersection of these constraints is empty (e.g., $x > 5$ AND $x < 3$), t
 
 \subsection{Standard Form: Minimisation vs. Maximisation}
 
-Standard numerical solvers (like \texttt{quadprog} or \texttt{fmincon} in MATLAB) are typically written to perform \textbf{minimisation}. However, engineering problems are often phrased as maximisation (e.g., maximise profit, maximise volume).
+Standard numerical solvers (like \texttt{quadprog} or \texttt{fmincon} in MATLAB) are typically written to perform \emph{minimisation}. However, engineering problems are often phrased as maximisation (e.g., maximise profit, maximise volume).
 
 To reconcile this, we rely on a mathematical identity. But first, we must clarify a precise piece of notation often used in optimisation: the difference between $\min$ and $\arg \min$.
 
 \textbf{Notation Note: Minimum vs. Argument of the Minimum:} \\
 
 \begin{itemize}
-	\item \textbf{$\min f(x)$:} Returns the \textbf{value} of the function at the minimum. This is the score (the vertical axis on a graph).
+	\item \textbf{$\min f(x)$:} Returns the \emph{value} of the function at the minimum. This is the score (the vertical axis on a graph).
 	\item \textbf{$\arg \min f(x)$:} Returns the {argument} (the variable $x$) that produces that minimum. This is the decision (the horizontal axis).
 \end{itemize}
 
@@ -373,7 +373,7 @@ With this notation in mind, we can state the equivalence principle. We do not ne
 	\underbrace{\arg \max_{x \in S} f(x)}_{\text{Best Decision}} \equiv \underbrace{\arg \min_{x \in S} \{-f(x)\}}_{\text{Equivalent Search}}
 \end{equation}
 
-Visually, multiplying the objective function by $-1$ flips the curve upside down. A peak (maximum) in the original function becomes a valley (minimum) in the negated function. While the vertical values flip signs, the \textbf{horizontal location ($x$)} of the optimal point remains exactly the same. This is pictured in Figure~\ref{fig:minimization_vs_max}.
+Visually, multiplying the objective function by $-1$ flips the curve upside down. A peak (maximum) in the original function becomes a valley (minimum) in the negated function. While the vertical values flip signs, the \emph{horizontal location ($x$)} of the optimal point remains exactly the same. This is pictured in Figure~\ref{fig:minimization_vs_max}.
 
 \begin{figure}
 	\begin{center}
@@ -384,8 +384,8 @@ Visually, multiplying the objective function by $-1$ flips the curve upside down
 				\draw[->] (0,-1.5) -- (0,1.5);
 				
 				% Draw the function
-				\draw[thick, green!60!black] plot[domain=0:3, samples=50] (\x, {sin(\x*100)});
-				\node[green!60!black] at (1.7, 1.5) {Maximise $f(x)$};
+				\draw[thick, teal] plot[domain=0:3, samples=50] (\x, {sin(\x*100)});
+				\node[teal] at (1.7, 1.5) {Maximise $f(x)$};
 				
 				% Draw x* lines and labels
 				\draw[dashed] (0.85, 0) -- (0.85, 1);
@@ -416,7 +416,7 @@ Visually, multiplying the objective function by $-1$ flips the curve upside down
 			\end{scope}
 		\end{tikzpicture}
 	\end{center}
-	\caption{Visual representation of the equivalence between maximisation and minimisation. To maximise an objective function $f(x)$ (green curve), one can equivalently minimise its negative, $-f(x)$ (red curve). Note that while the vertical value flips sign, the optimal decision variable $x^*$ (the horizontal position of the black dot) remains identical.}
+	\caption{Visual representation of the equivalence between maximisation and minimisation. To maximise an objective function $f(x)$ (teal curve), one can equivalently minimise its negative, $-f(x)$ (red curve). Note that while the vertical value flips sign, the optimal decision variable $x^*$ (the horizontal position of the black dot) remains identical.}
 	\label{fig:minimization_vs_max}
 \end{figure}
 
@@ -434,14 +434,14 @@ With the general structure of an optimisation problem in place, we now refine th
 
 The distinguishing factor is rarely just the size of the problem (the number of variables); rather, it is the geometry of the problem.
 
-The difference between easy and hard problems lies not in the number of variables but in the geometry of the search space. The central concept here is \textbf{Convexity}: if the objective is convex and the constraints form a convex set, then any local minimum is guaranteed to be the global minimum. We begin by defining the building blocks of this geometry: sets and functions.
+The difference between easy and hard problems lies not in the number of variables but in the geometry of the search space. The central concept here is \emph{Convexity}: if the objective is convex and the constraints form a convex set, then any local minimum is guaranteed to be the global minimum. We begin by defining the building blocks of this geometry: sets and functions.
 
 \subsection{Convex Sets}
 
-A fundamental concept in optimisation, particularly in Model Predictive Control (MPC), is that of a \textbf{convex set}. Working with convex sets and functions simplifies the optimisation problem significantly, often guaranteeing that any local optimum is also a global optimum.
+A fundamental concept in optimisation, particularly in Model Predictive Control (MPC), is that of a \emph{convex set}. Working with convex sets and functions simplifies the optimisation problem significantly, often guaranteeing that any local optimum is also a global optimum.
 
 \begin{defnbox}{Convex Set}
-	A set $\mathcal{X}$ is \textbf{convex} if and only if for any pair of points $x$ and $y$ in $\mathcal{X}$, any \textbf{convex combination} of $x$ and $y$ lies in $\mathcal{X}$.
+	A set $\mathcal{X}$ is \emph{convex} if and only if for any pair of points $x$ and $y$ in $\mathcal{X}$, any \emph{convex combination} of $x$ and $y$ lies in $\mathcal{X}$.
 \end{defnbox}
 
 Mathematically, this definition is stated as:
@@ -546,11 +546,11 @@ Hyperplanes and half-spaces are always convex sets. This property ensures that o
 	\end{equation}
 	This represents a line in 2D space. To relate this to the standard hyperplane definition $a^\top x = b$, we define the vectors:
 	\begin{equation}
-		a = \begin{pmatrix} 2 \\ 1 \end{pmatrix}, \quad x = \begin{pmatrix} x_1 \\ x_2 \end{pmatrix}, \quad b = 2
+		a = \begin{bmatrix} 2 \\ 1 \end{bmatrix}, \quad x = \begin{bmatrix} x_1 \\ x_2 \end{bmatrix}, \quad b = 2
 	\end{equation}
 	Thus, the equation becomes:
 	\begin{equation}
-		\underbrace{\begin{pmatrix} 2 & 1 \end{pmatrix}}_{a^\top} \begin{pmatrix} x_1 \\ x_2 \end{pmatrix} = \underbrace{2}_{b}
+		\underbrace{\begin{bmatrix} 2 & 1 \end{bmatrix}}_{a^\top} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} = \underbrace{2}_{b}
 	\end{equation}
 	
 	\textbf{Connection to the Gradient:}\\
@@ -563,7 +563,7 @@ Hyperplanes and half-spaces are always convex sets. This property ensures that o
 	\end{equation}
 	The gradient of this function, denoted as $\nabla f$, is a column vector containing the partial derivatives with respect to $x_1$ and $x_2$:
 	\begin{equation}
-		a = \nabla_x f = \begin{pmatrix} \dfrac{\partial f}{\partial x_1} \\[12pt] \dfrac{\partial f}{\partial x_2} \end{pmatrix} = \begin{pmatrix} 2 \\ 1 \end{pmatrix}
+		a = \nabla_x f = \begin{bmatrix} \dfrac{\partial f}{\partial x_1} \\[12pt] \dfrac{\partial f}{\partial x_2} \end{bmatrix} = \begin{bmatrix} 2 \\ 1 \end{bmatrix}
 	\end{equation}
 	This confirms that the vector $a = (2, 1)^\top$ is the gradient of the linear function defining the hyperplane. Geometrically, the gradient vector is perpendicular to the level sets of the function, meaning $a$ is perpendicular to the line $2x_1 + x_2 = 2$, as shown in Figure \ref{fig:example_hyperplane}.
 	
@@ -589,7 +589,7 @@ Hyperplanes and half-spaces are always convex sets. This property ensures that o
 			
 			% Normal Vector calculation
 			\coordinate (P) at (0.5, 1);
-			\draw[->, red, thick] (P) -- ++(1, 0.5) node[right] {$a = \begin{pmatrix} 2 \\ 1 \end{pmatrix}$};
+			\draw[->, red, thick] (P) -- ++(1, 0.5) node[right] {$a = \begin{bmatrix} 2 \\ 1 \end{bmatrix}$};
 			
 			% Right angle marker
 			\draw[thick] ($(P)!0.2cm!-63.4:(1.5,-1)$) -- ++(26.6:0.2) -- ($(P)!0.2cm!26.6:(1.5,1.5)$);
@@ -722,7 +722,7 @@ Hyperplanes and half-spaces are always convex sets. This property ensures that o
 Let $S$ be a convex subset of a vector space. We define the properties of functions mapping $S$ to the real numbers $\mathbb{R}$ as follows.
 
 \begin{defnbox}{Convex Function}
-	A function $f: S \rightarrow \mathbb{R}$ is said to be \textbf{convex} if $S$ is convex and the following inequality holds for all $z_1, z_2 \in S$ and for all $\lambda \in [0, 1]$:
+	A function $f: S \rightarrow \mathbb{R}$ is said to be \emph{convex} if $S$ is convex and the following inequality holds for all $z_1, z_2 \in S$ and for all $\lambda \in [0, 1]$:
 	\begin{equation}
 		f(\lambda z_1 + (1 - \lambda)z_2) \leq \lambda f(z_1) + (1 - \lambda)f(z_2)
 	\end{equation}
@@ -730,7 +730,7 @@ Let $S$ be a convex subset of a vector space. We define the properties of functi
 \end{defnbox}
 	
 \begin{defnbox}{Concave Function}
-	A function $f: S \rightarrow \mathbb{R}$ is \textbf{concave} if $S$ is convex and $-f$ is a convex function. Equivalently, the inequality in the definition of convexity is reversed.
+	A function $f: S \rightarrow \mathbb{R}$ is \emph{concave} if $S$ is convex and $-f$ is a convex function. Equivalently, the inequality in the definition of convexity is reversed.
 \end{defnbox}
 
 
@@ -770,7 +770,7 @@ The concept of convexity is illustrated in Figure \ref{fig:convex_func}. The cur
 		
 		% Draw points
 		\filldraw (\zOne, \yOne) circle (1.5pt) node[above left, text=blue] {$f(z_1)$};
-		\filldraw (\zTwo, \yTwo) circle (1.5pt) node[above left, text=green!50!black] {$f(z_2)$};
+		\filldraw (\zTwo, \yTwo) circle (1.5pt) node[above left, text=teal] {$f(z_2)$};
 		\filldraw (\zMix, \yCurve) circle (1.5pt); % Point on curve
 		\filldraw (\zMix, \yLine) circle (1.5pt);  % Point on line
 		
@@ -786,7 +786,7 @@ The concept of convexity is illustrated in Figure \ref{fig:convex_func}. The cur
 		
 		% Labels on X-axis
 		\node[below, text=blue] at (\zOne, 0) {$z_1$};
-		\node[below, text=green!50!black] at (\zTwo, 0) {$z_2$};
+		\node[below, text=teal] at (\zTwo, 0) {$z_2$};
 		\node[below] at (\zMix, 0) {$\lambda z_1 + (1-\lambda)z_2$};
 		
 		% Labels on Y-axis
@@ -808,8 +808,8 @@ Different classes of problems require different numerical algorithms (solvers). 
 
 We typically classify problems in two ways:
 \begin{enumerate}
-	\item By the \textbf{existence and type of constraints} (Constrained vs. Unconstrained).
-	\item By the \textbf{mathematical structure} of the cost and constraint functions (Linear, Quadratic, Nonlinear).
+	\item By the \emph{existence and type of constraints} (Constrained vs. Unconstrained).
+	\item By the \emph{mathematical structure} of the cost and constraint functions (Linear, Quadratic, Nonlinear).
 \end{enumerate}
 
 \subsection{Classification I: Existence of Constraints}
@@ -865,7 +865,7 @@ When dealing with $n$ variables, the function $J(x)$ describes a surface in $n+1
 				\node[blue, font=\tiny, fill=white, inner sep=1pt] at (axis cs: 3.2, 3.2) {$J=20$};
 				
 				% The Minimum
-				\draw[fill=green, draw=black, thick] (axis cs:0,0) circle [radius=0.15];
+				\draw[fill=teal, draw=black, thick] (axis cs:0,0) circle [radius=0.15];
 				\node[anchor=north west] at (axis cs:0.1, 0.6) {\tiny min $(0,0)$};
 			\end{axis}
 		\end{tikzpicture}
@@ -923,7 +923,7 @@ An equality constrained problem restricts the decision variables to lie strictly
 				\fill[gray] (axis cs:0,0) circle (2pt) node[below left] {\tiny Unconstrained};
 				
 				% 4. Draw Constrained Minimum
-				\fill[green, draw=black, thick] (axis cs:0.8, 1.6) circle (3pt);
+				\fill[teal, draw=black, thick] (axis cs:0.8, 1.6) circle (3pt);
 				\node[anchor=south west] at (axis cs:0.85, 1.6) {\textbf{Optimal} $(0.8, 1.6)$};
 			\end{axis}
 		\end{tikzpicture}
@@ -951,7 +951,7 @@ Unlike equality constraints, inequality constraints confine the solution to a \t
 	\solution
 	
 
-	Visualisation is excellent for understanding, but to get numerical answers, we use software. In this course, we utilise \textbf{YALMIP}, an open source MATLAB toolbox that allows us to write optimisation problems using syntax that looks almost identical to the mathematics.
+	Visualisation is excellent for understanding, but to get numerical answers, we use software. In this course, we utilise \emph{YALMIP}, an open source MATLAB toolbox that allows us to write optimisation problems using syntax that looks almost identical to the mathematics.
 	
 	The workflow always follows three steps: 
 	\begin{center}
@@ -1010,10 +1010,10 @@ Unlike equality constraints, inequality constraints confine the solution to a \t
 				
 				% 3. Constraint Lines
 				\addplot[domain=-0.5:5, color=red, thick] {2.5 - 0.5*x};
-				\addplot[domain=-0.5:3, color=green!50!black, thick] {5 - 2*x};
+				\addplot[domain=-0.5:3, color=teal, thick] {5 - 2*x};
 				
 				% 4. Optimal Point
-				\fill[green, draw=black, thick] (axis cs:1, 2) circle (3pt);
+				\fill[teal, draw=black, thick] (axis cs:1, 2) circle (3pt);
 				\node[anchor=north east] at (axis cs:1, 2) {{\tiny \textbf{Optimal} $(1, 2)$}};
 			\end{axis}
 		\end{tikzpicture}
@@ -1021,7 +1021,7 @@ Unlike equality constraints, inequality constraints confine the solution to a \t
 \end{examplebox}
 \paragraph{Type C: General Constraints}
 
-In the most general case, a problem contains both equality and inequality constraints. The solver must find a solution that lies inside the inequality region \textbf{and} lies exactly on the equality curve.
+In the most general case, a problem contains both equality and inequality constraints. The solver must find a solution that lies inside the inequality region \emph{and} lies exactly on the equality curve.
 
 Geometrically, the feasible set is the intersection of the regions defined by all constraints. This often effectively reduces the dimensionality of the search space.
 
@@ -1103,7 +1103,7 @@ Geometrically, the feasible set is the intersection of the regions defined by al
 				\node[darkgray, font=\scriptsize, anchor=north east] at (axis cs:1, 2) {Old Optimum $(1, 2)$};
 				
 				% 5. New Optimal Point
-				\fill[green, draw=black, thick] (axis cs:1, 3) circle (3pt);
+				\fill[teal, draw=black, thick] (axis cs:1, 3) circle (3pt);
 				\node[anchor=south west, font=\scriptsize] at (axis cs:1, 3) { \textbf{New Optimum} $(1, 3)$};
 				
 			\end{axis}
@@ -1178,7 +1178,7 @@ The feasible set of an LP is a polyhedron, and the optimum, when it exists, is a
 	Crucially, among all possible valid equilibria, we want to find the one that requires the \emph{least control effort}. In engineering (e.g., satellite thrusters), "effort" is often quantified by fuel consumption, which corresponds to the sum of the absolute values of the inputs.
 	
 	\textbf{1. The 1-Norm and Notation:}
-	Mathematically, we want to minimise the \textbf{1-norm} of the input vector $u \in \mathbb{R}^m$:
+	Mathematically, we want to minimise the \emph{1-norm} of the input vector $u \in \mathbb{R}^m$:
 	\begin{equation}
 		\|u\|_1 = \sum_{i=1}^{m} |u_i| = |u_1|+|u_2|+\cdots + |u_m|
 	\end{equation}
@@ -1376,12 +1376,12 @@ This is shown in Figure~\ref{fig:QP}.
 		2 & 10
 	\end{bmatrix}
 	\]
-	Note that for smooth functions, the Hessian is always a \textbf{symmetric} matrix ($H_{ij} = H_{ji}$).
+	Note that for smooth functions, the Hessian is always a \emph{symmetric} matrix ($H_{ij} = H_{ji}$).
 \end{examplebox}
 
 
 
-In the strictly convex case (where $P \succ 0$), the level sets of the objective function form concentric ellipses. This structure guarantees that the optimisation problem yields a \textbf{unique global minimiser}, provided the feasible region is non-empty. 
+In the strictly convex case (where $P \succ 0$), the level sets of the objective function form concentric ellipses. This structure guarantees that the optimisation problem yields a \emph{unique global minimiser}, provided the feasible region is non-empty. 
 
 Geometrically, the solver searches for the smallest possible ellipse that still overlaps with the constraints. The optimal solution is found at the precise point where this lowest-cost contour touches (or \emph{grazes}) the feasible polytope. This graphical interpretation is illustrated in Figure~\ref{fig:QP}.
 
@@ -1754,7 +1754,7 @@ The feasible set becomes a set of discrete points embedded within a polyhedron, 
 	
 	\tcbline
 	\textbf{Solving this problem:}
-	The model above is a Mixed-Integer Linear Programme (MILP) due to the binary variables $u(k), s(k), z(k)$. It requires specialised solvers like Gurobi or CPLEX. In the software section later, we will implement a \textbf{simplified} version of this (a continuous LP) to demonstrate the concept in MATLAB.
+	The model above is a Mixed-Integer Linear Programme (MILP) due to the binary variables $u(k), s(k), z(k)$. It requires specialised solvers like Gurobi or CPLEX. In the software section later, we will implement a \emph{simplified} version of this (a continuous LP) to demonstrate the concept in MATLAB.
 	
 \end{examplebox}
 
@@ -1802,11 +1802,11 @@ Implementing Model Predictive Control (MPC) requires a robust software stack. Ge
 
 Choosing the right parser depends heavily on the programming environment (MATLAB vs. Python) and the type of problem (Convex vs. Nonlinear).
 
-For \textbf{MATLAB} users, \textbf{YALMIP} is the de facto standard for prototyping. It supports a vast array of solvers and allows users to switch between them by changing a single line of code. \textbf{CVX} is another popular option, specifically designed for Disciplined Convex Programming (DCP), a methodology that requires users to compose their optimisation problems from a fixed library of convex functions and composition rules so that convexity is automatically verified.
+For \emph{MATLAB} users, \emph{YALMIP} is the de facto standard for prototyping. It supports a vast array of solvers and allows users to switch between them by changing a single line of code. \emph{CVX} is another popular option, specifically designed for Disciplined Convex Programming (DCP), a methodology that requires users to compose their optimisation problems from a fixed library of convex functions and composition rules so that convexity is automatically verified.
 
-For \textbf{Python} users, \textbf{CVXPY} is the equivalent of CVX, providing a clean object-oriented interface for convex problems. 
+For \emph{Python} users, \emph{CVXPY} is the equivalent of CVX, providing a clean object-oriented interface for convex problems. 
 
-For \textbf{Nonlinear MPC (NMPC)} and high-performance applications, \textbf{CasADi} is widely used in both Python and MATLAB. Unlike standard parsers, CasADi implements Algorithmic Differentiation (AD), allowing it to compute exact gradients and Hessians automatically, which is critical for solving nonlinear control problems efficiently.
+For \emph{Nonlinear MPC (NMPC)} and high-performance applications, \emph{CasADi} is widely used in both Python and MATLAB. Unlike standard parsers, CasADi implements Algorithmic Differentiation (AD), allowing it to compute exact gradients and Hessians automatically, which is critical for solving nonlinear control problems efficiently.
 
 \begin{table}[h]
 	\centering
@@ -1832,14 +1832,14 @@ For \textbf{Nonlinear MPC (NMPC)} and high-performance applications, \textbf{Cas
 The choice of solver is dictated by the problem class and the deployment requirements.
 
 \subsubsection*{Linear and Quadratic Solvers (Standard MPC)}
-For linear MPC, we typically solve a \textbf{Quadratic Programme (QP)}. Solvers like \textbf{OSQP} (Operator Splitting Quadratic Programme) and \textbf{quadprog} are popular because they are robust, code-generatable, and solve for moderate accuracy very quickly. \textbf{qpOASES} is an active-set solver specifically designed for MPC; it uses "warm-starting" to solve the next time-step's problem almost instantly based on the previous solution.
+For linear MPC, we typically solve a \emph{Quadratic Programme (QP)}. Solvers like \emph{OSQP} (Operator Splitting Quadratic Programme) and \emph{quadprog} are popular because they are robust, code-generatable, and solve for moderate accuracy very quickly. \emph{qpOASES} is an active-set solver specifically designed for MPC; it uses "warm-starting" to solve the next time-step's problem almost instantly based on the previous solution.
 
-For commercial applications, \textbf{Gurobi} and \textbf{CPLEX} are the industry leaders, offering unmatched speed for large-scale Mixed-Integer (MIP) and convex problems.
+For commercial applications, \emph{Gurobi} and \emph{CPLEX} are the industry leaders, offering unmatched speed for large-scale Mixed-Integer (MIP) and convex problems.
 
 \subsubsection*{Conic and Nonlinear Solvers (Robust \& Nonlinear MPC)}
-If the MPC formulation involves ellipsoidal constraints (Robust MPC) or Linear Matrix Inequalities (LMIs), a \textbf{Conic Solver} is required. \textbf{MOSEK} is the industry leader for these types of problems (SOCP and SDP). For pure MATLAB-based research involving LMIs, \textbf{SeDuMi} remains a classic open-source option.
+If the MPC formulation involves ellipsoidal constraints (Robust MPC) or Linear Matrix Inequalities (LMIs), a \emph{Conic Solver} is required. \emph{MOSEK} is the industry leader for these types of problems (SOCP and SDP). For pure MATLAB-based research involving LMIs, \emph{SeDuMi} remains a classic open-source option.
 
-For Nonlinear MPC, \textbf{IPOPT} (Interior Point OPTimizer) is the standard open-source engine, often paired with CasADi.
+For Nonlinear MPC, \emph{IPOPT} (Interior Point OPTimizer) is the standard open-source engine, often paired with CasADi.
 
 \begin{table}[h]
 	\centering
@@ -1872,7 +1872,7 @@ Mathematical formulation is only half the battle. To deploy Model Predictive Con
 
 \subsection{Economic MPC for Smart Grids}
 
-In this  example, we explore a sophisticated application of optimisation: \textbf{Economic Energy Management}.  The goal here is purely economic: minimise the total cost of electricity over a 24-hour horizon.
+In this  example, we explore a sophisticated application of optimisation: \emph{Economic Energy Management}.  The goal here is purely economic: minimise the total cost of electricity over a 24-hour horizon.
 
 \subsubsection{Problem Scenario}
 Although the general problem formulation (the MILP discussed earlier) included complex generator logic, for this MATLAB example we will solve a simplified but highly relevant subset: {Battery Energy Arbitrage}.
@@ -1987,7 +1987,7 @@ The result is best understood visually (Figure \ref{fig:smartgrid}).
 
 \item \textbf{Constraints Define Reality:} Unlike classical control, where saturation is often an afterthought, optimisation explicitly handles physical limitations. The \emph{feasible set} is the intersection of all equality and inequality constraints. If this set is empty, the problem is infeasible, and no solution exists.
 
-\item \textbf{Convexity:} The most critical property of an optimisation problem is convexity. If the objective function is convex (bowl-shaped) and the constraints form a convex set, any local minimum found is guaranteed to be the \textbf{global minimum}. This reliability is essential for safety-critical control systems.
+\item \textbf{Convexity:} The most critical property of an optimisation problem is convexity. If the objective function is convex (bowl-shaped) and the constraints form a convex set, any local minimum found is guaranteed to be the \emph{global minimum}. This reliability is essential for safety-critical control systems.
 
 \item \textbf{Standard Forms:}
 \begin{itemize}
@@ -1998,6 +1998,1267 @@ The result is best understood visually (Figure \ref{fig:smartgrid}).
 
 \item \textbf{Minimisation vs. Maximisation:} Solvers generally seek to minimise cost. To maximise a benefit (like profit), we simply minimise the negative of that function:
 \[ \arg \max f(x) \equiv \arg \min (-f(x)) \]
+\end{itemize}
+
+% ===================================================================
+% NUMERICAL METHODS FOR OPTIMISATION — Sections 1 & 2
+% (Body content only — no preamble, no \documentclass)
+% ===================================================================
+
+\section{Numerical Methods for Optimisation\texorpdfstring{$^{(*)}$}{(*)}}
+\label{sec:numerical_methods}
+
+The previous sections defined the components of an optimisation problem---decision variables, cost function, and constraints---and classified common problem types (LP, QP, MILP). This section addresses a natural follow-up question: \emph{how do numerical solvers actually find the optimal solution?} We begin with the simplest case, finding roots of scalar functions, and progressively build toward multi-variable constrained optimisation algorithms. The methods introduced here underpin virtually every solver used in Model Predictive Control.
+
+The key insight linking root finding to optimisation is the first-order necessary condition: for $x^*$ to be a local minimum of a differentiable function $J(x)$, the gradient must vanish,
+\[
+\nabla J(x^*) = 0.
+\]
+Therefore, finding an optimum \emph{reduces to finding a root} of the gradient. We begin by studying two classical root-finding algorithms---bisection and Newton--Raphson---before generalising them to multi-variable optimisation.
+
+% -------------------------------------------------------------------
+\subsection{The Bisection Method}
+% -------------------------------------------------------------------
+
+\begin{defnbox}{Bisection Method}
+	Given a continuous function $g\colon \mathbb{R}\to\mathbb{R}$ and an interval $[a,b]$ such that $g(a)\cdot g(b)<0$, the Intermediate Value Theorem guarantees at least one root $x^*\in(a,b)$. The bisection method evaluates $g$ at the midpoint $c=(a+b)/2$ and replaces the endpoint whose function value has the same sign as $g(c)$, thereby halving the bracket at each step.
+
+	\textbf{Convergence rate:} linear. After $k$ iterations the error satisfies
+	\[
+	|x_k - x^*| \;\le\; \frac{b-a}{2^{k}}.
+	\]
+\end{defnbox}
+
+\begin{algorithm}[H]
+\caption{Bisection Method}\label{alg:bisection}
+\begin{algorithmic}[1]
+\Require $g$, $a$, $b$, tolerance $\varepsilon>0$ with $g(a)\cdot g(b)<0$
+\While{$(b-a) > \varepsilon$}
+    \State $c \gets (a+b)/2$
+    \If{$g(a)\cdot g(c) < 0$}
+        \State $b \gets c$
+    \Else
+        \State $a \gets c$
+    \EndIf
+\EndWhile
+\State \Return $(a+b)/2$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{center}
+\begin{tikzpicture}[>=stealth]
+	% Scaling: x_real in [0, 0.6], x_plot = 10*x_real  →  [0, 6]
+	%          y = g(x) values plotted at 2× scale for visibility
+	\def\yscl{2.0}
+
+	% Axes
+	\draw[->] (-0.5,0) -- (7,0) node[right] {$x$};
+	\draw[->] (0,{-0.4*\yscl}) -- (0,{2.3*\yscl}) node[above] {$g(x)$};
+
+	% Tick marks on x-axis
+	\foreach \xr/\xl in {0/0, 1/0.1, 2/0.2, 3/0.3, 4/0.4, 5/0.5, 6/0.6}{
+		\draw (\xr, -0.08) -- (\xr, 0.08);
+		\node[below, font=\scriptsize] at (\xr, -0.12) {\xl};
+	}
+
+	% Curve g(x) = 3x^2 - 6x + 2, x_plot = 10*x_real
+	\draw[thick, blue!80!black, domain=0:6.5, samples=100, smooth]
+		plot (\x, {\yscl*(3*(\x/10)^2 - 6*(\x/10) + 2)});
+
+	% Zero line reference
+	\draw[dotted, gray!50] (0,0) -- (6.5,0);
+
+	% Root at x* ≈ 0.4226 → plot coord 4.226
+	\fill[teal] (4.226, 0) circle (3pt);
+	\node[below=6pt, teal, font=\small\bfseries] at (4.226, 0) {$x^*$};
+
+	% ---- Iteration 0 ----
+	% Bracket [0, 0.5] → [0, 5], midpoint c0=0.25 → 2.5
+	% g(0.25) = 0.6875, scaled = 1.375
+	\fill[red] (2.5, {\yscl*0.6875}) circle (2.5pt);
+	\draw[dashed, gray!60] (2.5, 0) -- (2.5, {\yscl*0.6875});
+	\node[above right, red, font=\small] at (2.5, {\yscl*0.6875}) {$c_0$};
+
+	% Shade discarded [0, 0.25] → [0, 2.5] lightly
+	\fill[red!10, opacity=0.35] (0, {-0.3*\yscl}) rectangle (2.5, {2.1*\yscl});
+	\draw[red!30, dashed] (2.5, {-0.3*\yscl}) -- (2.5, {2.1*\yscl});
+	\node[red!50, font=\scriptsize, rotate=90] at (1.25, {\yscl*0.9}) {discarded};
+
+	% ---- Iteration 1 ----
+	% Bracket [0.25, 0.5] → [2.5, 5], midpoint c1=0.375 → 3.75
+	% g(0.375) = 0.171875, scaled = 0.34375
+	\fill[red!70!black] (3.75, {\yscl*0.171875}) circle (2.5pt);
+	\draw[dashed, gray!60] (3.75, 0) -- (3.75, {\yscl*0.171875});
+	\node[above right, red!70!black, font=\small] at (3.75, {\yscl*0.171875}) {$c_1$};
+
+	% ---- Iteration 2 ----
+	% Bracket [0.375, 0.5] → [3.75, 5], midpoint c2=0.4375 → 4.375
+	% g(0.4375) = -0.05078, scaled = -0.10156
+	\fill[red!40!black] (4.375, {\yscl*(-0.05078)}) circle (2.5pt);
+	\draw[dashed, gray!60] (4.375, 0) -- (4.375, {\yscl*(-0.05078)});
+	\node[below=4pt, red!40!black, font=\small] at (4.375, {\yscl*(-0.05078)}) {$c_2$};
+
+	% ---- Bracket annotations (below x-axis) ----
+	% Initial bracket
+	\draw[<->, thick, red!70!black] (0, {-0.65*\yscl}) -- (5, {-0.65*\yscl});
+	\node[below, red!70!black, font=\small] at (2.5, {-0.65*\yscl}) {$[a_0, b_0] = [0,\, 0.5]$};
+
+	% Final bracket [0.375, 0.4375] → [3.75, 4.375]
+	\draw[<->, thick, orange] (3.75, {-1.05*\yscl}) -- (4.375, {-1.05*\yscl});
+	\node[below, orange, font=\small] at (4.0625, {-1.05*\yscl}) {$[a_2, b_2]$};
+
+	% Convergence arrow
+	\draw[->, thick, teal, dashed] (4.0625, {-1.5*\yscl}) -- (4.226, {-1.5*\yscl})
+		node[right, font=\scriptsize] {$\to x^*$};
+\end{tikzpicture}
+\captionof{figure}{Bisection method: the bracket $[a,b]$ is halved at each iteration until it converges to the root $x^*$. The light red region is discarded after iteration~0; successive midpoints $c_0, c_1, c_2$ (red dots) narrow the bracket toward the root.}
+\label{fig:num_bisection}
+\end{center}
+
+\begin{examplebox}{Root Finding by Bisection}
+	Consider finding the roots of the polynomial
+	\[
+	g(x) \;=\; 3x^2 - 6x + 2 \;=\; 0.
+	\]
+	This arises, for instance, when setting the gradient of a cost function to zero.
+	We observe that $g(0)=2>0$ and $g(0.5)=-0.25<0$, so by the IVT a root lies in $[0,\,0.5]$.
+
+	\solution
+
+	Applying Algorithm~\ref{alg:bisection}:
+
+	\begin{center}
+	\renewcommand{\arraystretch}{1.15}
+	\begin{tabular}{c c c c r l}
+		\toprule
+		$k$ & $a_k$ & $b_k$ & $c_k$ & $g(c_k)$ & Action \\
+		\midrule
+		0 & 0.0000 & 0.5000 & 0.2500 & $+0.6875$ & $a \gets c$ \\
+		1 & 0.2500 & 0.5000 & 0.3750 & $+0.1719$ & $a \gets c$ \\
+		2 & 0.3750 & 0.5000 & 0.4375 & $-0.0508$ & $b \gets c$ \\
+		3 & 0.3750 & 0.4375 & 0.4063 & $+0.0576$ & $a \gets c$ \\
+		4 & 0.4063 & 0.4375 & 0.4219 & $+0.0027$ & $a \gets c$ \\
+		\bottomrule
+	\end{tabular}
+	\end{center}
+
+	After 5 iterations the bracket width is $0.4375-0.4219=0.0156$, and the midpoint $0.4297$ is already close to the exact root $x^*=1-\sqrt{3}/3\approx 0.4226$. Reaching six-decimal accuracy requires about 20 iterations.
+\end{examplebox}
+
+\begin{lstlisting}[language=Matlab,caption={Bisection method in MATLAB.}]
+g = @(x) 3*x.^2 - 6*x + 2;
+a = 0; b = 0.5; tol = 1e-6;
+while (b - a) > tol
+    c = (a + b) / 2;
+    if g(a) * g(c) < 0
+        b = c;
+    else
+        a = c;
+    end
+end
+fprintf('Root: %.6f\n', (a+b)/2);
+\end{lstlisting}
+
+% -------------------------------------------------------------------
+\subsection{Newton--Raphson Method}
+% -------------------------------------------------------------------
+
+\begin{defnbox}{Newton--Raphson Iteration}
+	We seek $x^*$ such that $g(x^*)=0$, but we cannot solve this equation directly. Instead, we \emph{approximate} $g$ near the current iterate $x_k$ using a first-order Taylor expansion:
+	\[
+	g(x) \;\approx\; g(x_k) + g'(x_k)\,(x - x_k).
+	\]
+	Setting this linear approximation to zero and solving for $x$ gives the next iterate:
+	\[
+	0 = g(x_k) + g'(x_k)\,(x_{k+1} - x_k)
+	\quad\Longrightarrow\quad
+	{\;x_{k+1} \;=\; x_k \;-\; \frac{g(x_k)}{g'(x_k)}\;}
+	\]
+	Geometrically, this replaces the curve $g$ by its tangent line at $x_k$ and takes the root of that tangent as the next iterate. The process repeats, producing progressively better approximations.
+
+	Convergence is \emph{quadratic} near the root: there exists a constant $C>0$ such that
+	\[
+	|x_{k+1}-x^*| \;\le\; C\,|x_k-x^*|^2.
+	\]
+	This means the number of correct digits roughly \emph{doubles} at each step.
+\end{defnbox}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.3, >=stealth]
+	% Axes
+	\draw[->] (-0.5,0) -- (4.5,0) node[right] {$x$};
+	\draw[->] (0,-1.5) -- (0,3.0) node[above] {$g(x)$};
+
+	% Scale: plot x in [0, 0.7] mapped to [0, 4.2] via factor 6
+	% Curve g(x) = 3x^2 - 6x + 2
+	\draw[thick, blue!80!black, domain=0:4.2, samples=80, smooth]
+		plot (\x, {3*(\x/6)^2 - 6*(\x/6) + 2});
+
+	% Root mark
+	\fill[teal] (2.536, 0) circle (2.5pt);
+	\node[below=3pt, teal, font=\small] at (2.536, 0) {$x^*$};
+
+	% x0 = 0 → plot 0
+	\fill[black] (0, 2) circle (2.5pt);
+	\node[above left, font=\small] at (0, 2) {$(x_0, g(x_0))$};
+	\draw[dashed, gray] (0, 0) -- (0, 2);
+	\node[below, font=\small] at (0, 0) {$x_0$};
+
+	% Tangent at x0=0: g(0)=2, g'(0)=-6 → line: y = 2 - 6x (in original coords)
+	% In plot coords: y = 2 - (6/6)*X = 2 - X, root at X=2
+	\draw[dashed, red, thick, domain=0:2.5] plot (\x, {2 - \x});
+	% x1 = 1/3 → plot 2
+	\fill[black] (2, 0) circle (2.5pt);
+	\node[below, font=\small] at (2, -0.05) {$x_1$};
+	\draw[dashed, gray] (2, 0) -- (2, {3*(2/6)^2 - 6*(2/6) + 2});
+	\fill[black] (2, {3*(1.0/3)^2 - 6*(1.0/3) + 2}) circle (2pt);
+
+	% Tangent at x1=1/3: g(1/3)=1/3, g'(1/3)=-4 → y = 1/3 - 4(x-1/3) = 1/3 -4x+4/3 = 5/3 - 4x
+	% In plot coords: y = 1/3 - (4/6)(X-2) = 1/3 - 2X/3 + 4/3 = 5/3 - 2X/3, root at X=2.5
+	\draw[dashed, teal, thick, domain=1.2:2.8]
+		plot (\x, {5.0/3 - 2*\x/3});
+	% x2 = 5/12 ≈ 0.41667 → plot 2.5
+	\fill[black] (2.5, 0) circle (2.5pt);
+	\node[below, font=\small] at (2.5, -0.05) {$x_2$};
+\end{tikzpicture}
+\captionof{figure}{Newton--Raphson method: the tangent line at each iterate provides the next approximation to the root. The red dashed tangent at $x_0$ yields $x_1$; the teal dashed tangent at $x_1$ yields $x_2\approx x^*$.}
+\label{fig:num_newton_raphson}
+\end{center}
+
+\begin{examplebox}{Newton--Raphson for Root Finding}
+	We apply Newton--Raphson to the same function $g(x)=3x^2-6x+2$, with derivative $g'(x)=6x-6$. Starting from $x_0=0$:
+
+	\solution
+
+	\begin{center}
+	\renewcommand{\arraystretch}{1.15}
+	\begin{tabular}{c c r r c}
+		\toprule
+		$k$ & $x_k$ & $g(x_k)$ & $g'(x_k)$ & $x_{k+1}=x_k - g/g'$ \\
+		\midrule
+		0 & $0.0000$ & $+2.0000$ & $-6.0000$ & $0.3333$ \\
+		1 & $0.3333$ & $+0.3333$ & $-4.0000$ & $0.4167$ \\
+		2 & $0.4167$ & $+0.0208$ & $-3.5000$ & $0.4226$ \\
+		3 & $0.4226$ & $+0.0001$ & $-3.4643$ & $0.4226$ \\
+		\bottomrule
+	\end{tabular}
+	\end{center}
+
+	Newton--Raphson converges to six-decimal accuracy in only \emph{3 iterations}, compared with roughly 20 iterations for bisection. This dramatic speedup is a direct consequence of the quadratic convergence rate: once the iterates are close to the root, the number of correct digits approximately doubles at each step.
+\end{examplebox}
+
+\begin{notebox}{Connection to Optimisation}
+	When we apply the Newton--Raphson method to the first-order optimality condition $J'(x)=0$, the update formula becomes
+	\[
+	x_{k+1} \;=\; x_k \;-\; \frac{J'(x_k)}{J''(x_k)}.
+	\]
+	This is \emph{Newton's method for one-dimensional optimisation}. In the next subsection, we generalise this idea to multiple dimensions: the scalar derivative $J'$ is replaced by the gradient $\nabla J$, and the scalar second derivative $J''$ is replaced by the Hessian matrix $\nabla^2 J$.
+\end{notebox}
+
+
+% ===================================================================
+% SECTION 2: UNCONSTRAINED OPTIMISATION
+% ===================================================================
+
+\subsection{Unconstrained Optimisation: Gradient-Based Methods}
+
+We now generalise the root-finding ideas from one dimension to multiple dimensions. Given a differentiable cost function $J\colon\mathbb{R}^n\to\mathbb{R}$, the necessary condition for a local minimum is $\nabla J(x^*)=0$. The gradient $\nabla J(x)\in\mathbb{R}^n$ points in the direction of steepest \emph{ascent}; its negative $-\nabla J(x)$ is the direction of steepest \emph{descent}. This observation motivates the iterative algorithms below.
+
+% -------------------------------------------------------------------
+\subsubsection{Gradient Descent (Steepest Descent)}
+% -------------------------------------------------------------------
+
+\begin{defnbox}{Gradient Descent}
+	Starting from an initial guess $x_0\in\mathbb{R}^n$, the gradient descent method generates iterates
+	\[
+	x_{k+1} \;=\; x_k \;-\; \alpha\,\nabla J(x_k),
+	\]
+	where $\alpha>0$ is the \emph{step size} (or \emph{learning rate}). If $\alpha$ is sufficiently small and $J$ is smooth, the cost decreases monotonically: $J(x_{k+1})<J(x_k)$.
+\end{defnbox}
+
+\begin{algorithm}[H]
+\caption{Gradient Descent}\label{alg:gradient_descent}
+\begin{algorithmic}[1]
+\Require $J$, $\nabla J$, initial guess $x_0$, step size $\alpha>0$, tolerance $\varepsilon>0$
+\State $k \gets 0$
+\While{$\|\nabla J(x_k)\| > \varepsilon$}
+    \State $x_{k+1} \gets x_k - \alpha\,\nabla J(x_k)$
+    \State $k \gets k+1$
+\EndWhile
+\State \Return $x_k$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.85, >=stealth]
+	% Contour plot of J = 5x1^2 + x2^2
+	% Eigenvalues: 10, 2. Ratio 5 → elongated ellipses: x1^2/(c/5) + x2^2/c = 1
+
+	% Draw contours: J = const → 5x1^2 + x2^2 = C
+	% Semi-axes: a1 = sqrt(C/5), a2 = sqrt(C)
+	\foreach \C/\op in {5/0.15, 15/0.20, 30/0.25, 50/0.30, 70/0.35, 89/0.40} {
+		\draw[blue!60, dashed, opacity=\op+0.3]
+			(0,0) ellipse ({sqrt(\C/5)} and {sqrt(\C)});
+	}
+
+	% Axes
+	\draw[->] (-5.5,0) -- (5.5,0) node[right] {$x_1$};
+	\draw[->] (0,-4.5) -- (0,4.5) node[above] {$x_2$};
+
+	% Gradient descent path: x0=(4,3), alpha=0.08
+	% k=0: (4, 3)
+	% k=1: (0.8, 2.52)
+	% k=2: (0.16, 2.117)
+	% k=3: (0.032, 1.778)
+	% k=4: (0.0064, 1.494)
+	% k=5: (0.0013, 1.255)
+	% k=6: (0.0003, 1.054)
+
+	\coordinate (p0) at (4, 3);
+	\coordinate (p1) at (0.8, 2.52);
+	\coordinate (p2) at (0.16, 2.117);
+	\coordinate (p3) at (0.032, 1.778);
+	\coordinate (p4) at (0.0064, 1.494);
+	\coordinate (p5) at (0.0013, 1.255);
+	\coordinate (p6) at (0.0003, 1.054);
+
+	\draw[thick, red!80!black, ->, >=stealth] (p0) -- (p1);
+	\draw[thick, red!80!black, ->, >=stealth] (p1) -- (p2);
+	\draw[thick, red!80!black, ->, >=stealth] (p2) -- (p3);
+	\draw[thick, red!80!black, ->, >=stealth] (p3) -- (p4);
+	\draw[thick, red!80!black, ->, >=stealth] (p4) -- (p5);
+	\draw[thick, red!80!black, ->, >=stealth] (p5) -- (p6);
+
+	\foreach \p in {p0,p1,p2,p3,p4,p5,p6} {
+		\fill[red!80!black] (\p) circle (2pt);
+	}
+
+	\node[above right, font=\small] at (p0) {$x_0$};
+	\node[right, font=\small] at (p1) {$x_1$};
+	\node[right, font=\small] at (p2) {$x_2$};
+
+	% Optimum
+	\fill[teal] (0,0) node[star, star points=5, star point ratio=2.25,
+		inner sep=1.5pt, fill=teal] {};
+	\node[below left, teal, font=\small] at (-0.15,-0.15) {$x^*$};
+\end{tikzpicture}
+\captionof{figure}{Gradient descent on $J(x)=5x_1^2+x_2^2$ exhibits a zigzag trajectory on elongated contours. The poor conditioning (eigenvalue ratio $=5$) causes slow convergence.}
+\label{fig:num_gradient_descent}
+\end{center}
+
+\begin{examplebox}{Gradient Descent on a Quadratic}
+	Minimise $J(x)=5x_1^2+x_2^2$ starting from $x_0=(4,\,3)^\top$ with a fixed step size $\alpha=0.08$.
+
+	The gradient is $\nabla J(x)=(10x_1,\;2x_2)^\top$.
+
+	\solution
+
+	\begin{center}
+	\renewcommand{\arraystretch}{1.15}
+	\begin{tabular}{c r r r r}
+		\toprule
+		$k$ & $x_1$ & $x_2$ & $J(x)$ & $\|\nabla J\|$ \\
+		\midrule
+		0 & $4.0000$ & $3.0000$ & $89.00$ & $40.45$ \\
+		1 & $0.8000$ & $2.5200$ & $9.55$ & $9.46$ \\
+		2 & $0.1600$ & $2.1168$ & $4.61$ & $4.53$ \\
+		3 & $0.0320$ & $1.7781$ & $3.17$ & $3.57$ \\
+		4 & $0.0064$ & $1.4936$ & $2.23$ & $2.99$ \\
+		5 & $0.0013$ & $1.2546$ & $1.57$ & $2.51$ \\
+		6 & $0.0003$ & $1.0539$ & $1.11$ & $2.11$ \\
+		\bottomrule
+	\end{tabular}
+	\end{center}
+
+	After 7 iterations the cost has only decreased from $89$ to $1.11$. The zigzag pattern visible in Figure~\ref{fig:num_gradient_descent} arises because the contours are elongated ellipses: the step overshoots in the $x_1$-direction (steep curvature) and undershoots in the $x_2$-direction (gentle curvature). A single step size $\alpha$ cannot simultaneously suit both scales.
+\end{examplebox}
+
+% -------------------------------------------------------------------
+\subsubsection{Step-Size Selection: Armijo Backtracking}
+% -------------------------------------------------------------------
+
+A fixed step size $\alpha$ is fragile---too large causes divergence, too small makes convergence impractically slow. The \emph{Armijo backtracking line search} adaptively selects $\alpha$ at each step to guarantee sufficient decrease.
+
+\begin{defnbox}{Armijo Condition}
+	A step size $\alpha$ satisfies the \emph{Armijo (sufficient decrease) condition} if
+	\[
+	J(x_k + \alpha\, d_k) \;\le\; J(x_k) \;+\; c\,\alpha\,\nabla J(x_k)^\top d_k,
+	\]
+	where $d_k$ is the search direction (e.g.\ $d_k=-\nabla J(x_k)$) and $c\in(0,1)$ is a small constant (typically $c=10^{-4}$). The right-hand side is a linear model of the decrease; the condition requires the actual decrease to be at least as large as a fraction $c$ of the predicted decrease.
+\end{defnbox}
+
+\begin{algorithm}[H]
+\caption{Armijo Backtracking Line Search}\label{alg:armijo}
+\begin{algorithmic}[1]
+\Require $J$, $\nabla J$, current iterate $x_k$, search direction $d_k$
+\Require $c = 10^{-4}$, contraction factor $\beta = 0.5$
+\State $\alpha \gets 1$
+\While{$J(x_k + \alpha\, d_k) > J(x_k) + c\,\alpha\,\nabla J(x_k)^\top d_k$}
+    \State $\alpha \gets \beta\,\alpha$
+\EndWhile
+\State \Return $\alpha$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{notebox}{Relevance to MPC}
+	In real-time Nonlinear MPC (Chapter~10), Sequential Quadratic Programming (SQP) solvers such as \texttt{SNOPT} and \texttt{IPOPT} use globalised Newton steps with Armijo-type line searches. This prevents the solver from overshooting, which could violate safety constraints on a physical system. The backtracking mechanism is therefore not merely a numerical convenience---it is a practical safeguard.
+\end{notebox}
+
+% -------------------------------------------------------------------
+\subsubsection{Newton's Method for Optimisation}
+% -------------------------------------------------------------------
+
+Gradient descent uses only first-order information (the gradient). Newton's method also uses \emph{second-order} information (the Hessian), enabling much faster convergence by accounting for the curvature of $J$.
+
+\begin{defnbox}{Newton's Method for Optimisation}
+	Starting from $x_0\in\mathbb{R}^n$, Newton's method generates iterates by solving the linear system
+	\[
+	\nabla^2 J(x_k)\, d_k \;=\; -\nabla J(x_k)
+	\]
+	for the \emph{Newton direction} $d_k$, then updating $x_{k+1}=x_k+\alpha_k\, d_k$ (with $\alpha_k$ chosen by an Armijo line search, or $\alpha_k=1$ for a full Newton step). Near a local minimum with a positive-definite Hessian, convergence is \emph{quadratic}.
+\end{defnbox}
+
+\begin{algorithm}[H]
+\caption{Newton's Method for Optimisation}\label{alg:newton_opt}
+\begin{algorithmic}[1]
+\Require $J$, $\nabla J$, $\nabla^2 J$, initial guess $x_0$, tolerance $\varepsilon>0$
+\State $k \gets 0$
+\While{$\|\nabla J(x_k)\| > \varepsilon$}
+    \State Solve $\nabla^2 J(x_k)\, d_k = -\nabla J(x_k)$ for $d_k$
+    \State $\alpha_k \gets \textsc{ArmijoBacktrack}(J, \nabla J, x_k, d_k)$
+    \State $x_{k+1} \gets x_k + \alpha_k\, d_k$
+    \State $k \gets k+1$
+\EndWhile
+\State \Return $x_k$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.85, >=stealth]
+	% Same contour plot as gradient descent figure
+	\foreach \C/\op in {5/0.15, 15/0.20, 30/0.25, 50/0.30, 70/0.35, 89/0.40} {
+		\draw[blue!60, dashed, opacity=\op+0.3]
+			(0,0) ellipse ({sqrt(\C/5)} and {sqrt(\C)});
+	}
+
+	% Axes
+	\draw[->] (-5.5,0) -- (5.5,0) node[right] {$x_1$};
+	\draw[->] (0,-4.5) -- (0,4.5) node[above] {$x_2$};
+
+	% Gradient descent path (light, for comparison)
+	\coordinate (g0) at (4, 3);
+	\coordinate (g1) at (0.8, 2.52);
+	\coordinate (g2) at (0.16, 2.117);
+	\coordinate (g3) at (0.032, 1.778);
+	\coordinate (g4) at (0.0064, 1.494);
+	\coordinate (g5) at (0.0013, 1.255);
+	\coordinate (g6) at (0.0003, 1.054);
+
+	\draw[thick, red!30, ->, >=stealth] (g0) -- (g1);
+	\draw[thick, red!30, ->, >=stealth] (g1) -- (g2);
+	\draw[thick, red!30, ->, >=stealth] (g2) -- (g3);
+	\draw[thick, red!30, ->, >=stealth] (g3) -- (g4);
+	\draw[thick, red!30, ->, >=stealth] (g4) -- (g5);
+	\draw[thick, red!30, ->, >=stealth] (g5) -- (g6);
+	\foreach \p in {g0,g1,g2,g3,g4,g5,g6} {
+		\fill[red!30] (\p) circle (1.5pt);
+	}
+
+	% Newton path: x0=(4,3) → x1=(0,0) in ONE step
+	\coordinate (n0) at (4, 3);
+	\coordinate (n1) at (0, 0);
+	\draw[very thick, teal, ->, >=stealth] (n0) -- (n1);
+	\fill[teal] (n0) circle (2.5pt);
+	\fill[teal] (n1) circle (2.5pt);
+
+	\node[above right, font=\small] at (4, 3) {$x_0$};
+	\node[above, teal, font=\small] at (2.0, 1.8) {Newton (1 step)};
+	\node[right, red!50, font=\small] at (0.85, 2.52) {\small GD (zigzag)};
+
+	% Optimum
+	\fill[teal] (0,0) node[star, star points=5, star point ratio=2.25,
+		inner sep=1.5pt, fill=teal] {};
+	\node[below left, teal, font=\small] at (-0.15,-0.15) {$x^*$};
+\end{tikzpicture}
+\captionof{figure}{Comparison of gradient descent (red, zigzag) and Newton's method (teal, single step) on the same quadratic cost $J(x)=5x_1^2+x_2^2$. Newton's method accounts for curvature and converges in one iteration for quadratic functions.}
+\label{fig:num_newton_vs_gd}
+\end{center}
+
+\begin{examplebox}{Newton vs.\ Gradient Descent}
+	We apply Newton's method to the same problem: $J(x)=5x_1^2+x_2^2$, starting from $x_0=(4,\,3)^\top$.
+
+	\solution
+
+	The gradient and Hessian are
+	\[
+	\nabla J(x) = \begin{bmatrix} 10x_1 \\ 2x_2 \end{bmatrix}, \qquad
+	\nabla^2 J = \begin{bmatrix} 10 & 0 \\ 0 & 2 \end{bmatrix} \quad \text{(constant)}.
+	\]
+	At $x_0=(4,3)^\top$:
+	\[
+	\nabla J(x_0) = \begin{bmatrix} 40 \\ 6 \end{bmatrix}, \qquad
+	d_0 = -\bigl(\nabla^2 J\bigr)^{-1}\nabla J(x_0)
+	= -\begin{bmatrix} 1/10 & 0 \\ 0 & 1/2 \end{bmatrix}
+	\begin{bmatrix} 40 \\ 6 \end{bmatrix}
+	= \begin{bmatrix} -4 \\ -3 \end{bmatrix}.
+	\]
+	With a full Newton step ($\alpha=1$):
+	\[
+	x_1 = x_0 + d_0 = \begin{bmatrix} 4 \\ 3 \end{bmatrix} + \begin{bmatrix} -4 \\ -3 \end{bmatrix} = \begin{bmatrix} 0 \\ 0 \end{bmatrix} = x^*.
+	\]
+	Newton's method converges in \emph{one step} because $J$ is quadratic and the Hessian is constant. Gradient descent required 20+ iterations for comparable accuracy.
+
+	This observation is directly relevant to MPC: the standard MPC cost function is a convex quadratic programme (QP), so Newton-type solvers (e.g.\ active-set or interior-point methods) converge in very few iterations per active-set change.
+\end{examplebox}
+
+\begin{lstlisting}[language=Matlab,caption={Newton's method with Armijo backtracking for a 2D quadratic.}]
+x = [4; 3]; tol = 1e-8;
+H = [10 0; 0 2];              % Hessian (constant for this quadratic)
+J = @(z) 5*z(1)^2 + z(2)^2;  % cost function
+for k = 1:50
+    g = [10*x(1); 2*x(2)];    % gradient
+    if norm(g) < tol, break; end
+    d = -H \ g;                % Newton direction
+    alpha = 1;                 % Armijo backtracking
+    while J(x + alpha*d) > J(x) + 1e-4*alpha*(g'*d)
+        alpha = 0.5 * alpha;
+    end
+    x = x + alpha * d;
+    fprintf('k=%d: x=[%.4f, %.4f], J=%.6f\n', k, x(1), x(2), J(x));
+end
+\end{lstlisting}
+% ===================================================================
+% SECTION: LAGRANGE MULTIPLIERS
+% ===================================================================
+
+\subsection{Constrained Optimisation: Lagrange Multipliers}
+
+The unconstrained methods we have studied so far find minima by solving $\nabla J(x^*) = 0$. However, in Model Predictive Control, we always operate under constraints---dynamics equations impose equality constraints, while actuator limits and safety bounds impose inequalities. How do we find a minimum when the optimum is forced to lie on a constraint surface?
+
+\subsubsection{Geometric Intuition: Tangency of Level Curves}
+
+Consider minimising $J(x) = x_1^2 + x_2^2$ subject to $x_1 + 2x_2 = 4$. The level curves of $J$ are concentric circles centred at the origin. The constraint is a straight line. As we move along the constraint line, $J$ decreases until we reach a point where the constraint is \emph{tangent} to a level curve---this is the constrained minimum. At this special point, the gradient of $J$ is parallel to the gradient of the constraint:
+\[
+\nabla J(x^*) = -\lambda \,\nabla h(x^*) \quad \text{for some scalar } \lambda.
+\]
+The key geometric insight is that if $\nabla J$ had any component along the constraint surface, we could slide along the constraint and further reduce $J$. Only when the gradient of $J$ is entirely perpendicular to the constraint (i.e., parallel to $\nabla h$) is there no improving direction remaining.
+
+\begin{center}
+\begin{tikzpicture}[scale=1.1, >=stealth]
+    % Axes
+    \draw[->] (-0.5,0) -- (5,0) node[right] {$x_1$};
+    \draw[->] (0,-0.5) -- (0,4.5) node[above] {$x_2$};
+
+    % Level curves of J = x1^2 + x2^2
+    \foreach \r/\lab in {1/{J=1}, 2/{J=4}, 3/{J=9}, 4/{J=16}} {
+        \draw[blue!50, dashed] (0,0) circle (\r);
+    }
+    \node[blue!50, right] at (1.0,0.3) {\small $J\!=\!1$};
+    \node[blue!50, right] at (2.1,0.3) {\small $J\!=\!4$};
+    \node[blue!50, right] at (3.1,0.3) {\small $J\!=\!9$};
+
+    % Constraint line: x1 + 2*x2 = 4  =>  x2 = (4-x1)/2
+    % At x1=0: x2=2; at x1=4: x2=0
+    \draw[red, thick] (-0.2, 2.1) -- (4.5, -0.25) node[right] {$x_1 + 2x_2 = 4$};
+
+    % Optimal point: x* = (4/5, 8/5) = (0.8, 1.6)
+    \fill[teal] (0.8, 1.6) circle (3pt);
+    \node[above left] at (0.6, 1.8) {$x^* = (0.8,\, 1.6)$};
+
+    % Level curve through x*: J* = 0.64 + 2.56 = 3.20, radius = sqrt(3.2) ~ 1.789
+    \draw[blue, thick] (0,0) circle (1.789);
+    \node[blue, left] at (-1.3, 1.3) {\small $J^*\!=\!3.2$};
+
+    % --- Non-optimal point A on constraint: (2, 1), J=5 ---
+    \fill[orange!80!black] (2, 1) circle (2.5pt);
+    \draw[->, blue!70, semithick] (2, 1) -- +(0.88, 0.44);
+    \draw[->, red!70, semithick] (2, 1) -- +(0.35, 0.70);
+    \node[below right, font=\scriptsize, orange!70!black] at (2.05, 0.85) {$\nabla J \nparallel \nabla h$};
+
+    % --- Non-optimal point B on constraint: (3.2, 0.4), J=10.4 ---
+    \fill[orange!80!black] (3.2, 0.4) circle (2.5pt);
+    \draw[->, blue!70, semithick] (3.2, 0.4) -- +(0.79, 0.10);
+    \draw[->, red!70, semithick] (3.2, 0.4) -- +(0.35, 0.70);
+    \node[below, font=\scriptsize, orange!70!black] at (3.5, 0.2) {$\nabla J \nparallel \nabla h$};
+
+    % Gradient of J at x*: nabla J = (2*0.8, 2*1.6) = (1.6, 3.2), scale down for display
+    \draw[->, blue, very thick] (0.8, 1.6) -- (0.8+0.6, 1.6+1.2) node[above right] {$\nabla J$};
+
+    % Gradient of h at x*: nabla h = (1, 2), scale for display
+    \draw[->, red, very thick] (0.8, 1.6) -- (0.8+0.45, 1.6+0.9) node[below right] {$\nabla h$};
+
+    % Annotation
+    \node[anchor=west, draw=black!40, fill=yellow!10, rounded corners, font=\small] at (2.8, 3.8) {$\nabla J \parallel \nabla h$ at the constrained optimum};
+\end{tikzpicture}
+\captionof{figure}{Geometric interpretation of Lagrange multipliers. At the constrained minimum $x^* = (0.8,\, 1.6)$, the gradient of the cost (blue) is parallel to the gradient of the constraint (red), meaning the cost cannot be further reduced while staying on the constraint surface.}
+\label{fig:num_lagrange_geometry}
+\end{center}
+
+
+\subsubsection{The Lagrangian Function}
+
+The geometric observation---that $\nabla J$ and $\nabla h$ must be parallel at the optimum---can be formalised algebraically by introducing an auxiliary variable $\lambda$ called the \emph{Lagrange multiplier}.
+
+\begin{defnbox}{The Lagrangian and First-Order Conditions}
+	For the equality-constrained problem
+	\[
+	\min_{x}\; J(x) \quad \text{subject to} \quad h(x) = 0,
+	\]
+	define the \emph{Lagrangian}:
+	\[
+	\mathcal{L}(x,\lambda) \;=\; J(x) + \lambda^\top h(x).
+	\]
+	At a constrained minimum $(x^*,\lambda^*)$, the following first-order necessary conditions hold:
+	\begin{align*}
+		\nabla_x \mathcal{L} &= \nabla J(x^*) + \lambda^{*\top} \nabla h(x^*) = 0 && \text{(Stationarity)}\\
+		h(x^*) &= 0 && \text{(Feasibility)}
+	\end{align*}
+	This is a system of $(n+q)$ equations in $(n+q)$ unknowns: $n$ primal variables $x$ and $q$ multipliers $\lambda$.
+\end{defnbox}
+
+The Lagrange multiplier $\lambda$ has an important economic interpretation: it measures the \emph{sensitivity} of the optimal cost to a perturbation of the constraint. If we relax the constraint to $h(x) = \epsilon$, the optimal cost changes by approximately $\lambda\,\epsilon$. In MPC, this tells us how much the cost would improve if we slightly relaxed an actuator limit or a state bound---a quantity known as the \emph{shadow price}.
+
+\begin{examplebox}{Lagrange Multipliers: Worked Example}
+	Minimise $J(x) = x_1^2 + x_2^2$ subject to $h(x) = x_1 + 2x_2 - 4 = 0$.
+
+	\solution
+
+	\textbf{Step 1: Form the Lagrangian.}
+	\[
+	\mathcal{L}(x,\lambda) = x_1^2 + x_2^2 + \lambda(x_1 + 2x_2 - 4).
+	\]
+
+	\textbf{Step 2: First-order conditions.}
+	\begin{align*}
+		\frac{\partial \mathcal{L}}{\partial x_1} &= 2x_1 + \lambda = 0 &&\Longrightarrow \quad x_1 = -\tfrac{\lambda}{2}, \\[4pt]
+		\frac{\partial \mathcal{L}}{\partial x_2} &= 2x_2 + 2\lambda = 0 &&\Longrightarrow \quad x_2 = -\lambda, \\[4pt]
+		\frac{\partial \mathcal{L}}{\partial \lambda} &= x_1 + 2x_2 - 4 = 0 &&\text{(feasibility)}.
+	\end{align*}
+
+	\textbf{Step 3: Substitute into the feasibility condition.}
+	\[
+	\bigl(-\tfrac{\lambda}{2}\bigr) + 2(-\lambda) = 4 \quad\Longrightarrow\quad -\tfrac{5\lambda}{2} = 4 \quad\Longrightarrow\quad \lambda^* = -\tfrac{8}{5} = -1.6.
+	\]
+
+	\textbf{Step 4: Back-substitute.}
+	\[
+	x_1^* = -\frac{-1.6}{2} = 0.8, \qquad x_2^* = -(-1.6) = 1.6.
+	\]
+
+	The constrained minimum is $x^* = (0.8,\; 1.6)$ with optimal cost $J^* = 0.64 + 2.56 = 3.20$.
+
+	\textbf{Interpretation:} $\lambda^* = -1.6$ means that perturbing the constraint to $x_1 + 2x_2 = 4 + \epsilon$ would \emph{increase} the optimal cost by approximately $1.6\epsilon$. This is intuitive: the unconstrained minimum is the origin, so pushing the constraint line further away forces a larger cost.
+\end{examplebox}
+
+
+% ===================================================================
+% SECTION: KKT CONDITIONS
+% ===================================================================
+
+\subsection{The Karush--Kuhn--Tucker (KKT) Conditions}
+
+The Lagrange multiplier method handles equality constraints beautifully, but most practical problems---especially in MPC---involve \emph{inequality} constraints: actuator saturations ($|u| \le u_{\max}$), state bounds ($x_{\min} \le x \le x_{\max}$), and safety regions. The Karush--Kuhn--Tucker (KKT) conditions extend Lagrange multipliers to handle both equality and inequality constraints simultaneously.
+
+\subsubsection{Active and Inactive Constraints}
+
+Consider an inequality constraint $g_i(x) \le 0$. At a candidate solution $x^*$, two situations arise:
+\begin{itemize}
+	\item \textbf{Active (binding):} $g_i(x^*) = 0$---the constraint is tight, and $x^*$ lies on the constraint boundary. This constraint actively shapes the solution.
+	\item \textbf{Inactive:} $g_i(x^*) < 0$---the constraint is satisfied with slack. Removing it would not change the solution.
+\end{itemize}
+The fundamental insight is that active constraints behave like equality constraints at the optimum (because $g_i = 0$), while inactive constraints can be ignored. The KKT conditions formalise this observation by introducing a multiplier for each inequality and a rule that automatically ``switches off'' inactive constraints.
+
+
+\subsubsection{Statement of the KKT Conditions}
+
+\begin{defnbox}{Karush--Kuhn--Tucker (KKT) Necessary Conditions}
+	Consider the general constrained problem:
+	\[
+	\min_{x}\; J(x) \quad \text{s.t.} \quad g_i(x) \le 0,\; i=1,\ldots,m, \quad h_j(x) = 0,\; j=1,\ldots,q.
+	\]
+	If $x^*$ is a local minimum satisfying a constraint qualification, then there exist multipliers $\mu_i \ge 0$ and $\lambda_j$ such that:
+	\begin{enumerate}
+		\item \textbf{Stationarity:}
+		\[
+		\nabla J(x^*) + \sum_{i=1}^{m} \mu_i \,\nabla g_i(x^*) + \sum_{j=1}^{q} \lambda_j \,\nabla h_j(x^*) = 0
+		\]
+		\item \textbf{Primal feasibility:}
+		\[
+		g_i(x^*) \le 0, \qquad h_j(x^*) = 0
+		\]
+		\item \textbf{Dual feasibility:}
+		\[
+		\mu_i \ge 0
+		\]
+		\item \textbf{Complementary slackness:}
+		\[
+		\mu_i \, g_i(x^*) = 0 \quad \forall\, i
+		\]
+	\end{enumerate}
+\end{defnbox}
+
+\begin{notebox}{Complementary Slackness Demystified}
+	Condition~4 encodes the active/inactive logic. For each inequality constraint, exactly one of two cases holds:
+	\begin{itemize}
+		\item $g_i(x^*) = 0$ --- the constraint is \emph{active} and its multiplier $\mu_i$ may be positive, or
+		\item $\mu_i = 0$ --- the constraint is \emph{inactive} and exerts no influence.
+	\end{itemize}
+	A useful analogy: imagine a ball rolling downhill inside a fenced yard. If the ball comes to rest against a fence (active constraint, $g_i = 0$), the fence pushes back with a reaction force $\mu_i > 0$---without it, the ball would roll further. If the ball settles in the middle of the yard, far from any fence (inactive, $g_i < 0$), that fence exerts no force at all ($\mu_i = 0$)---the ball does not even ``know'' it is there. The product $\mu_i\,g_i = 0$ captures precisely this: either you are at the fence and it pushes, or you are away from it and it does nothing.
+\end{notebox}
+
+\begin{alertbox}{When Are KKT Conditions Sufficient?}
+	In general, the KKT conditions are only \emph{necessary}---they identify candidate solutions but do not guarantee a global minimum. However, for \emph{convex} problems (convex $J$, convex feasible set), the KKT conditions are both necessary \emph{and} sufficient. Since the standard MPC problem is a convex QP, any point satisfying the KKT conditions is the global optimum. This is precisely what solvers like \texttt{quadprog} exploit.
+\end{alertbox}
+
+
+\subsubsection{Geometric Interpretation}
+
+The stationarity condition has a powerful geometric meaning: at the constrained optimum, the negative gradient of the cost (the ``desired descent direction'') must be expressible as a non-negative combination of the active constraint gradients. In other words, every direction that would decrease $J$ violates at least one active constraint---you are ``stuck'' at the optimum.
+
+\begin{center}
+\begin{tikzpicture}[scale=1.2, >=stealth]
+    % Feasible region: triangle with vertices (0,0), (5,0), (0,5)
+    \fill[gray!20] (0,0) -- (5,0) -- (0,5) -- cycle;
+    \draw[gray, dashed, thin] (5,0) -- (5,0) node{}; % placeholder
+
+    % Constraint boundaries
+    % g1: x1+x2-5=0 (active)
+    \draw[red, very thick] (-0.3,5.3) -- (5.3,-0.3) node[below right] {$g_1\!:\; x_1+x_2=5$};
+    % g2: -x1=0 (inactive, x1>=0)
+    \draw[gray, dashed] (0,-0.3) -- (0,5.3) node[above left, gray] {$g_2$};
+    % g3: -x2=0 (inactive, x2>=0)
+    \draw[gray, dashed] (-0.3,0) -- (5.3,0) node[below right, gray] {$g_3$};
+
+    % Contour ellipses of J = (x1-4)^2 + (x2-3)^2 centred at (4,3)
+    \draw[blue!30, thin] (4,3) circle (0.5);
+    \draw[blue!30, thin] (4,3) circle (1.0);
+    \draw[blue!30, thin] (4,3) circle (1.5);
+    \draw[blue!30, thin] (4,3) circle (2.2);
+
+    % Unconstrained optimum (infeasible)
+    \draw[black] (4,3) circle (3pt);
+    \node[above right, font=\small] at (4.1,3.1) {unconstrained min (infeasible)};
+
+    % Constrained optimum x* = (3,2)
+    \fill[teal] (3,2) circle (3.5pt);
+    \node[below left, font=\small] at (2.8,1.8) {$x^* = (3,\,2)$};
+
+    % -nabla J at x* = -(2(3-4), 2(2-3)) = -(-2,-2) = (1,1) direction toward (4,3)
+    % Scale for display: arrow from (3,2) toward (4,3)
+    \draw[->, blue, very thick] (3,2) -- (3.8,2.8) node[above, font=\small] {$-\nabla J$};
+
+    % nabla g1 = (1,1), pointing outward from feasible region
+    \draw[->, red, very thick] (3,2) -- (3.7,2.7) node[below right, font=\small] {$\nabla g_1$};
+
+    % Annotation: parallel
+    \node[anchor=west, draw=black!40, fill=yellow!10, rounded corners, font=\small] at (3.5,4.5) {$-\nabla J = \mu_1 \nabla g_1,\;\; \mu_1 > 0$};
+
+    % Inactive labels
+    \node[gray, font=\small, rotate=90, anchor=south] at (-0.5,2.5) {$g_2$ inactive, $\mu_2=0$};
+    \node[gray, font=\small, anchor=north] at (2.5,-0.5) {$g_3$ inactive, $\mu_3=0$};
+
+    % Axes
+    \draw[->] (-0.7,0) -- (5.5,0) node[right] {$x_1$};
+    \draw[->] (0,-0.7) -- (0,5.5) node[above] {$x_2$};
+\end{tikzpicture}
+\captionof{figure}{Geometric interpretation of the KKT conditions. At the constrained optimum $x^* = (3,\,2)$, the descent direction $-\nabla J$ is blocked by the active constraint $g_1$ (red boundary). The multiplier $\mu_1 > 0$ measures the force required to hold the solution on this boundary. The inactive constraints ($g_2$, $g_3$, grey dashed) exert no force ($\mu_2 = \mu_3 = 0$).}
+\label{fig:num_kkt_geometry}
+\end{center}
+
+When the optimum lies at the intersection of \emph{two or more} active constraints, the descent direction must lie inside the cone spanned by their gradient vectors. The following figure illustrates this vertex case.
+
+\begin{center}
+\begin{tikzpicture}[scale=1.3, >=stealth]
+    % Feasible region: first quadrant
+    \fill[gray!15] (0,0) rectangle (4,4);
+
+    % Constraint boundaries
+    \draw[red, thick] (0,-0.3) -- (0,4.3);  % g1: -x1 <= 0, boundary x1=0
+    \draw[red, thick] (-0.3,0) -- (4.3,0);  % g2: -x2 <= 0, boundary x2=0
+
+    % Contour circles of J = (x1+1)^2 + (x2+1)^2 centred at (-1,-1)
+    \draw[blue!30, thin] (-1,-1) circle (1.0);
+    \draw[blue!30, thin] (-1,-1) circle (1.6);
+    \draw[blue!30, thin] (-1,-1) circle (2.3);
+    \draw[blue!30, thin] (-1,-1) circle (3.0);
+
+    % Unconstrained optimum (infeasible)
+    \draw[black] (-1,-1) circle (3pt);
+    \node[below left, font=\small] at (-1.1,-1.1) {$(-1,-1)$};
+
+    % Constrained optimum x* = (0,0)
+    \fill[teal] (0,0) circle (3.5pt);
+    \node[above right, font=\small] at (0.15,0.15) {$x^* = (0,\,0)$};
+
+    % -nabla J at (0,0) = -(2(0+1), 2(0+1)) = (-2,-2)
+    % Draw as arrow pointing toward (-1,-1)
+    \draw[->, blue, very thick] (0,0) -- (-1.2,-1.2) node[below left, font=\small] {$-\nabla J$};
+
+    % Decomposition arrows:
+    % mu1 * nabla g1 = 2*(-1,0), so contributes (-2,0) to stationarity
+    % In terms of -nabla J: component (-1.2, 0) along -x1 direction
+    \draw[->, red!80!black, thick] (0,0) -- (-1.2,0) node[above left, font=\small] {$\mu_1 \nabla g_1$};
+    % mu2 * nabla g2 = 2*(0,-1), contributes (0,-2) to stationarity
+    \draw[->, red!80!black, thick] (0,0) -- (0,-1.2) node[below right, font=\small] {$\mu_2 \nabla g_2$};
+
+    % Parallelogram to show vector sum
+    \draw[dashed, gray] (-1.2,0) -- (-1.2,-1.2);
+    \draw[dashed, gray] (0,-1.2) -- (-1.2,-1.2);
+
+    % Annotation
+    \node[anchor=west, draw=black!40, fill=yellow!10, rounded corners, font=\small] at (1.0,3.2) {$-\nabla J = \mu_1 \nabla g_1 + \mu_2 \nabla g_2$};
+    \node[anchor=west, font=\small] at (1.0,2.6) {$\mu_1 = 2,\;\; \mu_2 = 2$};
+
+    % Axes
+    \draw[->] (-2,0) -- (4.5,0) node[right] {$x_1$};
+    \draw[->] (0,-2) -- (0,4.5) node[above] {$x_2$};
+\end{tikzpicture}
+\captionof{figure}{Vertex optimum with two active constraints. The descent direction $-\nabla J$ lies in the cone spanned by the constraint normals $\nabla g_1$ and $\nabla g_2$, confirming that both multipliers are positive: $\mu_1 = \mu_2 = 2$.}
+\label{fig:num_kkt_vertex}
+\end{center}
+
+
+\begin{examplebox}{KKT Conditions: Complete Worked Example}
+	Minimise $J(x) = (x_1 - 4)^2 + (x_2 - 3)^2$ subject to $x_1 + x_2 \le 5$, $x_1 \ge 0$, $x_2 \ge 0$.
+
+	\solution
+
+	\textbf{Step 1: Rewrite constraints in standard form $g_i(x) \le 0$.}
+	\begin{align*}
+		g_1(x) &= x_1 + x_2 - 5 \le 0, \\
+		g_2(x) &= -x_1 \le 0, \\
+		g_3(x) &= -x_2 \le 0.
+	\end{align*}
+
+	\textbf{Step 2: Form the Lagrangian.}
+	\[
+	\mathcal{L} = (x_1-4)^2 + (x_2-3)^2 + \mu_1(x_1+x_2-5) + \mu_2(-x_1) + \mu_3(-x_2).
+	\]
+
+	\textbf{Step 3: Stationarity conditions.}
+	\begin{align}
+		\frac{\partial \mathcal{L}}{\partial x_1} &= 2(x_1 - 4) + \mu_1 - \mu_2 = 0 \tag{i} \\[4pt]
+		\frac{\partial \mathcal{L}}{\partial x_2} &= 2(x_2 - 3) + \mu_1 - \mu_3 = 0 \tag{ii}
+	\end{align}
+
+	\textbf{Step 4: Apply complementary slackness.} We hypothesise that only $g_1$ is active ($\mu_2 = \mu_3 = 0$):
+	\begin{align*}
+		\text{From (i):} &\quad 2(x_1-4) + \mu_1 = 0 \quad\Longrightarrow\quad x_1 = 4 - \tfrac{\mu_1}{2}, \\[3pt]
+		\text{From (ii):} &\quad 2(x_2-3) + \mu_1 = 0 \quad\Longrightarrow\quad x_2 = 3 - \tfrac{\mu_1}{2}, \\[3pt]
+		\text{From } g_1 \text{ active:} &\quad x_1 + x_2 = 5 \quad\Longrightarrow\quad \bigl(4 - \tfrac{\mu_1}{2}\bigr) + \bigl(3 - \tfrac{\mu_1}{2}\bigr) = 5 \\
+		&\quad\Longrightarrow\quad 7 - \mu_1 = 5 \quad\Longrightarrow\quad \mu_1 = 2.
+	\end{align*}
+
+	So $x_1^* = 3$, $x_2^* = 2$, $\mu_1^* = 2$.
+
+	\textbf{Step 5: Verify all KKT conditions.}
+	\begin{itemize}
+		\item \emph{Stationarity:} $2(3-4)+2-0 = 0$ \checkmark \quad and \quad $2(2-3)+2-0 = 0$ \checkmark
+		\item \emph{Primal feasibility:} $3+2-5 = 0 \le 0$, $-3 \le 0$, $-2 \le 0$ \checkmark
+		\item \emph{Dual feasibility:} $\mu_1 = 2 \ge 0$, $\mu_2 = 0$, $\mu_3 = 0$ \checkmark
+		\item \emph{Complementary slackness:} $\mu_1 g_1 = 2 \cdot 0 = 0$, $\mu_2 g_2 = 0$, $\mu_3 g_3 = 0$ \checkmark
+	\end{itemize}
+
+	\textbf{Optimal cost:} $J^* = (3-4)^2 + (2-3)^2 = 1 + 1 = 2$.
+
+	\textbf{Interpretation:} $\mu_1 = 2$ means that relaxing the budget constraint by $\epsilon$ (allowing $x_1 + x_2 \le 5 + \epsilon$) would reduce the cost by approximately $2\epsilon$.
+\end{examplebox}
+
+\begin{lstlisting}[language=Matlab,caption={Solving the KKT example with \texttt{quadprog}.}]
+H = 2*eye(2);                  % Hessian of J
+f = [-8; -6];                   % linear term (see note below)
+A = [1 1]; b = 5;               % g1: x1 + x2 <= 5
+lb = [0; 0];                    % g2,g3: x >= 0
+
+[x_opt, J_opt, ~, ~, dual] = quadprog(H, f, A, b, [], [], lb);
+fprintf('x*   = [%.4f, %.4f]\n', x_opt(1), x_opt(2));
+fprintf('J*   = %.4f\n', J_opt + 25);
+fprintf('mu1  = %.4f (inequality)\n', dual.ineqlin);
+fprintf('mu2,mu3 = [%.4f, %.4f] (lower bounds)\n', ...
+         dual.lower(1), dual.lower(2));
+% Note: quadprog minimises (1/2)x'Hx + f'x.  Our cost expands as
+% J = x1^2 - 8*x1 + 16 + x2^2 - 6*x2 + 9 = x'*I*x + [-8,-6]*x + 25,
+% so H = 2I, f = [-8;-6], and we add 25 to recover the true cost.
+\end{lstlisting}
+% ===================================================================
+% SECTION 5: EFFICIENT SOLVERS
+% ===================================================================
+
+\subsection{How Solvers Work: Interior-Point and Active-Set Methods}
+
+The KKT conditions tell us \emph{what} the optimal solution looks like. But how do practical QP solvers---the workhorses behind every MPC controller---actually \emph{find} that solution? Two dominant algorithmic paradigms exist: the \emph{active-set method} and the \emph{interior-point method}. Understanding their mechanics helps MPC engineers choose the right solver, diagnose convergence failures, and exploit warm-starting.
+
+\subsubsection{The Active-Set Method}
+
+The active-set method is motivated by a simple observation: if we \emph{knew} which inequality constraints were active (binding) at the optimum, we could replace them with equalities and solve an equality-constrained QP---a problem that reduces to a single linear system. Of course, we do not know the active set in advance, so the algorithm discovers it iteratively.
+
+The method maintains a \emph{working set} $\mathcal{W}_k$: the subset of inequality constraints currently treated as equalities. At each iteration, the algorithm performs the following steps:
+
+\begin{enumerate}
+	\item \textbf{Solve the equality-constrained subproblem.} With the constraints in $\mathcal{W}_k$ enforced as equalities (and all other inequality constraints temporarily ignored), solve the resulting KKT system to obtain a candidate step $d_k$ and the associated Lagrange multipliers $\mu_i$ for $i \in \mathcal{W}_k$.
+
+	\item \textbf{If $d_k = 0$ (no improving direction exists within the working set):}
+	\begin{itemize}
+		\item Check the multipliers. If $\mu_i \geq 0$ for all $i \in \mathcal{W}_k$, the KKT conditions are satisfied---\emph{stop}, we are optimal.
+		\item If some $\mu_j < 0$, then constraint $j$ was incorrectly assumed active. Remove it from $\mathcal{W}_k$ and repeat.
+	\end{itemize}
+
+	\item \textbf{If $d_k \neq 0$ (an improving direction exists):}
+	\begin{itemize}
+		\item Take a step along $d_k$, using the largest step length $\alpha_k \in (0, 1]$ that does not violate any inactive constraint.
+		\item If an inactive constraint becomes active (a \emph{blocking constraint}), add it to $\mathcal{W}_k$.
+		\item Update the iterate: $x_{k+1} = x_k + \alpha_k d_k$.
+	\end{itemize}
+\end{enumerate}
+
+Geometrically, the method walks along edges and vertices of the feasible polytope, much like the simplex method for linear programmes. Each iteration either moves to a new vertex (adding or dropping a constraint from the working set) or confirms optimality. For convex QPs, the algorithm terminates in a finite number of iterations---bounded by $\binom{m}{n}$ working-set combinations in the worst case, but typically far fewer in practice.
+
+\begin{center}
+\begin{tikzpicture}[>=stealth, scale=1.4]
+	% --- Feasible polytope ---
+	\coordinate (V1) at (0, 0);
+	\coordinate (V2) at (3.5, 0);
+	\coordinate (V3) at (4, 2.5);
+	\coordinate (V4) at (1.5, 3.5);
+	\coordinate (V5) at (0, 2);
+
+	% Fill feasible region
+	\fill[gray!15] (V1) -- (V2) -- (V3) -- (V4) -- (V5) -- cycle;
+	\draw[thick, black] (V1) -- (V2) -- (V3) -- (V4) -- (V5) -- cycle;
+
+	% --- Unconstrained minimiser (outside the polytope) ---
+	\coordinate (unc) at (3.0, 3.5);
+
+	% --- Contour ellipses centred at unconstrained minimiser ---
+	\draw[blue!50, dashed, thick] (unc) ellipse (0.4 and 0.3);
+	\draw[blue!40, dashed] (unc) ellipse (0.9 and 0.65);
+	\draw[blue!30, dashed] (unc) ellipse (1.5 and 1.1);
+	\draw[blue!20, dashed] (unc) ellipse (2.2 and 1.6);
+
+	% Mark unconstrained minimiser
+	\draw[blue!60, thick] (unc) circle (3pt);
+	\node[blue!60, above, font=\footnotesize] at (unc) {unconstrained min};
+
+	% --- Constrained optimum: closest point on edge V3--V4 to unc ---
+	% Edge V3(4,2.5)--V4(1.5,3.5): at t=0.48, point = (2.8, 2.98)
+	\coordinate (P3) at (2.8, 2.98);
+
+	% --- Active-set path (walks along polytope edges) ---
+	\coordinate (P0) at (0, 0);
+	\coordinate (P1) at (3.5, 0);
+	\coordinate (P2) at (4, 2.5);
+
+	% Steps
+	\draw[->, red, very thick] (P0) -- (P1);
+	\draw[->, red, very thick] (P1) -- (P2);
+	\draw[->, red, very thick] (P2) -- (P3);
+
+	% Iterate dots
+	\fill[red] (P0) circle (2.5pt) node[below left, black] {\small $x_0$};
+	\fill[red] (P1) circle (2.5pt) node[below, black] {\small $x_1$};
+	\fill[red] (P2) circle (2.5pt) node[right, black] {\small $x_2$};
+	\fill[red] (P3) circle (2.5pt) node[below left, black] {\small $x^*$};
+
+	% Optimal marker (on the boundary)
+	\draw[red, thick] (P3) circle (4pt);
+
+	% Labels
+	\node[gray] at (1.8, 1.5) {\small Feasible region};
+	\node[blue!60, right] at (3.6, 3.5) {\footnotesize $J(x) = \text{const}$};
+\end{tikzpicture}
+\captionof{figure}{Active-set method for a QP: the algorithm walks along edges and vertices of the feasible polytope, adjusting the working set at each step until the KKT conditions are satisfied.}
+\label{fig:num_active_set}
+\end{center}
+
+\begin{notebox}{Warm-Starting in MPC}
+	Between consecutive MPC time steps, the optimal solution shifts only slightly (the system has moved by one time step). The active set from the previous solution is almost always correct for the new problem. Solvers like \texttt{qpOASES} exploit this by \emph{warm-starting}: initialising the working set from the previous solution, so that only 1--3 iterations are needed to solve the new QP. This is what makes active-set methods the preferred choice for real-time linear MPC, achieving solve times well below 1\,ms for moderate problem sizes.
+\end{notebox}
+
+\subsubsection{The Interior-Point (Barrier) Method}
+
+The interior-point method takes a contrasting philosophy to the active-set approach: instead of walking along the boundary of the feasible region, it approaches the optimum from the \emph{interior}. The key idea is to replace the hard inequality constraints $g_i(x) \leq 0$ with a smooth penalty that becomes infinite at the boundary, keeping all iterates strictly inside the feasible region.
+
+Concretely, the inequality-constrained problem is approximated by the \emph{barrier problem}:
+\begin{equation}
+	\min_{x} \; J(x) - t \sum_{i=1}^{m} \ln\bigl(-g_i(x)\bigr),
+	\label{eq:barrier_problem}
+\end{equation}
+where $t > 0$ is the \emph{barrier parameter}. The logarithmic term $-t \ln(-g_i(x))$ is finite only when $g_i(x) < 0$ (strictly feasible) and blows up to $+\infty$ as $g_i(x) \to 0^-$, creating an invisible repulsive wall at each constraint boundary.
+
+For each fixed $t > 0$, the barrier problem~\eqref{eq:barrier_problem} is an unconstrained (or equality-constrained) smooth problem that can be solved by Newton's method. The solution $x^*(t)$ lies in the strict interior of the feasible set. As $t \to 0$, the barrier penalty weakens and $x^*(t)$ approaches the true constrained optimum $x^*$. The curve traced by $x^*(t)$ as $t$ decreases is called the \emph{central path}.
+
+A crucial advantage of interior-point methods is their worst-case complexity: $O(\sqrt{m} \cdot \log(1/\varepsilon))$ Newton steps suffice to reach $\varepsilon$-optimality, where $m$ is the number of inequality constraints. This polynomial-time guarantee contrasts with the potentially exponential worst case of active-set methods (though active-set methods are typically faster in practice for small, warm-started problems).
+
+\begin{center}
+\begin{tikzpicture}[>=stealth, scale=1.4]
+	% --- Feasible polytope (same as active-set figure) ---
+	\coordinate (V1) at (0, 0);
+	\coordinate (V2) at (3.5, 0);
+	\coordinate (V3) at (4, 2.5);
+	\coordinate (V4) at (1.5, 3.5);
+	\coordinate (V5) at (0, 2);
+
+	% Fill feasible region
+	\fill[gray!15] (V1) -- (V2) -- (V3) -- (V4) -- (V5) -- cycle;
+	\draw[thick, black] (V1) -- (V2) -- (V3) -- (V4) -- (V5) -- cycle;
+
+	% --- Active-set path (grey, for comparison) ---
+	\coordinate (P0) at (0, 0);
+	\coordinate (P1) at (3.5, 0);
+	\coordinate (P2) at (4, 2.5);
+	\coordinate (P3) at (2.8, 2.98);
+
+	\draw[->, gray!40, thick] (P0) -- (P1);
+	\draw[->, gray!40, thick] (P1) -- (P2);
+	\draw[->, gray!40, thick] (P2) -- (P3);
+	\fill[gray!50] (P0) circle (1.8pt);
+	\fill[gray!50] (P1) circle (1.8pt);
+	\fill[gray!50] (P2) circle (1.8pt);
+	\fill[gray!50] (P3) circle (1.8pt);
+	\node[gray!60, below left] at (P0) {\scriptsize Active-set path};
+
+	% --- Central path (smooth curve from interior toward optimum) ---
+	\draw[teal, very thick, smooth, tension=0.7]
+		plot coordinates {(1.8, 1.2) (2.1, 1.7) (2.4, 2.2) (2.6, 2.6) (2.8, 2.98)};
+
+	% Barrier solutions for different t
+	\fill[teal] (1.8, 1.2) circle (2.5pt)
+		node[below, black] {\small $x^*(t_1)$};
+	\fill[teal] (2.4, 2.2) circle (2.5pt)
+		node[left, black] {\small $x^*(t_2)$};
+	\fill[teal] (2.6, 2.6) circle (2.5pt)
+		node[left, black] {\small $x^*(t_3)$};
+	\fill[teal] (2.8, 2.98) circle (2.5pt);
+	\draw[red, thick] (2.8, 2.98) circle (4pt);
+	\node[above right, black] at (2.8, 2.98) {\small $x^*$};
+
+	% Label central path
+	\node[teal, right] at (2.5, 1.5) {\small Central path};
+
+	% Annotations
+	\node[black] at (1.2, 0.3) {\scriptsize $t_1 > t_2 > t_3$};
+\end{tikzpicture}
+\captionof{figure}{Interior-point method: the central path (teal curve) traces barrier solutions $x^*(t)$ from the interior toward the constrained optimum as $t \to 0$. Compare with the active-set path (grey) which hops along boundary edges.}
+\label{fig:num_interior_point}
+\end{center}
+
+\begin{examplebox}{Barrier Method: A 2D Illustration}
+	Minimise $J(x) = x_1^2 + x_2^2$ subject to $x_1 + x_2 \geq 1$, $x_1 \geq 0$, $x_2 \geq 0$.
+
+	Rewriting in standard form $g_i(x) \leq 0$:
+	\begin{align*}
+		g_1(x) &= 1 - x_1 - x_2 \leq 0, \\
+		g_2(x) &= -x_1 \leq 0, \\
+		g_3(x) &= -x_2 \leq 0.
+	\end{align*}
+
+	The barrier problem becomes:
+	\[
+		\min_{x} \; x_1^2 + x_2^2 - t\bigl[\ln(x_1 + x_2 - 1) + \ln(x_1) + \ln(x_2)\bigr].
+	\]
+
+	\solution
+
+	By symmetry, $x_1 = x_2$ at every barrier optimum (and at the true constrained optimum). The true constrained optimum is $x^* = (0.5,\; 0.5)$ with $J^* = 0.5$.
+
+	Setting the gradient of the barrier objective to zero and exploiting symmetry, we can solve for $x^*(t)$ analytically. The results for decreasing values of $t$ are:
+
+	\begin{center}
+	\begin{tabular}{cccc}
+		\toprule
+		$t$ & $x_1^*(t)$ & $x_2^*(t)$ & $J(x^*(t))$ \\
+		\midrule
+		1.000 & 1.000 & 1.000 & 2.000 \\
+		0.100 & 0.554 & 0.554 & 0.614 \\
+		0.010 & 0.505 & 0.505 & 0.510 \\
+		0.001 & 0.501 & 0.501 & 0.501 \\
+		\bottomrule
+	\end{tabular}
+	\end{center}
+
+	As $t \to 0$, the barrier solution converges to $(0.5, 0.5)$, confirming that the logarithmic penalty progressively releases the iterates toward the constrained boundary.
+\end{examplebox}
+
+\subsubsection{The Primal-Dual Interior-Point Method}
+
+The basic barrier method described above requires solving a full unconstrained minimisation sub-problem at each outer iteration---an ``optimisation within an optimisation.'' The \emph{primal-dual interior-point method} avoids this inefficiency by applying Newton's method \emph{directly} to a perturbed version of the KKT system. This is the algorithm used by virtually all modern interior-point solvers, including IPOPT, MOSEK, OOQP, and MATLAB's \texttt{quadprog} (interior-point-convex option).
+
+The central idea is to introduce slack variables $s_i = -g_i(x) > 0$ and relax the complementary slackness condition $\mu_i g_i(x) = 0$ to the \emph{perturbed} form $\mu_i s_i = \tau$, where $\tau > 0$ is the barrier parameter. The complete perturbed KKT system is:
+\begin{equation}
+	\begin{aligned}
+		\nabla J(x) + \sum_{i=1}^{m} \mu_i \nabla g_i(x) + \sum_{j=1}^{q} \lambda_j \nabla h_j(x) &= 0, & & \text{(Stationarity)} \\
+		h_j(x) &= 0, \quad j = 1,\ldots,q, & & \text{(Equality feasibility)} \\
+		g_i(x) + s_i &= 0, \quad s_i > 0, \quad i = 1,\ldots,m, & & \text{(Slack definition)} \\
+		S \mu &= \tau \mathbf{1}, & & \text{(Perturbed complementarity)}
+	\end{aligned}
+	\label{eq:perturbed_kkt}
+\end{equation}
+where $S = \operatorname{diag}(s_1, \ldots, s_m)$, $\mu = (\mu_1,\ldots,\mu_m)^\top$, and $\mathbf{1}$ is the vector of all ones.
+
+\begin{defnbox}{Primal-Dual Interior-Point Method}
+	Given the perturbed KKT system~\eqref{eq:perturbed_kkt}, the primal-dual method proceeds as follows:
+	\begin{enumerate}
+		\item \textbf{Linearise:} Compute the Newton step $(\Delta x, \Delta s, \Delta \mu, \Delta \lambda)$ by linearising system~\eqref{eq:perturbed_kkt} around the current iterate $(x_k, s_k, \mu_k, \lambda_k)$.
+		\item \textbf{Step length:} Choose $\alpha \in (0, 1]$ to maintain strict positivity: $s_k + \alpha \Delta s > 0$ and $\mu_k + \alpha \Delta \mu > 0$.
+		\item \textbf{Update:} Set $(x_{k+1}, s_{k+1}, \mu_{k+1}, \lambda_{k+1}) = (x_k, s_k, \mu_k, \lambda_k) + \alpha (\Delta x, \Delta s, \Delta \mu, \Delta \lambda)$.
+		\item \textbf{Reduce barrier:} Update $\tau \leftarrow \sigma \tau$ with centering parameter $\sigma \in (0, 1)$.
+		\item \textbf{Repeat} until $\tau < \varepsilon$ and the KKT residual is sufficiently small.
+	\end{enumerate}
+\end{defnbox}
+
+The key advantage over the basic barrier method is efficiency: each iteration requires only \emph{one} Newton step on the full KKT system, rather than an entire sub-problem solve. Moreover, the Newton system possesses a structured sparsity pattern that can be exploited via block elimination (the Schur complement), reducing the per-iteration linear algebra cost dramatically. Convergence is superlinear near the solution, meaning the method takes fewer total iterations than the basic barrier approach.
+
+\begin{notebox}{Why Primal-Dual Dominates Modern Solvers}
+	The primal-dual interior-point method is the algorithm of choice for large-scale optimisation because:
+	\begin{enumerate}
+		\item It requires $O(\sqrt{m}\, \log(1/\varepsilon))$ iterations regardless of the number of variables---each iteration is one Newton step on the KKT system.
+		\item It naturally produces both primal ($x$) and dual ($\mu$, $\lambda$) solutions, providing sensitivity information for free.
+		\item For QPs, the Newton system is a structured linear system with known sparsity, making each iteration very efficient to solve.
+	\end{enumerate}
+\end{notebox}
+
+\begin{center}
+\begin{tikzpicture}[>=stealth, scale=1.4]
+	% --- Feasible polytope ---
+	\coordinate (V1) at (0, 0);
+	\coordinate (V2) at (3.5, 0);
+	\coordinate (V3) at (4, 2.5);
+	\coordinate (V4) at (1.5, 3.5);
+	\coordinate (V5) at (0, 2);
+
+	% Fill feasible region
+	\fill[gray!15] (V1) -- (V2) -- (V3) -- (V4) -- (V5) -- cycle;
+	\draw[thick, black] (V1) -- (V2) -- (V3) -- (V4) -- (V5) -- cycle;
+
+	% --- Basic barrier central path (many small dots) ---
+	\draw[teal!50, thick, smooth, tension=0.7]
+		plot coordinates {(1.8, 1.2) (1.95, 1.4) (2.1, 1.6) (2.2, 1.75)
+		(2.3, 1.9) (2.38, 2.05) (2.45, 2.18) (2.52, 2.3)
+		(2.58, 2.42) (2.63, 2.52) (2.67, 2.62) (2.71, 2.7)
+		(2.74, 2.78) (2.77, 2.88) (2.8, 2.98)};
+	\foreach \px/\py in {1.8/1.2, 1.95/1.4, 2.1/1.6, 2.2/1.75,
+		2.3/1.9, 2.38/2.05, 2.45/2.18, 2.52/2.3,
+		2.58/2.42, 2.63/2.52, 2.67/2.62, 2.71/2.7,
+		2.74/2.78, 2.77/2.88} {
+		\fill[teal!60] (\px, \py) circle (1.2pt);
+	}
+
+	% --- Primal-dual iterates (fewer, larger steps) ---
+	\coordinate (PD0) at (1.8, 1.2);
+	\coordinate (PD1) at (2.4, 2.15);
+	\coordinate (PD2) at (2.65, 2.7);
+	\coordinate (PD3) at (2.8, 2.98);
+
+	\draw[->, teal, very thick] (PD0) -- (PD1);
+	\draw[->, teal, very thick] (PD1) -- (PD2);
+	\draw[->, teal, very thick] (PD2) -- (PD3);
+
+	\fill[teal] (PD0) circle (3pt);
+	\fill[teal] (PD1) circle (3pt);
+	\fill[teal] (PD2) circle (3pt);
+	\fill[teal] (PD3) circle (3pt);
+	\draw[teal, thick] (PD3) circle (4pt);
+	\node[above right, black] at (PD3) {\small $x^*$};
+
+	% Labels (placed to the right, away from the paths)
+	\node[teal!60, anchor=west] at (3.3, 2.3) {\scriptsize Basic barrier};
+	\node[teal!60, anchor=west] at (3.3, 2.1) {\scriptsize (many small steps)};
+	\node[teal, anchor=west] at (3.3, 1.5) {\scriptsize Primal-dual};
+	\node[teal, anchor=west] at (3.3, 1.3) {\scriptsize (aggressive Newton steps)};
+\end{tikzpicture}
+\captionof{figure}{Comparison of basic barrier and primal-dual interior-point methods. The primal-dual method takes fewer, larger Newton steps by simultaneously updating primal and dual variables.}
+\label{fig:num_primal_dual}
+\end{center}
+
+\begin{examplebox}{Primal-Dual Step: Explicit Construction}
+	Consider the same QP from the barrier example: minimise $J(x) = x_1^2 + x_2^2$ subject to $x_1 + x_2 \geq 1$, $x_1 \geq 0$, $x_2 \geq 0$.
+
+	Starting from an interior point $x^0 = (1,\, 1)^\top$, with slacks $s^0 = (1,\, 1,\, 1)^\top$, multipliers $\mu^0 = (1,\, 1,\, 1)^\top$, and barrier parameter $\tau = 0.1$.
+
+	\solution
+
+	With constraints $g_1 = 1 - x_1 - x_2$, $g_2 = -x_1$, $g_3 = -x_2$, the slacks are $s_1 = x_1 + x_2 - 1 = 1$, $s_2 = x_1 = 1$, $s_3 = x_2 = 1$.
+
+	\textbf{KKT residuals at $(x^0, s^0, \mu^0)$:}
+
+	\emph{Stationarity:}
+	\[
+		\nabla J + \mu_1 \nabla g_1 + \mu_2 \nabla g_2 + \mu_3 \nabla g_3
+		= \begin{bmatrix} 2 \\ 2 \end{bmatrix}
+		+ 1 \begin{bmatrix} -1 \\ -1 \end{bmatrix}
+		+ 1 \begin{bmatrix} -1 \\ 0 \end{bmatrix}
+		+ 1 \begin{bmatrix} 0 \\ -1 \end{bmatrix}
+		= \begin{bmatrix} 0 \\ 0 \end{bmatrix}. \; \checkmark
+	\]
+
+	\emph{Feasibility:} $g(x^0) + s^0 = 0$. $\checkmark$
+
+	\emph{Perturbed complementarity:}
+	\[
+		S\mu - \tau \mathbf{1}
+		= \begin{bmatrix} 1 \cdot 1 \\ 1 \cdot 1 \\ 1 \cdot 1 \end{bmatrix}
+		- \begin{bmatrix} 0.1 \\ 0.1 \\ 0.1 \end{bmatrix}
+		= \begin{bmatrix} 0.9 \\ 0.9 \\ 0.9 \end{bmatrix} \neq 0.
+	\]
+
+	The complementarity residual is large because $\mu_i s_i = 1 \gg \tau = 0.1$. This residual drives the Newton step: the linearised system computes $(\Delta x, \Delta s, \Delta \mu)$ to reduce this gap while maintaining feasibility and stationarity.
+
+	After one Newton step with $\tau = 0.1$, the iterate moves to approximately $x \approx (0.64,\, 0.64)$. The solver then reduces $\tau$ and repeats; within a few outer iterations the solution converges to $x^* = (0.5,\, 0.5)$.
+\end{examplebox}
+
+\begin{lstlisting}[language=Matlab,caption={Solving the barrier example QP using MATLAB's interior-point solver.}]
+% Define the QP: min x1^2 + x2^2 s.t. x1+x2 >= 1, x1,x2 >= 0
+H = 2*eye(2);    % Hessian of x1^2 + x2^2
+f = [0; 0];      % No linear term
+
+% Inequality: -x1 - x2 <= -1  (i.e., x1 + x2 >= 1)
+A = [-1 -1];     b = -1;
+
+% Lower bounds: x1 >= 0, x2 >= 0
+lb = [0; 0];
+
+% Solve using interior-point method
+opts = optimoptions('quadprog', 'Algorithm', 'interior-point-convex', ...
+                    'Display', 'iter');
+[x_opt, J_opt, ~, ~, dual] = quadprog(H, f, A, b, [], [], lb, [], [], opts);
+
+fprintf('Optimal: x* = [%.4f, %.4f], J* = %.4f\n', x_opt, J_opt);
+fprintf('Dual (ineq): %.4f, Dual (lb): [%.4f, %.4f]\n', ...
+        dual.ineqlin, dual.lower);
+\end{lstlisting}
+
+% ===================================================================
+% SECTION 6: CLOSING BRIDGE
+% ===================================================================
+
+\begin{notebox}{Why This Matters for MPC}
+	The numerical methods introduced in this section underpin every MPC implementation:
+	\begin{itemize}
+		\item The standard linear MPC problem (Chapters 5--7) is a convex QP. Solvers like \texttt{quadprog} and \texttt{qpOASES} find the global optimum by solving the KKT system---the very conditions derived above.
+		\item For Nonlinear MPC (Chapter 10), Sequential Quadratic Programming (SQP) applies Newton's method to the KKT system of the underlying nonlinear programme, using Armijo-type line searches for globalisation.
+		\item The primal-dual interior-point method is the backbone of solvers like IPOPT, which solve the nonlinear programmes arising in trajectory optimisation, rocket landing, and autonomous vehicle control.
+		\item Understanding these fundamentals allows the MPC practitioner to diagnose solver failures (infeasibility, slow convergence, cycling), tune algorithmic parameters (tolerances, barrier parameters), and choose the right solver for each application.
+	\end{itemize}
+\end{notebox}
+
+\section{Chapter Summary}
+
+This chapter provided the mathematical optimisation foundations required for MPC. The key topics covered are:
+
+\begin{itemize}
+	\item \textbf{Problem Formulation:} Every optimisation problem consists of decision variables, a cost (objective) function to minimise, and constraints that restrict the feasible set.
+
+	\item \textbf{Convexity:} A set is convex if it contains all line segments between its points; a function is convex if its Hessian is positive semi-definite. Convexity guarantees that any local minimum is also the global minimum.
+
+	\item \textbf{Problem Classification:} Optimisation problems are classified by the structure of their cost and constraints---Linear Programmes (LP), Quadratic Programmes (QP), Mixed-Integer Linear Programmes (MILP), and Nonlinear Programmes (NLP)---each with different computational properties.
+
+	\item \textbf{Software Tools:} Modelling languages such as YALMIP allow the user to specify optimisation problems symbolically; solvers such as \texttt{quadprog} and OSQP then solve the resulting numerical problem.
+
+	\item \textbf{Unconstrained Numerical Methods:} Bisection and Newton--Raphson find roots of nonlinear equations; gradient descent iteratively reduces a cost function, with step-size selection governed by the Armijo backtracking condition.
+
+	\item \textbf{Constrained Optimisation Theory:} Lagrange multipliers characterise optima under equality constraints. The Karush--Kuhn--Tucker (KKT) conditions extend this framework to inequality constraints, providing necessary (and, for convex problems, sufficient) conditions for optimality.
+
+	\item \textbf{Solver Algorithms:} Active-set methods enumerate constraint boundaries; interior-point (barrier) methods traverse the interior of the feasible set; primal-dual methods solve the KKT system directly. These algorithms underpin the QP and NLP solvers used in MPC.
 \end{itemize}
 
 \section*{Exercises}

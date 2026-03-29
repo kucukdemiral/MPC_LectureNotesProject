@@ -37,13 +37,14 @@ The methods in this chapter fall into three families, distinguished by \emph{wha
 \end{defnbox}
 
 \begin{notebox}{Connection to Earlier Chapters}
-	Each approach builds on tools already developed in these notes:
+	Each approach builds on tools already developed in this book:
 	\begin{center}
-		\begin{tabular}{l l}
+		\small
+		\begin{tabular}{@{}l p{0.62\linewidth}@{}}
 			\toprule
 			\emph{Approach} & \emph{Prerequisites} \\
 			\midrule
-			GP-MPC & Ch.\,6 (Bayesian estimation), Ch.\,7 (constrained MPC), Tube MPC (uncertainty) \\
+			GP-MPC & Ch.\,6 (Bayesian estimation), Ch.\,7 (constrained MPC), Tube MPC \\
 			Koopman MPC & Ch.\,3 (state-space), Ch.\,5 (QP/LQR), Ch.\,7 (linear MPC) \\
 			DeePC & Ch.\,2 (optimisation/YALMIP), Ch.\,7 (MPC formulation) \\
 			LMPC & Ch.\,7 (terminal sets, recursive feasibility) \\
@@ -173,10 +174,10 @@ When two inputs $x$ and $x'$ are close ($\|x - x'\| \ll \ell$), the kernel is cl
 \subsubsection*{The Prediction Equations}
 
 Given training inputs $\{x_1, \ldots, x_T\}$, observations $y = [y_1, \ldots, y_T]^\top$, and a test point $x_*$, the GP posterior is Gaussian with:
-\begin{align}
-	\mu_*(x_*) &= k_*^\top \bigl(K + \sigma_n^2 I\bigr)^{-1} y \label{eq:gp_mean} \\[4pt]
-	\sigma_*^2(x_*) &= k(x_*, x_*) - k_*^\top \bigl(K + \sigma_n^2 I\bigr)^{-1} k_* \label{eq:gp_var}
-\end{align}
+\begin{align*}
+	\mu_*(x_*) &= k_*^\top \bigl(K + \sigma_n^2 I\bigr)^{-1} y \\[4pt]
+	\sigma_*^2(x_*) &= k(x_*, x_*) - k_*^\top \bigl(K + \sigma_n^2 I\bigr)^{-1} k_*
+\end{align*}
 where:
 \begin{itemize}[noitemsep]
 	\item $K \in \mathbb{R}^{T \times T}$ is the \emph{Gram matrix} with entries $K_{ij} = k(x_i, x_j)$.
@@ -275,9 +276,9 @@ Returning to the residual model~\eqref{eq:residual_model}, suppose we have colle
 \{(x_k, u_k, x_{k+1})\}_{k=0}^{T-1}
 \]
 The residual at each time step is:
-\begin{equation}\label{eq:residual_data}
+\begin{equation*}
 	r_k = x_{k+1} - Ax_k - Bu_k
-\end{equation}
+\end{equation*}
 This is the part of the dynamics the nominal model fails to explain. Each $r_k$ is a noisy observation of $g(x_k, u_k)$.
 
 For a system with $n$ states, $g$ maps $\mathbb{R}^{n+m}$ to $\mathbb{R}^n$. We fit \emph{one independent GP per state dimension}: the $i$th GP is trained on inputs $\{(x_k, u_k)\}$ and outputs $\{r_{k,i}\}$, where $r_{k,i}$ is the $i$th component of $r_k$.
@@ -290,7 +291,7 @@ After training, given a current state $x$ and input $u$, the GP provides:
 where $\mu_g$ and $\Sigma_{k+1}$ are assembled from the individual GP predictions.
 
 \begin{alertbox}{Computational Complexity}
-	GP prediction requires solving a $T \times T$ linear system, which scales as $O(T^3)$. For small to moderate datasets ($T < 500$), this is fast. For larger datasets, sparse GP approximations using \emph{inducing points} reduce the cost to $O(TM^2)$, where $M \ll T$ is the number of inducing points. For the examples in these notes, exact GP inference is sufficient.
+	GP prediction requires solving a $T \times T$ linear system, which scales as $O(T^3)$. For small to moderate datasets ($T < 500$), this is fast. For larger datasets, sparse GP approximations using \emph{inducing points} reduce the cost to $O(TM^2)$, where $M \ll T$ is the number of inducing points. For the examples in this book, exact GP inference is sufficient.
 \end{alertbox}
 
 Figure~\ref{fig:gp_residual} illustrates this process for the worked example in Section~\ref{sec:gpmpc_example}: the GP learns the unknown cubic drag $g(x) = -0.2\,x^3$ from 20 residual data points. The confidence band is narrow where data is concentrated and widens at the extremes.
@@ -309,12 +310,12 @@ Figure~\ref{fig:gp_residual} illustrates this process for the worked example in 
 At each time step, the GP-enhanced model predicts the mean trajectory and the state-dependent uncertainty. This uncertainty is exploited through \emph{chance constraints}: instead of requiring that constraints hold with certainty (which would require worst-case reasoning as in Tube MPC), we require that they hold with a specified probability $1 - \delta$.
 
 For each state dimension $i$ and each prediction step $k$, the state constraint $x_{k,i} \le x_{\max,i}$ becomes:
-\begin{equation}\label{eq:chance_constraint}
+\begin{equation*}
 	\Pr\bigl(x_{k,i} \le x_{\max,i}\bigr) \ge 1 - \delta
-\end{equation}
+\end{equation*}
 For a \emph{single} prediction step, if the GP prediction is Gaussian, this is equivalent to a deterministic tightened constraint:
 \begin{equation}\label{eq:tightened_chance}
-	\boxed{\mu_{k,i} + \Phi^{-1}(1-\delta)\;\sigma_{k,i} \le x_{\max,i}}
+	{\mu_{k,i} + \Phi^{-1}(1-\delta)\;\sigma_{k,i} \le x_{\max,i}}
 \end{equation}
 where $\Phi^{-1}$ is the inverse of the standard normal CDF (e.g.\ $\Phi^{-1}(0.95) \approx 1.645$ for a 95\% constraint, $\Phi^{-1}(0.975) \approx 1.96$ for 97.5\%).
 
@@ -331,9 +332,9 @@ where $\Phi^{-1}$ is the inverse of the standard normal CDF (e.g.\ $\Phi^{-1}(0.
 \end{notebox}
 
 The GP-MPC optimisation at time $t$ is:
-\begin{equation}\label{eq:gpmpc_opt}
+\begin{equation*}
 	\min_{u_0, \ldots, u_{N-1}} \; \sum_{k=0}^{N-1}\bigl(\mu_{x_k}^\top Q\,\mu_{x_k} + u_k^\top R\,u_k\bigr) + \mu_{x_N}^\top P\,\mu_{x_N}
-\end{equation}
+\end{equation*}
 subject to:
 \begin{align*}
 	\text{Initialisation:} \quad & \mu_{x_0} = x(t) \\
@@ -484,40 +485,51 @@ Figure~\ref{fig:gpmpc_architecture} shows the GP-MPC control architecture as a b
 	\centering
 	\begin{tikzpicture}[
 		>=Stealth,
-		node distance=1.0cm and 1.6cm,
 		block/.style={draw, rounded corners=3pt, fill=blue!8,
 			minimum width=2.8cm, minimum height=1.0cm, align=center, font=\small},
 		blockgp/.style={draw, rounded corners=3pt, fill=orange!15,
 			minimum width=2.8cm, minimum height=1.0cm, align=center, font=\small},
 		blockplant/.style={draw, rounded corners=3pt, fill=green!10,
-			minimum width=2.4cm, minimum height=1.0cm, align=center, font=\small},
-		sum/.style={draw, circle, minimum size=0.5cm, inner sep=0pt, font=\small},
+			minimum width=2.8cm, minimum height=1.0cm, align=center, font=\small},
+		sum/.style={draw, circle, minimum size=0.6cm, inner sep=0pt, font=\footnotesize},
 		arr/.style={->, thick},
 	]
-		% MPC block
-		\node[block] (mpc) {MPC Optimiser\\{\scriptsize (NLP solver)}};
+		% ---- Nodes ----
+		\node[block] (mpc) at (0,0) {MPC Optimiser\\{\scriptsize (NLP solver)}};
+		\node[blockplant] (plant) at (6,0) {True Plant\\$x_{k+1} = f(x_k, u_k)$};
+		\node[blockgp] (gp) at (0,-4.5) {GP Model\\$\mu_g(x,u),\;\sigma_g^2(x,u)$};
+		\node[block] (nom) at (6,-4.5) {Nominal Model\\$Ax_k + Bu_k$};
+		\node[sum] (sub) at (9,-2.5) {$\boldsymbol{-}$};
 
-		% Plant
-		\node[blockplant, right=3.5cm of mpc] (plant) {True Plant\\$x_{k+1} = f(x_k, u_k)$};
+		% ---- 1. MPC -> Plant ----
+		\draw[arr] (mpc.east) -- node[above] {$u_k^*$} (plant.west);
 
-		% GP block
-		\node[blockgp, below=2.0cm of mpc] (gp) {GP Model\\$\mu_g(x,u),\; \sigma_g^2(x,u)$};
+		% ---- 2. Plant -> x_{k+1} junction ----
+		\coordinate (xjunc) at (9, 0);
+		\draw[thick] (plant.east) -- (xjunc);
+		\node[above, font=\small] at (xjunc) {$x_{k+1}$};
 
-		% Nominal model
-		\node[block, below=2.1cm of plant] (nom) {Nominal Model\\$Ax_k + Bu_k$};
+		% ---- 3. Feedback: x_k to MPC ----
+		\draw[arr] (xjunc) -- ++(0.8,0) |- ([yshift=1.0cm]plant.north)
+			-| node[above, pos=0.25, font=\small] {$x_k$ (measured)} (mpc.north);
 
-		% Arrows
-		\draw[arr] (mpc.east) -- node[above, font=\small] {$u_k^*$} (plant.west);
-		\draw[arr] (plant.east) -- ++(1.0,0) node[above left, font=\small] {$x_{k+1}$} |- (nom.east);
-		\draw[arr] (nom.west) -- node[above, font=\small] {$r_k$} (gp.east);
-		\draw[arr] (gp.north) -- node[left, font=\small] {$\mu_g$, $\sigma_g^2$} (mpc.south);
+		% ---- 4. x_{k+1} down to subtraction (+ input) ----
+		\draw[arr] (xjunc) -- node[right, font=\scriptsize, pos=0.7] {$+$} (sub.north);
 
-		% Feedback: x_k to MPC
-		\draw[arr] (plant.north) -- ++(0,1.0) -| node[above, pos=0.25, font=\small] {$x_k$ (measured)} (mpc.north);
+		% ---- 5. Nominal model -> subtraction (- input) ----
+		\draw[arr] (nom.east) -- node[below, font=\small] {$Ax_k\!+\!Bu_k$}
+			(nom.east -| sub) -- node[right, font=\scriptsize, pos=0.8] {$-$} (sub.south);
 
-		% Data collection annotation
-		\node[right=1.0cm of nom, font=\scriptsize\itshape, text=gray] (ann) {residual data};
-		\draw[->, gray, dashed] (plant.east) ++(1.0,0) |- (ann.east);
+		% ---- 6. Subtraction output: right -> down -> left -> up into GP.south ----
+		\draw[arr] (sub.east) -- ++(1.0,0) |- ([yshift=-0.8cm]gp.south)
+			-- (gp.south);
+		\node[below, font=\small] at ([yshift=-0.8cm]gp.south) {$r_k$};
+
+		% ---- 7. GP -> MPC ----
+		\draw[arr] (gp.north) -- node[left, font=\small] {$\mu_g,\;\sigma_g^2$} (mpc.south);
+
+		% ---- 8. x_k, u_k to Nominal Model ----
+		\draw[arr, gray, dashed] ([yshift=-0.5cm]plant.south) -- node[right, font=\scriptsize, text=gray] {$x_k,\,u_k$} (nom.north);
 	\end{tikzpicture}
 	\caption{GP-MPC architecture. At each time step, the measured state $x_k$ is used to query the GP model, which returns the predicted residual mean $\mu_g$ and variance $\sigma_g^2$. These are incorporated into the MPC optimisation as a dynamics correction and as state-dependent constraint tightening, respectively. The residual data $r_k = x_{k+1} - Ax_k - Bu_k$ can optionally be appended to the GP training set for online learning.}
 	\label{fig:gpmpc_architecture}
@@ -561,7 +573,7 @@ In practice, we choose a \emph{dictionary} of $p$ observables:
 \]
 Common choices include monomials ($x_1$, $x_2$, $x_1^2$, $x_1 x_2$, $x_2^2$, \ldots), radial basis functions, or trigonometric functions. The \emph{lifted state} is $z_k = \Psi(x_k) \in \mathbb{R}^p$, with $p \ge n$. The first $n$ entries are typically chosen to be the original states: $\psi_i(x) = x_i$ for $i = 1, \ldots, n$.
 
-We then seek a matrix $K_d \in \mathbb{R}^{p \times p}$ (we write $K_d$ to distinguish it from the feedback gain $K$ used elsewhere in these notes) such that:
+We then seek a matrix $K_d \in \mathbb{R}^{p \times p}$ (we write $K_d$ to distinguish it from the feedback gain $K$ used elsewhere in this book) such that:
 \begin{equation}\label{eq:koopman_approx}
 	z_{k+1} = \Psi(x_{k+1}) \approx K_d\,z_k = K_d\,\Psi(x_k)
 \end{equation}
@@ -582,9 +594,9 @@ This is a \emph{linear} dynamical system in the lifted coordinates $z_k$. The no
 \label{sec:edmd}
 
 EDMD is the standard method for computing the Koopman approximation from data. For a system with control inputs, the dynamics are $x_{k+1} = f(x_k, u_k)$, and the lifted linear model becomes:
-\begin{equation}\label{eq:koopman_controlled}
+\begin{equation*}
 	z_{k+1} \approx A_K\,z_k + B_K\,u_k
-\end{equation}
+\end{equation*}
 
 \subsubsection*{The Algorithm}
 
@@ -600,9 +612,9 @@ Apply the dictionary $\Psi$ to each state:
 \end{align*}
 
 The matrices $A_K$ and $B_K$ are found by solving the least-squares problem:
-\begin{equation}\label{eq:edmd_ls}
+\begin{equation*}
 	\bigl[A_K \;\; B_K\bigr] = Z' \begin{bmatrix} Z \\ U \end{bmatrix}^\dagger
-\end{equation}
+\end{equation*}
 where $\dagger$ denotes the Moore--Penrose pseudoinverse. This minimises $\sum_{k} \|\Psi(x_{k+1}) - A_K\Psi(x_k) - B_K u_k\|^2$.
 
 \begin{examplebox}{Hand-Worked EDMD for a Scalar Nonlinear System}
@@ -1281,9 +1293,9 @@ We index iterations by $j = 0, 1, 2, \ldots$ and time steps within an iteration 
 \label{sec:lmpc_safe_set}
 
 After $j$ successful iterations, we have $j+1$ complete trajectories (iterations $0, 1, \ldots, j$) that all satisfy the constraints and reach the target. The union of \emph{every state visited during any of these iterations} forms the \emph{sampled safe set}:
-\begin{equation}\label{eq:safe_set}
+\begin{equation*}
 	\mathcal{SS}^j = \bigcup_{i=0}^{j}\bigl\{x_0^{(i)},\; x_1^{(i)},\; \ldots,\; x_{T_i}^{(i)}\bigr\}
-\end{equation}
+\end{equation*}
 Here $x_k^{(i)}$ denotes the state at time step $k$ during iteration $i$, and $T_i$ is the number of steps iteration $i$ took to reach the target. The superscript $(i)$ always refers to the iteration index and the subscript to the time index within that iteration. Since every iteration reached $x_F$ safely, every state in $\mathcal{SS}^j$ is a state from which the target is \emph{known to be reachable} without violating constraints --- hence the name ``safe set.'' As we complete more iterations, $\mathcal{SS}^j$ can only grow: $\mathcal{SS}^{j} \supseteq \mathcal{SS}^{j-1}$.
 
 For each state in $\mathcal{SS}^j$, we can compute the \emph{cost-to-go}: the total cost that was actually incurred from that state to the target during the iteration in which it was visited. If the same state $x$ was visited during multiple iterations, we take the cheapest one:
@@ -1462,10 +1474,10 @@ The key departure from the standard LMPC formulation is that the cost-to-go $Q^j
 \subsubsection{Vehicle Model}
 
 The vehicle is modelled as a rear-wheel-drive dynamic bicycle with six states and two inputs:
-\begin{equation}\label{eq:racing_state}
+\begin{equation*}
 	\mathbf{x} = \begin{bmatrix} X \\ Y \\ \varphi \\ v_x \\ v_y \\ r \end{bmatrix}, \qquad
 	\mathbf{u} = \begin{bmatrix} \delta \\ D \end{bmatrix},
-\end{equation}
+\end{equation*}
 where $(X, Y)$ is the position in the global frame, $\varphi$ is the heading angle, $v_x$ and $v_y$ are the longitudinal and lateral velocities in the body frame, $r$ is the yaw rate, $\delta$ is the front steering angle, and $D \in [-1, 1]$ is the normalised throttle/brake command.
 
 The continuous-time dynamics are:
@@ -1482,20 +1494,20 @@ The continuous-time dynamics are:
 Here $m$ is the vehicle mass, $I_z$ the yaw moment of inertia, and $l_f$, $l_r$ the distances from the centre of gravity to the front and rear axles respectively.
 
 \paragraph{Tyre forces.} The lateral tyre forces follow the \emph{Pacejka Magic Formula}~\cite{pacejka2012}. The front and rear slip angles are
-\begin{equation}\label{eq:slip_angles}
+\begin{equation*}
 	\alpha_f = -\arctan\!\frac{v_y + r\,l_f}{v_x} + \delta, \qquad
 	\alpha_r = -\arctan\!\frac{v_y - r\,l_r}{v_x},
-\end{equation}
+\end{equation*}
 and the corresponding lateral forces are
-\begin{equation}\label{eq:pacejka}
+\begin{equation*}
 	F_{fy} = D_f \sin\!\bigl(C_f \arctan(B_f\,\alpha_f)\bigr), \qquad
 	F_{ry} = D_r \sin\!\bigl(C_r \arctan(B_r\,\alpha_r)\bigr).
-\end{equation}
+\end{equation*}
 The longitudinal driving force and drag are modelled as
-\begin{equation}\label{eq:drive_drag}
+\begin{equation*}
 	F_{rx} = C_{m1}\,D - C_{m2}\,D\,v_x, \qquad
 	F_{\mathrm{drag}} = C_{r0} + C_{r2}\,v_x^2,
-\end{equation}
+\end{equation*}
 where $C_{m1}$, $C_{m2}$ capture the motor torque curve and $C_{r0}$, $C_{r2}$ account for rolling resistance and aerodynamic drag. The parameters used in the simulation are listed in Table~\ref{tab:racing_params}.
 
 \begin{table}[ht]
@@ -1527,9 +1539,9 @@ The dynamics~\eqref{eq:racing_dynamics} are integrated using fourth-order Runge-
 \subsubsection{Track Representation}
 
 The track centreline is taken from the MPCC benchmark~\cite{liniger2015optimization}, a complex racing circuit of approximately 445\,m featuring tight hairpins, chicanes, and high-speed straights. The centreline is parameterised by arc length $s \in [0, L)$, where $L$ is the total track length. At each point, the unit tangent $\mathbf{t}(s)$ and outward normal $\mathbf{n}(s)$ are computed from the spline derivatives, and the local curvature $\kappa(s)$ is obtained from the rate of change of the tangent angle:
-\begin{equation}\label{eq:curvature}
+\begin{equation*}
 	\kappa(s) = \left|\frac{\mathrm{d}\varphi_{\mathrm{tan}}}{\mathrm{d}s}\right|.
-\end{equation}
+\end{equation*}
 The track boundaries lie at distance $\pm w$ from the centreline along the normal, where $w = 5$\,m is the track half-width.
 
 
@@ -1539,8 +1551,8 @@ The track boundaries lie at distance $\pm w$ from the centreline along the norma
 The algorithm follows the LMPC paradigm of Section~\ref{sec:lmpc}: iterate between driving and learning, with each lap producing data that improves the next. Two neural networks replace the explicit safe set lookup and convex-hull terminal constraint of the standard LMPC:
 
 \begin{enumerate}
-	\item A \textbf{speed map} $v_\theta(s)$ that predicts the target speed at each track position~$s$, replacing the safe-set--based speed targets.
-	\item A \textbf{value function} $V_\phi(\mathbf{x})$ that approximates the cost-to-go from any state, replacing the convex-combination terminal cost $Q^j(x_N)$.
+	\item A \emph{speed map} $v_\theta(s)$ that predicts the target speed at each track position~$s$, replacing the safe-set--based speed targets.
+	\item A \emph{value function} $V_\phi(\mathbf{x})$ that approximates the cost-to-go from any state, replacing the convex-combination terminal cost $Q^j(x_N)$.
 \end{enumerate}
 
 \begin{notebox}{Connection to LMPC}
@@ -1551,9 +1563,9 @@ The algorithm follows the LMPC paradigm of Section~\ref{sec:lmpc}: iterate betwe
 \subsubsection{Iteration~0: Data Collection via Pure Pursuit}
 
 The first lap uses a \emph{pure pursuit} controller at a conservative speed $v_{\mathrm{PP}} = 5$\,m/s to complete one full circuit safely. The pure pursuit law computes a lookahead point on the centreline at distance
-\begin{equation}\label{eq:lookahead}
+\begin{equation*}
 	d_{\mathrm{look}} = \max(4\,\text{m},\; 0.9\,v_x)
-\end{equation}
+\end{equation*}
 ahead of the current arc-length position, then steers towards it. Figure~\ref{fig:nnmpc_pure_pursuit} illustrates the geometry.
 
 \begin{figure}[ht]
@@ -1614,28 +1626,28 @@ where $\kappa(s)$ is the local curvature. With $a_{\mathrm{lat,max}} = 6\,\text{
 \end{figure}
 
 The final target speed for each bin combines all three stages:
-\begin{equation}\label{eq:target_speed}
+\begin{equation*}
 	v_{\mathrm{target},b}^{(j)} = \text{clip}\!\left(\min\!\bigl(\tilde{v}_b^{(j)},\; v_{\max,b}\bigr),\; v_{\mathrm{PP}},\; v_{x,\max}\right),
-\end{equation}
+\end{equation*}
 followed by a 5-bin moving-average smooth to remove discontinuities.
 
 \paragraph{Stage~4: Neural network fit.} An \texttt{MLPRegressor} with two hidden layers of 64 and 32 neurons (\texttt{ReLU} activation) is trained on the binned data. The input features are
-\begin{equation}\label{eq:speed_features}
+\begin{equation*}
 	\mathbf{z}(s) = \left[\frac{s}{L},\;\; \kappa(s),\;\; \sin\!\frac{2\pi s}{L},\;\; \cos\!\frac{2\pi s}{L}\right],
-\end{equation}
+\end{equation*}
 and the output is the target speed. The Fourier features $\sin(2\pi s/L)$ and $\cos(2\pi s/L)$ encode the periodic (closed-loop) nature of the track, allowing the network to generalise across the start/finish line. The curvature input $\kappa$ provides a direct geometric signal. Five training samples per bin (at uniformly spaced offsets within each bin) give 300 training points in total.
 
 
 \subsubsection{NN Value Function: Learning the Cost-to-Go}
 
 A second neural network $V_\phi(\mathbf{x})$ approximates the cost-to-go from any state, replacing the convex-combination terminal cost of the standard LMPC~\eqref{eq:lmpc_opt}. With stage cost $\ell = 1$ (minimum-time objective), the cost-to-go from state $\mathbf{x}_k^{(i)}$ is
-\begin{equation}\label{eq:vf_target}
+\begin{equation*}
 	Q^j(\mathbf{x}_k^{(i)}) = T_i - k,
-\end{equation}
+\end{equation*}
 where $T_i$ is the total number of steps in iteration $i$. Training data from all completed laps is accumulated; for states visited in multiple iterations, only the minimum cost-to-go is retained, consistent with~\eqref{eq:cost_to_go}. The network is retrained after each iteration. The input features are:
-\begin{equation}\label{eq:vf_features}
+\begin{equation*}
 	\mathbf{z}_V(\mathbf{x}) = \left[\frac{X}{50},\;\; \frac{Y}{50},\;\; \cos\varphi,\;\; \sin\varphi,\;\; \frac{v_x}{v_{x,\max}}\right].
-\end{equation}
+\end{equation*}
 The position is normalised by 50\,m to match the track scale. The heading is encoded as $(\cos\varphi, \sin\varphi)$ to avoid the discontinuity at $\varphi = \pm\pi$. The network architecture is the same as the speed map (two hidden layers of 64 and 32 neurons).
 
 
@@ -1645,11 +1657,11 @@ The position is normalised by 50\,m to match the track scale. The heading is enc
 At each control step (every $2 \times \Delta t = 0.1$\,s), the controller computes a target speed through four sub-steps:
 
 \paragraph{Step~1: Query the speed map.} The current arc-length position $s$ is obtained by projecting the vehicle position $(X, Y)$ onto the centreline using a KD-tree nearest-neighbour search. The NN speed map returns the target speed:
-\begin{equation}\label{eq:mpc_step1}
+\begin{equation*}
 	v_{\mathrm{target}} = v_\theta(s).
-\end{equation}
+\end{equation*}
 
-\paragraph{Step~2: Lookahead braking.} The controller checks the speed map at positions $\Delta t_{\mathrm{look}} \in \{0.5, 1.0, 1.5\}$\,s ahead of the current position. If the target speed is lower ahead (a corner is approaching), the current target is reduced to allow time for deceleration:
+\paragraph{Step~2: Lookahead braking.} The controller checks the speed map at lookahead times $\Delta t_{\mathrm{look}} \in \{0.5,\, 1.0,\, 1.5\}$\,s ahead. If the target speed is lower ahead (a corner is approaching), the current target is reduced to allow deceleration:
 \begin{equation}\label{eq:mpc_step2}
 	v_{\mathrm{target}} \leftarrow \min\!\Bigl(v_{\mathrm{target}},\;\;
 	v_\theta\bigl(s + v_x \cdot \Delta t_{\mathrm{look}}\bigr) + 1.5 \cdot \Delta t_{\mathrm{look}}\Bigr).
@@ -1664,13 +1676,13 @@ The term $+1.5 \cdot \Delta t_{\mathrm{look}}$ is a deceleration budget: the car
 \end{figure}
 
 \paragraph{Step~3: Value function adjustment.} The controller evaluates the value function at two hypothetical states: $\mathbf{x}_{\mathrm{fast}}$ with $v_x = v_{\mathrm{target}}$ and $\mathbf{x}_{\mathrm{slow}}$ with $v_x = 0.8\,v_{\mathrm{target}}$. If $V_\phi(\mathbf{x}_{\mathrm{fast}}) < V_\phi(\mathbf{x}_{\mathrm{slow}})$, the faster state leads to lower remaining cost, and the target speed is increased by~5\%:
-\begin{equation}\label{eq:mpc_step3}
+\begin{equation*}
 	v_{\mathrm{target}} \leftarrow
 	\begin{cases}
 		\min(1.05 \cdot v_{\mathrm{target}},\; v_{x,\max}) & \text{if } V_\phi(\mathbf{x}_{\mathrm{fast}}) < V_\phi(\mathbf{x}_{\mathrm{slow}}), \\
 		v_{\mathrm{target}} & \text{otherwise.}
 	\end{cases}
-\end{equation}
+\end{equation*}
 
 \paragraph{Step~4: Execute.} The computed target speed is passed to the pure pursuit controller~\eqref{eq:pp_steering}--\eqref{eq:pp_throttle}, which returns the steering angle $\delta$ and throttle command~$D$.
 
@@ -1822,7 +1834,7 @@ using gradient descent (backpropagation). After training, $f_\theta$ is embedded
 
 Practical workarounds include:
 \begin{itemize}
-	\item \emph{Linearise the NN} at each time step (similar to the Real-Time Iteration scheme in Chapter~10), producing a time-varying QP.
+	\item \emph{Linearise the NN} at each time step (similar to the Real-Time Iteration scheme in Chapter~\ref{chap:nmpc}), producing a time-varying QP.
 	\item \emph{Use the NN for warm-starting}: compute an initial guess with the NN, then refine with a simpler model-based MPC.
 	\item \emph{Approximate the MPC policy}: train a NN to clone the MPC controller's input--output map $\pi_\theta(x) \approx u_0^*(x)$, eliminating the online optimisation entirely.
 \end{itemize}
@@ -1842,7 +1854,7 @@ X_in  = [x_nn(1:T_data), u_nn];   % inputs: [x_k, u_k]
 Y_out = x_nn(2:T_data+1);          % targets: x_{k+1}
 
 % 2. Train a Simple NN (1 hidden layer, 20 neurons)
-net = fitnet(20, 'trainlm');
+net = feedforwardnet(20, 'trainlm');
 net.trainParam.showWindow = false;
 net = train(net, X_in', Y_out');
 

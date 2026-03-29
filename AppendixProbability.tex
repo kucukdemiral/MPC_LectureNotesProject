@@ -19,7 +19,7 @@ encountering these tools in the main text.
 By the end of this appendix you should be comfortable with random
 variables, Gaussian distributions, expectations, covariance matrices,
 Bayes' theorem, and stochastic processes — the exact toolkit needed for
-Chapters on Kalman filtering, LQG, stochastic MPC, and RL.
+Chapters on Kalman filtering, LQG, and stochastic MPC.
 
 % =============================================================
 \section{Why Probability in Control?}
@@ -37,8 +37,8 @@ uncertainty or handles it implicitly through robustness margins.
 Probabilistic control treats uncertainty explicitly by modelling
 unknown quantities as \emph{random variables} and designing controllers
 that perform well \emph{on average} or with \emph{guaranteed
-probability}.  The four main applications you will encounter in these
-notes are:
+probability}.  The four main applications you will encounter in this
+book are:
 
 \begin{itemize}[noitemsep]
   \item \textbf{Kalman filter}: optimal state estimator when process
@@ -60,9 +60,9 @@ notes are:
 % =============================================================
 
 \begin{defnbox}{Sample Space and Event}
-The \textbf{sample space} $\Omega$ is the set of all possible outcomes
-of a random experiment.  An \textbf{event} $A$ is any subset
-$A \subseteq \Omega$.  The \textbf{probability} of event $A$, written
+The \emph{sample space} $\Omega$ is the set of all possible outcomes
+of a random experiment.  An \emph{event} $A$ is any subset
+$A \subseteq \Omega$.  The \emph{probability} of event $A$, written
 $P(A)$, is a number in $[0,1]$ that quantifies how likely $A$ is to
 occur.
 \end{defnbox}
@@ -115,7 +115,7 @@ p_atleast1 = 1 - p_none           % 0.0961
 % =============================================================
 
 \begin{defnbox}{Conditional Probability}
-The \textbf{conditional probability} of event $A$ given that event $B$
+The \emph{conditional probability} of event $A$ given that event $B$
 has occurred (with $P(B) > 0$) is:
 \[
   P(A \mid B) = \frac{P(A \cap B)}{P(B)}.
@@ -125,7 +125,7 @@ rescales probabilities accordingly.
 \end{defnbox}
 
 \begin{defnbox}{Statistical Independence}
-Events $A$ and $B$ are \textbf{independent} if knowing $B$ occurred
+Events $A$ and $B$ are \emph{independent} if knowing $B$ occurred
 gives no information about $A$:
 \[
   P(A \mid B) = P(A) \quad \Longleftrightarrow \quad
@@ -147,7 +147,7 @@ Let $O$ = ``room occupied'', $T$ = ``sensor triggered''.
 \[
   P(O) = 0.7,\quad P(T \mid O) = 0.9,\quad P(T \mid O^c) = 0.05.
 \]
-By the \textbf{law of total probability}:
+By the \emph{law of total probability}:
 \[
   P(T) = P(T\mid O)P(O) + P(T\mid O^c)P(O^c)
        = 0.9\times0.7 + 0.05\times0.3 = 0.645.
@@ -181,9 +181,9 @@ For events $A$ and $B$ with $P(B) > 0$:
 \[
   {P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}}.
 \]
-In words: the \textbf{posterior} probability of $A$ given evidence $B$
-equals the \textbf{likelihood} $P(B\mid A)$ times the \textbf{prior}
-$P(A)$, divided by the \textbf{marginal likelihood} (evidence) $P(B)$.
+In words: the \emph{posterior} probability of $A$ given evidence $B$
+equals the \emph{likelihood} $P(B\mid A)$ times the \emph{prior}
+$P(A)$, divided by the \emph{marginal likelihood} (evidence) $P(B)$.
 \end{defnbox}
 
 Bayes' theorem is the mathematical foundation of the Kalman filter.
@@ -214,17 +214,17 @@ structure of the Kalman filter described in the main text.
 % =============================================================
 
 \begin{defnbox}{Random Variable}
-A \textbf{random variable} (RV) $X$ is a function that assigns a
+A \emph{random variable} (RV) $X$ is a function that assigns a
 numerical value to every outcome in the sample space $\Omega$.  It
-is \textbf{discrete} if it takes countably many values and
-\textbf{continuous} if it takes values in a continuous range.
+is \emph{discrete} if it takes countably many values and
+\emph{continuous} if it takes values in a continuous range.
 \end{defnbox}
 
 \subsection{Discrete Random Variables}
 \label{subsec:app_discrete}
 
 A discrete RV is characterised by its
-\textbf{probability mass function} (PMF):
+\emph{probability mass function} (PMF):
 \[
   p_X(x) = P(X = x), \qquad \sum_{\text{all }x} p_X(x) = 1.
 \]
@@ -262,7 +262,7 @@ ylim([0, 0.4]); grid on;
 \label{subsec:app_continuous}
 
 A continuous RV is characterised by its
-\textbf{probability density function} (PDF) $f_X(x)$, defined so that:
+\emph{probability density function} (PDF) $f_X(x)$, defined so that:
 \[
   P(a \leq X \leq b) = \int_a^b f_X(x)\,\mathrm{d}x,
   \qquad
@@ -275,7 +275,7 @@ A continuous RV is characterised by its
   (a continuous RV never takes an exact value).
 \end{alertbox}
 
-The \textbf{cumulative distribution function} (CDF) collects
+The \emph{cumulative distribution function} (CDF) collects
 probability up to $x$:
 \[
   F_X(x) = P(X \leq x) = \int_{-\infty}^{x} f_X(t)\,\mathrm{d}t.
@@ -303,7 +303,7 @@ Mean: $(a+b)/2$.\quad Variance: $(b-a)^2/12$.
 
 The Gaussian distribution is the most important distribution in
 control engineering.  Its central role follows from the
-\textbf{Central Limit Theorem}: the sum of many independent random
+\emph{Central Limit Theorem}: the sum of many independent random
 variables tends to a Gaussian, regardless of their individual
 distributions.  Sensor noise, modelling errors, and thermal
 fluctuations are all well approximated as Gaussian.
@@ -315,8 +315,8 @@ A scalar RV $X \sim \mathcal{N}(\mu, \sigma^2)$ has PDF:
             \exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right),
   \quad x \in \mathbb{R},
 \]
-where $\mu$ is the \textbf{mean} (centre) and $\sigma^2$ is the
-\textbf{variance} (spread).  The \textbf{standard deviation} is
+where $\mu$ is the \emph{mean} (centre) and $\sigma^2$ is the
+\emph{variance} (spread).  The \emph{standard deviation} is
 $\sigma = \sqrt{\sigma^2}$.
 \end{defnbox}
 
@@ -436,7 +436,7 @@ Poisson $\mathrm{Poi}(\lambda)$ &
 % =============================================================
 
 \begin{defnbox}{Expected Value (Mean)}
-The \textbf{expected value} (or \textbf{mean}) of a random variable
+The \emph{expected value} (or \emph{mean}) of a random variable
 $X$ is its probability-weighted average:
 \[
   \mu = \mathbb{E}[X] =
@@ -449,13 +449,13 @@ $X$ is its probability-weighted average:
 \end{defnbox}
 
 \begin{defnbox}{Variance and Standard Deviation}
-The \textbf{variance} measures the average squared deviation from the
+The \emph{variance} measures the average squared deviation from the
 mean:
 \[
   \sigma^2 = \mathrm{Var}(X) = \mathbb{E}\!\left[(X-\mu)^2\right]
            = \mathbb{E}[X^2] - \mu^2.
 \]
-The \textbf{standard deviation} $\sigma = \sqrt{\mathrm{Var}(X)}$ has
+The \emph{standard deviation} $\sigma = \sqrt{\mathrm{Var}(X)}$ has
 the same units as $X$ and is the most intuitive measure of spread.
 \end{defnbox}
 
@@ -504,7 +504,7 @@ fprintf('Sample variance: %.4f\n', var(v))     % ~0.25
 % =============================================================
 
 \begin{defnbox}{Covariance}
-The \textbf{covariance} of two random variables $X$ and $Y$ measures
+The \emph{covariance} of two random variables $X$ and $Y$ measures
 how they vary together:
 \[
   \mathrm{Cov}(X,Y) = \mathbb{E}\!\left[(X - \mathbb{E}[X])
@@ -517,7 +517,7 @@ generally true).
 \end{defnbox}
 
 \begin{defnbox}{Pearson Correlation Coefficient}
-The \textbf{correlation coefficient} normalises covariance to the
+The \emph{correlation coefficient} normalises covariance to the
 range $[-1,1]$:
 \[
   \rho_{XY} = \frac{\mathrm{Cov}(X,Y)}{\sigma_X \sigma_Y}.
@@ -571,9 +571,9 @@ generalisation of the Gaussian.
 
 \begin{defnbox}{Multivariate Gaussian $\mathcal{N}(\boldsymbol{\mu}, \Sigma)$}
 A random vector $x \in \mathbb{R}^n$ follows a
-\textbf{multivariate Gaussian} distribution with mean vector
+\emph{multivariate Gaussian} distribution with mean vector
 $\boldsymbol{\mu} \in \mathbb{R}^n$ and
-\textbf{covariance matrix} $\Sigma \in \mathbb{R}^{n\times n}$ if its
+\emph{covariance matrix} $\Sigma \in \mathbb{R}^{n\times n}$ if its
 PDF is:
 \[
   f(x) = \frac{1}{(2\pi)^{n/2}\sqrt{\det(\Sigma)}}
@@ -582,7 +582,7 @@ PDF is:
                   \Sigma^{-1}
                   (x-\boldsymbol{\mu})\right).
 \]
-The covariance matrix $\Sigma$ must be \textbf{symmetric positive
+The covariance matrix $\Sigma$ must be \emph{symmetric positive
 semi-definite}: $\Sigma = \Sigma^\top$ and $\Sigma \succeq 0$.
 \end{defnbox}
 
@@ -630,7 +630,7 @@ covariances: $\Sigma_{ij} = \mathrm{Cov}(x_i, x_j)$.
 \begin{notebox}{Covariance matrices in the Kalman filter}
   The Kalman filter maintains the state estimate as
   $x_k \sim \mathcal{N}(\hat{x}_k, P_k)$,
-  where $P_k$ is the \textbf{error covariance matrix}.  At each step:
+  where $P_k$ is the \emph{error covariance matrix}.  At each step:
   \begin{itemize}[noitemsep]
     \item \textbf{Prediction}: $P$ grows (uncertainty increases
           because the model is imperfect).
@@ -761,7 +761,7 @@ $y = Ax + b$, then:
 \]
 \end{defnbox}
 
-This is exactly the \textbf{predict step} of the Kalman filter.  If
+This is exactly the \emph{predict step} of the Kalman filter.  If
 the state $x_k \sim \mathcal{N}(\hat{x}_k, P_k)$
 and the system evolves as $x_{k+1} = Ax_k +
 w_k$ with process noise
@@ -831,7 +831,7 @@ title('Propagated variance'); grid on;
 \label{sec:app_stochastic}
 % =============================================================
 
-A \textbf{stochastic process} is a sequence of random variables
+A \emph{stochastic process} is a sequence of random variables
 indexed by time: $\{X_k\}_{k=0}^{\infty}$ (discrete time) or
 $\{X(t)\}_{t\geq0}$ (continuous time).  In control, the key
 stochastic processes are:
@@ -1054,13 +1054,13 @@ $P(x_1 \geq 21) \geq 0.95$.
 With the tools of this appendix, the Kalman filter equations can now
 be understood probabilistically rather than just algorithmically.
 
-The \textbf{state-space model} is:
-\begin{align}
+The \emph{state-space model} is:
+\begin{align*}
   {x}_{k+1} &= A{x}_k + B{u}_k + {w}_k,
-  \qquad {w}_k \sim \mathcal{N}({0}, Q), \label{eq:ss1}\\
+  \qquad {w}_k \sim \mathcal{N}({0}, Q), \\
   {y}_k     &= C{x}_k + {v}_k,
-  \qquad {v}_k \sim \mathcal{N}({0}, R). \label{eq:ss2}
-\end{align}
+  \qquad {v}_k \sim \mathcal{N}({0}, R).
+\end{align*}
 
 The Kalman filter maintains a Gaussian belief over the state:
 \[
@@ -1146,7 +1146,7 @@ filter's noise-rejection capability.
 % =============================================================
 
 Reinforcement Learning frames the control problem as a
-\textbf{Markov Decision Process} (MDP), which is a direct application
+\emph{Markov Decision Process} (MDP), which is a direct application
 of the probabilistic tools developed in this appendix.
 
 \begin{defnbox}{Markov Decision Process}
@@ -1155,7 +1155,7 @@ An MDP is defined by the tuple $(\mathcal{S}, \mathcal{A},
 \begin{itemize}[noitemsep]
   \item $\mathcal{S}$: state space (e.g.\ room temperatures)
   \item $\mathcal{A}$: action space (e.g.\ heater power levels)
-  \item $\mathcal{P}(s' \mid s, a)$: \textbf{transition probability} —
+  \item $\mathcal{P}(s' \mid s, a)$: \emph{transition probability} —
         probability of reaching state $s'$ from state $s$ under action
         $a$
   \item $r(s,a)$: reward function (e.g.\ negative energy cost)
@@ -1163,7 +1163,7 @@ An MDP is defined by the tuple $(\mathcal{S}, \mathcal{A},
 \end{itemize}
 The agent's goal is to find a policy $\pi(a \mid s)$ (a conditional
 probability distribution over actions given states) that maximises
-the \textbf{expected discounted return}:
+the \emph{expected discounted return}:
 \[
   J(\pi) = \mathbb{E}_\pi\!\left[\sum_{k=0}^{\infty} \gamma^k r(s_k, a_k)\right].
 \]

@@ -9,7 +9,7 @@
 \label{app:linalg}
 
 This appendix provides a concise but complete review of the linear
-algebra concepts used throughout these lecture notes.  Each topic is
+algebra concepts used throughout this book.  Each topic is
 presented with a formal definition, worked examples by hand, and the
 corresponding MATLAB commands so that you can verify every result
 interactively.  No prior knowledge beyond basic school-level algebra is
@@ -26,12 +26,12 @@ elements within a row.
 % =============================================================
 
 \begin{defnbox}{Scalar}
-	A \textbf{scalar} is a single real (or complex) number, denoted by a
+	A \emph{scalar} is a single real (or complex) number, denoted by a
 	lower-case italic letter, e.g.\ $a = 3.7$.
 \end{defnbox}
 
 \begin{defnbox}{Vector}
-	A \textbf{column vector} of size $n$ is an ordered list of $n$ scalars
+	A \emph{column vector} of size $n$ is an ordered list of $n$ scalars
 	arranged vertically:
 	\[
 	{x} =
@@ -40,11 +40,11 @@ elements within a row.
 	\]
 	A {row vector} is the transpose of a column vector:
 	${x}^\top = [x_1,\; x_2,\; \ldots,\; x_n]$.  Unless stated
-	otherwise, \emph{vector} means column vector in these notes.
+	otherwise, \emph{vector} means column vector in this book.
 \end{defnbox}
 
 \begin{defnbox}{Matrix}
-	An $m \times n$ \textbf{matrix} has $m$ rows and $n$ columns:
+	An $m \times n$ \emph{matrix} has $m$ rows and $n$ columns:
 	\[
 	A =
 	\begin{bmatrix}
@@ -56,7 +56,7 @@ elements within a row.
 	\in \mathbb{R}^{m \times n}.
 	\]
 	The element in row $i$ and column $j$ is written $a_{ij}$ or
-	$[A]_{ij}$.  A \textbf{square matrix} has $m = n$.
+	$[A]_{ij}$.  A \emph{square matrix} has $m = n$.
 \end{defnbox}
 
 \begin{notebox}{MATLAB notation}
@@ -152,7 +152,7 @@ worth knowing by name.
 	\[
 	[A \pm B]_{ij} = a_{ij} \pm b_{ij}.
 	\]
-	Addition with matrices of different sizes is \textbf{not defined}.
+	Addition with matrices of different sizes is \emph{not defined}.
 \end{defnbox}
 
 \textbf{Properties of matrix addition:}
@@ -204,17 +204,17 @@ worth knowing by name.
 % =============================================================
 
 \begin{defnbox}{Transpose}
-	The \textbf{transpose} of $A \in \mathbb{R}^{m \times n}$ is the
+	The \emph{transpose} of $A \in \mathbb{R}^{m \times n}$ is the
 	matrix $A^\top \in \mathbb{R}^{n \times m}$ obtained by swapping rows
 	and columns: $[A^\top]_{ij} = a_{ji}$.
 \end{defnbox}
 
 \textbf{Useful transpose identities:}
 \begin{align}
-	(A^\top)^\top &= A \label{eq:t1}\\
-	(A + B)^\top  &= A^\top + B^\top \label{eq:t2}\\
+	(A^\top)^\top &= A \nonumber\\
+	(A + B)^\top  &= A^\top + B^\top \nonumber\\
 	(AB)^\top     &= B^\top A^\top \label{eq:t3}\\
-	(\alpha A)^\top &= \alpha A^\top \label{eq:t4}
+	(\alpha A)^\top &= \alpha A^\top \nonumber
 \end{align}
 
 Identity \eqref{eq:t3} is the most frequently used and most easily
@@ -334,7 +334,7 @@ forgotten: note the \emph{reversed} order.
 	\begin{bmatrix} -2 \\ 5 \end{bmatrix}.
 	\]
 	$BA$ would require $B$ ($3\times1$) times $A$ ($2\times3$): inner
-	dimensions are $1 \neq 2$, so $BA$ is \textbf{undefined}.
+	dimensions are $1 \neq 2$, so $BA$ is \emph{undefined}.
 	
 	\begin{lstlisting}[language=Matlab]
 		A = [1, 0, -1; 2, 3, 1];
@@ -418,13 +418,13 @@ nothing more than two matrix--vector products added together.
 % =============================================================
 
 \begin{defnbox}{Matrix Inverse}
-	A square matrix $A \in \mathbb{R}^{n\times n}$ is \textbf{invertible}
-	(or \textbf{non-singular}) if there exists a matrix
+	A square matrix $A \in \mathbb{R}^{n\times n}$ is \emph{invertible}
+	(or \emph{non-singular}) if there exists a matrix
 	$A^{-1} \in \mathbb{R}^{n\times n}$ such that
 	\[
 	A A^{-1} = A^{-1} A = I_n.
 	\]
-	If no such matrix exists, $A$ is called \textbf{singular}.
+	If no such matrix exists, $A$ is called \emph{singular}.
 \end{defnbox}
 
 \begin{defnbox}{Conditions for Invertibility}
@@ -530,7 +530,7 @@ A^{-1} = \frac{1}{ad - bc}
 % =============================================================
 
 \begin{defnbox}{Determinant}
-	The \textbf{determinant} $\det(A)$ (also written $|A|$) is a scalar
+	The \emph{determinant} $\det(A)$ (also written $|A|$) is a scalar
 	function of a square matrix that encodes fundamental properties such as
 	invertibility, volume scaling, and orientation.
 	
@@ -586,7 +586,7 @@ A^{-1} = \frac{1}{ad - bc}
 % =============================================================
 
 \begin{defnbox}{Trace}
-	The \textbf{trace} of a square matrix $A \in \mathbb{R}^{n\times n}$
+	The \emph{trace} of a square matrix $A \in \mathbb{R}^{n\times n}$
 	is the sum of its diagonal elements:
 	\[
 	\mathrm{tr}(A) = \sum_{i=1}^{n} a_{ii} = a_{11} + a_{22} + \cdots + a_{nn}.
@@ -642,12 +642,12 @@ unit circle.
 
 \begin{defnbox}{Eigenvalue and Eigenvector}
 	Let $A \in \mathbb{R}^{n\times n}$.  A scalar $\lambda \in \mathbb{C}$
-	is an \textbf{eigenvalue} of $A$ if there exists a non-zero vector
+	is an \emph{eigenvalue} of $A$ if there exists a non-zero vector
 	${v} \in \mathbb{C}^n$ such that
 	\[
 	A{v} = \lambda {v}.
 	\]
-	The vector $v$ is the corresponding \textbf{eigenvector}.
+	The vector $v$ is the corresponding \emph{eigenvector}.
 	Geometrically, $A$ does not rotate ${v}$; it only scales it by
 	$\lambda$.
 \end{defnbox}
@@ -661,7 +661,7 @@ singular:
 \[
 \det(A - \lambda I) = 0.
 \]
-This is the \textbf{characteristic equation}, a degree-$n$ polynomial
+This is the \emph{characteristic equation}, a degree-$n$ polynomial
 in $\lambda$ whose $n$ roots (counting multiplicity, possibly complex)
 are the eigenvalues.
 
@@ -781,7 +781,7 @@ are the eigenvalues.
 
 This section demonstrates how all the operations above arise together
 in a single state-space simulation, mirroring the structure of the MPC
-plant model used throughout these notes.
+plant model used throughout this book.
 
 \begin{examplebox}{Two-state discrete system: simulation and analysis}
 	Consider the discrete-time system

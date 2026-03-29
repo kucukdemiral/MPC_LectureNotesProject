@@ -12,11 +12,11 @@ While the physical world operates in continuous time and is inherently nonlinear
 
 In this chapter, we establish the mathematical modelling framework used by the predictive controllers developed in later chapters. We will cover:
 \begin{itemize}
-	\item A very short review of the \textbf{Continuous-Time (CT) LTI state-space} formulation.
-	\item Practical methods for deriving models of \textbf{electrical and mechanical systems} from first principles.
-	\item The concept of \textbf{equilibrium points} and \textbf{local linearisation} to approximate nonlinear dynamics.
-	\item Techniques for \textbf{discretisation}, including the analytic solution for linear systems (Zero-Order Hold) and numerical integration methods (Forward Euler, Runge-Kutta) for nonlinear systems.
-	\item An analysis of \textbf{stability} in the discrete-time domain.
+	\item A very short review of the \emph{Continuous-Time (CT) LTI state-space} formulation.
+	\item Practical methods for deriving models of \emph{electrical and mechanical systems} from first principles.
+	\item The concept of \emph{equilibrium points} and \emph{local linearisation} to approximate nonlinear dynamics.
+	\item Techniques for \emph{discretisation}, including the analytic solution for linear systems (Zero-Order Hold) and numerical integration methods (Forward Euler, Runge-Kutta) for nonlinear systems.
+	\item An analysis of \emph{stability} in the discrete-time domain.
 \end{itemize}
 
 \section{What is state-space, and why is it central to MPC?}
@@ -229,7 +229,7 @@ In practice, states are not abstract quantities: they usually correspond to phys
 This interpretation provides a systematic way to construct models from first principles. Starting from physical laws—such as Kirchhoff’s laws in electrical systems or Newton’s laws in mechanical systems—we obtain differential equations whose natural variables become the system states.
 
 \begin{notebox}{Caveat: Intentionally incorporated states}
-	It is also common to extend the state vector with non-physical variables to improve control performance. For instance, to ensure the controller eliminates steady-state error (offset-free tracking), we often add an \textbf{integrator state} or a \textbf{disturbance estimate} to the model. 
+	It is also common to extend the state vector with non-physical variables to improve control performance. For instance, to ensure the controller eliminates steady-state error (offset-free tracking), we often add an \emph{integrator state} or a \emph{disturbance estimate} to the model. 
 	
 	These are mathematical constructs rather than physical ones, yet they are treated identically within the state-space framework. We will explore these techniques in the upcoming chapters.
 \end{notebox}
@@ -738,7 +738,7 @@ D = \left.\frac{\partial h}{\partial u}\right|_{(x_e,u_e)}.
 	\medskip
 	\solution
 	\textbf{1) Define states and inputs:}
-	We select the state vector such that the generalized coordinates appear first, followed by their velocities:
+	We select the state vector such that the generalised coordinates appear first, followed by their velocities:
 	\[
 	x(t) = 
 	\begin{bmatrix} x_1 & x_2 & x_3 & x_4 & x_5 & x_6 \end{bmatrix}^\top
@@ -880,7 +880,7 @@ Expanding the equation for ${x}_{k+1}$ gives the standard discrete-time form:
 \end{equation}
 
 
-\begin{lstlisting}[language=Matlab, caption={MATLAB code to perform ZOH discretization of a forced LTI system.}, label={lst:matlab_zoh}]
+\begin{lstlisting}[language=Matlab, caption={MATLAB code to perform ZOH discretisation of a forced LTI system.}, label={lst:matlab_zoh}]
 	% Define a continuous-time LTI system
 	A = [0, 1; -5, -2]; % Example A matrix
 	B = [0; 1];         % Example B matrix
@@ -923,7 +923,7 @@ The simplest numerical approach is the Forward Euler method, which approximates 
 	x_{k+1} = x_k + h \cdot f(x_k, u_k).
 \end{equation}
 
-While Euler's method is algebraically simple and easy to differentiate (which is useful for optimization gradients), it suffers from significant drawbacks.
+While Euler's method is algebraically simple and easy to differentiate (which is useful for optimisation gradients), it suffers from significant drawbacks.
 
 \begin{alertbox}{Warning: Avoid Euler's Method}
 	Forward Euler is a first-order method, meaning the global error scales linearly with the step size ($\mathcal{O}(h)$). It is notoriously inaccurate and numerically unstable for \emph{stiff} systems (systems with fast dynamics). 
@@ -1004,13 +1004,13 @@ The RK4 method has a global error of $\mathcal{O}(h^4)$, providing a significant
 	\textbf{Simulation Results} \\
 	Figure~\ref{fig:integrator_comparison} compares these two methods against the exact solution across different sampling times $h$. 
 	
-	It can be observed that the \textbf{Forward Euler} method is numerically unstable for every selection of sampling time $h$; it introduces artificial energy into the system, causing the amplitude to grow unbounded (spiralling out) as time progresses. This occurs because the continuous-time eigenvalues are purely imaginary ($\pm j\omega$), placing them outside the Forward Euler stability region for any $h > 0$. In contrast, the \textbf{RK4} method maintains high accuracy and preserves stability even at larger time steps.
+	It can be observed that the \emph{Forward Euler} method is numerically unstable for every selection of sampling time $h$; it introduces artificial energy into the system, causing the amplitude to grow unbounded (spiralling out) as time progresses. This occurs because the continuous-time eigenvalues are purely imaginary ($\pm j\omega$), placing them outside the Forward Euler stability region for any $h > 0$. In contrast, the \emph{RK4} method maintains high accuracy and preserves stability even at larger time steps.
 \end{examplebox}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=1\linewidth]{Figures/RK4_vs_euler.pdf}
-\caption{Comparison of numerical integration accuracy for an undamped harmonic oscillator ($\ddot{p} + p = 0$) across increasing time steps $h \in \{0.05, 0.10, 0.25, 0.50\}$ seconds. For this system (purely imaginary eigenvalues), the \textbf{Forward Euler} method (red dashed) is numerically unstable; it introduces artificial energy into the simulation, causing the amplitude to grow unbounded as time progresses. This error scales linearly with $h$. In contrast, the \textbf{Runge--Kutta 4 (RK4)} method (blue dash-dot) maintains high fidelity to the \textbf{Exact} solution (solid gray), preserving stability even at the coarsest time step of $h=0.50$\,s.}
+\caption{Comparison of numerical integration accuracy for an undamped harmonic oscillator ($\ddot{p} + p = 0$) across increasing time steps $h \in \{0.05, 0.10, 0.25, 0.50\}$ seconds. For this system (purely imaginary eigenvalues), the \emph{Forward Euler} method (red dashed) is numerically unstable; it introduces artificial energy into the simulation, causing the amplitude to grow unbounded as time progresses. This error scales linearly with $h$. In contrast, the \emph{Runge--Kutta 4 (RK4)} method (blue dash-dot) maintains high fidelity to the \emph{Exact} solution (solid gray), preserving stability even at the coarsest time step of $h=0.50$\,s.}
 	\label{fig:integrator_comparison}
 \end{figure}
 
@@ -1039,7 +1039,7 @@ For linear systems ${x}_{k+1} = {A}_d {x}_k$, this condition is both necessary a
 
 \subsection{Geometric Interpretation: The Unit Circle}
 
-Unlike continuous-time systems, where stability is defined by the Left Half Plane (LHP), discrete-time stability is determined by the \textbf{Unit Circle}. The mapping between the two domains is governed by the relation $z = e^{sh}$, where $h$ is the sampling time. Figure~\ref{fig:unit_circle} shows an unstable system having 4 eigenvalues. 
+Unlike continuous-time systems, where stability is defined by the Left Half Plane (LHP), discrete-time stability is determined by the \emph{Unit Circle}. The mapping between the two domains is governed by the relation $z = e^{sh}$, where $h$ is the sampling time. Figure~\ref{fig:unit_circle} shows an unstable system having 4 eigenvalues. 
 
 \begin{itemize}
 	\item \textbf{Stable:} Eigenvalues lie strictly \emph{inside} the unit circle ($|\lambda| < 1$). The state vector decays to zero.
@@ -1074,7 +1074,7 @@ Unlike continuous-time systems, where stability is defined by the Left Half Plan
 
 \subsection{Lyapunov Stability and the Stein Equation}
 
-While eigenvalue analysis is useful for linear analysis, a more general approach—fundamental to optimal control—is the \textbf{Lyapunov method}. Instead of looking at roots of a polynomial, we look at the system's "energy".
+While eigenvalue analysis is useful for linear analysis, a more general approach—fundamental to optimal control—is the \emph{Lyapunov method}. Instead of looking at roots of a polynomial, we look at the system's "energy".
 
 For a linear discrete-time system $x_{k+1} = A x_k$, let us define a quadratic energy candidate function:
 \begin{equation}
@@ -1088,7 +1088,7 @@ Substituting the dynamics into the energy difference yields:
 	&= (A x_k)^\top P (A x_k) - x_k^\top P x_k \\
 	&= x_k^\top (A^\top P A - P) x_k
 \end{align*}
-For the energy to decrease strictly, the term in the brackets must be negative definite. This leads to the \textbf{Discrete Lyapunov Equation}, also known as the \textit{Stein Equation}.
+For the energy to decrease strictly, the term in the brackets must be negative definite. This leads to the \emph{Discrete Lyapunov Equation}, also known as the \textit{Stein Equation}.
 
 \begin{alertbox}{Lyapunov Stability Theorem}
 	The discrete-time linear system $x_{k+1} = A x_k$ is asymptotically stable if and only if, for any given positive definite matrix $Q \succ 0$, there exists a unique positive definite matrix $P \succ 0$ satisfying:
@@ -1104,6 +1104,22 @@ For the energy to decrease strictly, the term in the brackets must be negative d
 \begin{notebox}{Further reading}
 Standard references for state-space modelling and discretisation include \citet{Ogata2010} and \citet{Franklin2015}. The reader seeking a deeper treatment of continuous-to-discrete conversion methods is referred to these texts.
 \end{notebox}
+
+\section{Chapter Summary}
+
+This chapter introduced the state-space framework that serves as the internal model for MPC. The key topics covered are:
+
+\begin{itemize}
+	\item \textbf{State-Space Representation:} A dynamical system is described by state, input, and output matrices $(A, B, C, D)$. The continuous-time form uses differential equations ($\dot{x} = Ax + Bu$) and the discrete-time form uses difference equations ($x_{k+1} = Ax_k + Bu_k$).
+
+	\item \textbf{Transfer Function Conversion:} Standard techniques (controllable canonical form, observable canonical form) convert a transfer function $G(s)$ into an equivalent state-space realisation, enabling the use of time-domain methods.
+
+	\item \textbf{Linearisation:} Nonlinear systems are approximated around an equilibrium point by computing the Jacobian matrices. The resulting linear model is valid for small deviations and provides the basis for linear MPC design.
+
+	\item \textbf{Discretisation Methods:} Continuous-time models are converted to discrete time using zero-order hold (ZOH, exact for LTI systems), forward/backward Euler (first-order approximations), or Runge--Kutta methods (RK4, higher accuracy). The choice of method and sampling period affects model fidelity.
+
+	\item \textbf{Stability Analysis:} A continuous-time system is stable if all eigenvalues of $A$ have strictly negative real parts; a discrete-time system is stable if all eigenvalues lie strictly inside the unit circle. Lyapunov's method provides an energy-based stability criterion without requiring explicit eigenvalue computation.
+\end{itemize}
 
 \section*{Exercises}
 

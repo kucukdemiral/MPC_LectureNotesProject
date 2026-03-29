@@ -139,7 +139,9 @@
 	showstringspaces=false,
 	showtabs=false,                  
 	tabsize=2,
-	frame=single                     % Box around the code
+	frame=single,                    % Box around the code
+	aboveskip=1.5\baselineskip,      % Space before listing
+	belowskip=1.5\baselineskip       % Space after listing
 }
 
 \newtheorem{definition}{Definition}
@@ -148,9 +150,9 @@
 % -------------------------------------------------------------------
 % Title Details
 % -------------------------------------------------------------------
-\title{\textbf{Model Predictive Control}\\ An Introduction}
+\title{\textbf{Model Predictive Control}\\ From Foundations to Advanced Topics}
 
-\author{Lecture Notes \\ \.Ibrahim K\"u\c c\"ukdemiral }
+\author{\.Ibrahim K\"u\c c\"ukdemiral }
 \date{\today}
 % Custom box for Definitions
 \newtcolorbox[auto counter, number within=chapter]{defnbox}[1]{
@@ -216,8 +218,44 @@
 \definecolor{satred}{RGB}{190,30,45}
 \definecolor{sensorgold}{RGB}{180,140,20}
 \begin{document}
-	
+\raggedbottom
+\hypersetup{pageanchor=false}
+
 	\maketitle
+	\hypersetup{pageanchor=true}
+
+	% Copyright page (verso of title page)
+	\thispagestyle{empty}
+	\vspace*{\fill}
+	\begin{center}
+		\textcopyright{} 2026 \.Ibrahim K\"u\c{c}\"ukdemiral
+
+		\vspace{0.8cm}
+
+		This work is licensed under the Creative Commons Attribution--NonCommercial 4.0\\
+		International License (CC BY--NC 4.0).\\[4pt]
+		\texttt{\url{https://creativecommons.org/licenses/by-nc/4.0/}}
+
+		\vspace{1.5cm}
+
+		\textbf{How to cite this book}\\[4pt]
+		\.Ibrahim K\"u\c{c}\"ukdemiral.\\
+		\textit{Model Predictive Control: From Foundations to Advanced Topics.}\\
+		2026. \texttt{https://doi.org/10.5281/zenodo.XXXXXXX}
+	\end{center}
+	\vspace*{\fill}
+	\cleardoublepage
+
+	% Dedication page
+	\thispagestyle{empty}
+	\vspace*{\stretch{1}}
+	\begin{center}
+		\large\itshape
+		To Neslihan and Demir
+	\end{center}
+	\vspace*{\stretch{3}}
+	\cleardoublepage
+
 	\tableofcontents
 	\newpage
 	\input{Foreword}

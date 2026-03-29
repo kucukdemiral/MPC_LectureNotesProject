@@ -22,7 +22,7 @@ To handle this, we augment the system model with a \emph{disturbance state} \(d_
 \begin{align}
 	x_{k+1} &= A x_k + B u_k + B_w d_k + w_k \label{eq:aug_sys_x}\\
 	d_{k+1} &= d_k + \xi_k \label{eq:aug_sys_d}\\
-	y_k &= C x_k + C_d d_k + v_k \label{eq:aug_sys_y}
+	y_k &= C x_k + C_d d_k + v_k \nonumber
 \end{align}
 where:
 \begin{itemize}
@@ -110,7 +110,7 @@ If the coefficient matrix is nonsingular, this yields a computationally cheap st
 	If the linear solution produces, for example, \(u_{ss} > u_{\max}\), then the target is infeasible. Feeding an unreachable target to the MPC regulator can compromise recursive feasibility and may lead to poor performance or failure.
 \end{notebox}
 
-To handle this, we reformulate the target calculation as a constrained \textbf{steady-state optimisation} (SSO) problem. Instead of insisting on exact equality \(y_{ss}=r_k\), we minimise the tracking error whilst enforcing the equilibrium equations and any relevant constraints.
+To handle this, we reformulate the target calculation as a constrained \emph{steady-state optimisation} (SSO) problem. Instead of insisting on exact equality \(y_{ss}=r_k\), we minimise the tracking error whilst enforcing the equilibrium equations and any relevant constraints.
 
 At each time step, after estimating \(\hat d_k\), we solve
 \begin{align}
@@ -293,7 +293,7 @@ The architecture operates as a hierarchical loop, separating the task of \emph{s
 \subsection{Optimisation Problem}
 
 Once the steady-state targets \((x_{ss}, u_{ss})\) have been computed, the
-regulation layer is designed in \textbf{deviation variables}:
+regulation layer is designed in \emph{deviation variables}:
 \[
 \tilde x_i = x_i - x_{ss}, \qquad \tilde u_i = u_i - u_{ss}.
 \]
@@ -320,7 +320,7 @@ Subtracting the equilibrium equation from the prediction model gives
 \end{align*}
 Because the steady-state pair absorbs the disturbance estimate $\hat d_k$
 through both the state equation and the output equation, all affine terms
-cancel exactly, leaving the \textbf{disturbance-free linear deviation
+cancel exactly, leaving the \emph{disturbance-free linear deviation
 	dynamics}:
 \[
 \tilde x_{i+1} = A \tilde x_i + B \tilde u_i.
@@ -726,7 +726,7 @@ Algorithm~\ref{alg:offset_free_mpc} describes the general offset-free MPC struct
 	\ddot{z} \approx \frac{T}{m} - g.
 	\]
 	
-	We now define the \textbf{virtual control inputs}
+	We now define the \emph{virtual control inputs}
 	\[
 	u_{\mathrm{lin}} = [a_x,\ a_y,\ a_z]^T,
 	\]
@@ -1506,16 +1506,14 @@ The pre-computed discrete model matrices are
 	(friction, payload) in~[Nm].
 	
 	\emph{Computed-torque (CT) feedback linearisation} is applied by choosing:
-	\begin{equation}
+	\begin{equation*}
 		\tau = M(q)\,v + Cor(q,\dot{q})\,\dot{q} + G(q),
-		\label{eq:ct_law}
-	\end{equation}
+	\end{equation*}
 	which reduces~\eqref{eq:robot_dyn} to three decoupled double integrators,
 	one per joint:
-	\begin{equation}
+	\begin{equation*}
 		\ddot{q} = v + \underbrace{M(q)^{-1}\,d_{\tau}}_{\displaystyle d},
-		\label{eq:double_int}
-	\end{equation}
+	\end{equation*}
 	where $d \triangleq M(q)^{-1}\,d_{\tau} \in \mathbb{R}^{3}$ is the
 	\emph{acceleration-space disturbance}~[rad/s$^{2}$].
 	Because the MPC and observer operate entirely in the linearised
@@ -1526,13 +1524,12 @@ The pre-computed discrete model matrices are
 	
 	Defining the state $x = [q^{\top},\,\dot{q}^{\top}]^{\top} \in \mathbb{R}^{6}$,
 	the linearised continuous-time plant is:
-	\begin{equation}
+	\begin{equation*}
 		\dot{x} =
 		\underbrace{\begin{bmatrix}0 & I \\ 0 & 0\end{bmatrix}}_{A_c}x +
 		\underbrace{\begin{bmatrix}0 \\ I\end{bmatrix}}_{B_c}v, \qquad
 		y = \underbrace{\begin{bmatrix}I & 0\end{bmatrix}}_{C}\,x,
-		\label{eq:lin_plant}
-	\end{equation}
+	\end{equation*}
 	which is discretised exactly via zero-order hold at $T_s = 0.02$\,s to give
 	$(A,\,B,\,C)$. The entire control scheme is shown in Figure~\ref{fig:CTMPC_robot_block_diagram}.
 	
@@ -1546,7 +1543,7 @@ The pre-computed discrete model matrices are
 	A random-walk model $d_{k+1} = d_k$ for the acceleration-space disturbance
 	is appended to the plant state,
 	yielding the augmented system $z = [x^{\top},\,d^{\top}]^{\top} \in \mathbb{R}^{9}$:
-	\begin{equation}
+	\begin{equation*}
 		\begin{bmatrix}x_{k+1}\\d_{k+1}\end{bmatrix}
 		=
 		\underbrace{\begin{bmatrix}A & B \\ 0 & I\end{bmatrix}}_{A_{\mathrm{aug}}}
@@ -1556,8 +1553,7 @@ The pre-computed discrete model matrices are
 		y_k =
 		\underbrace{\begin{bmatrix}C & 0\end{bmatrix}}_{C_{\mathrm{aug}}}
 		\begin{bmatrix}x_k\\d_k\end{bmatrix}.
-		\label{eq:aug_sys}
-	\end{equation}
+	\end{equation*}
 	Note that $d$ enters the state equation through $B$ (the same input matrix as $v$),
 	confirming that it represents the disturbance in virtual-acceleration
 	units~[rad/s$^{2}$], not in torque units~[Nm].
@@ -1572,13 +1568,12 @@ The pre-computed discrete model matrices are
 	\emph{Target calculator.}
 	At steady state, $x_{k+1} = x_k = x_{\mathrm{ss}}$ and $y_{\mathrm{ss}} = r_k$,
 	so the pair $(x_{\mathrm{ss}},\,v_{\mathrm{ss}})$ satisfies:
-	\begin{equation}
+	\begin{equation*}
 		\begin{bmatrix}I - A & -B \\ C & 0\end{bmatrix}
 		\begin{bmatrix}x_{\mathrm{ss}} \\ v_{\mathrm{ss}}\end{bmatrix}
 		=
 		\begin{bmatrix}B\,\hat{d}_k \\ r_k\end{bmatrix}.
-		\label{eq:target}
-	\end{equation}
+	\end{equation*}
 	This ensures that the MPC drives the plant to the reference with zero steady-state
 	offset despite the persistent acceleration-space disturbance estimate
 	$\hat{d}_k$~[rad/s$^{2}$].
@@ -1586,7 +1581,7 @@ The pre-computed discrete model matrices are
 	\emph{Deviation-form optimal control problem.}
 	Let $\delta x_k = x_k - x_{\mathrm{ss}}$ and $\delta v_k = v_k - v_{\mathrm{ss}}$.
 	The QP solved at each sampling instant is:
-	\begin{equation}
+	\begin{equation*}
 		\begin{aligned}
 			\min_{\{\delta v_k\},\{s_k\}}\;\;
 			&\sum_{k=0}^{N-1}\!\left[
@@ -1602,8 +1597,7 @@ The pre-computed discrete model matrices are
 			&y_{\min} - s_k \leq C(\delta x_k + x_{\mathrm{ss}}) \leq y_{\max} + s_k,\\
 			&s_k \geq 0, \quad k = 0, \ldots, N-1,
 		\end{aligned}
-		\label{eq:ocp}
-	\end{equation}
+	\end{equation*}
 	where $\delta y_k = C\,\delta x_k$, $P_N$ is the terminal LQR cost matrix (from the
 	DARE for $(A,B,Q_{\mathrm{mpc}},R)$), and $s_k \in \mathbb{R}^{3}$ are slack
 	variables that soften the joint-angle constraints.
@@ -2222,6 +2216,17 @@ The pre-computed discrete model matrices are
 
 
 \end{examplebox}
+
+\section*{Chapter Summary}
+\begin{itemize}
+    \item Output feedback MPC replaces full-state measurements with observer-based state estimates in the MPC optimisation loop.
+    \item The separation principle, which guarantees independent design of estimator and controller in LQG, does not extend directly to constrained MPC and requires careful treatment.
+    \item A disturbance model augments the plant state with an integrating disturbance, enabling the estimator to detect and compensate for persistent model--plant mismatch.
+    \item Offset-free MPC uses the augmented observer's disturbance estimate in a steady-state target calculator to eliminate steady-state tracking errors.
+    \item The steady-state target calculator solves a small optimisation problem at each step to find the closest feasible equilibrium consistent with the estimated disturbance.
+    \item The observer-based MPC architecture combines an augmented Kalman filter, a steady-state target calculator, and a dynamic MPC optimiser into a modular feedback loop.
+    \item Practical examples, including quadrotor altitude control, building HVAC regulation, and robot arm trajectory tracking, illustrate the design methodology on systems with different constraint structures.
+\end{itemize}
 
 \section*{Exercises}
 \begin{enumerate}
