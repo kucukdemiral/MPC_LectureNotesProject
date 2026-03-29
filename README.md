@@ -3,7 +3,8 @@
 **Author:** Ibrahim Kucukdemiral
 **Website:** [kucukdemiral.github.io/MPC_LectureNotesProject](https://kucukdemiral.github.io/MPC_LectureNotesProject/)
 **License:** [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
-**Status:** Open-access book (Zenodo publication forthcoming)
+**DOI:** [10.5281/zenodo.19310682](https://doi.org/10.5281/zenodo.19310682)
+**Status:** Published open-access book
 
 ---
 
