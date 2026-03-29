@@ -1,6 +1,7 @@
 # Model Predictive Control: From Foundations to Advanced Topics
 
 **Author:** Ibrahim Kucukdemiral
+**Website:** [kucukdemiral.github.io/MPC_LectureNotesProject](https://kucukdemiral.github.io/MPC_LectureNotesProject/)
 **License:** [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 **Status:** Open-access book (Zenodo publication forthcoming)
 
