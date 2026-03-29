@@ -80,7 +80,7 @@ pdflatex Main.tex
   title     = {Model Predictive Control: From Foundations to Advanced Topics},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.XXXXXXX},
+  doi       = {10.5281/zenodo.19310682},
   license   = {CC BY-NC 4.0}
 }
 ```
